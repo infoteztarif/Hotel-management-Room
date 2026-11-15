@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -42,8 +42,8 @@ class AdminMaintenanceControllerCore extends AdminController
                 'title' =>    $this->l('General'),
                 'fields' =>    array(
                     'PS_SHOP_ENABLE' => array(
-                        'title' => $this->l('Enable Shop'),
-                        'desc' => $this->l('Activate or deactivate your shop (It is a good idea to deactivate your shop while you perform maintenance. Please note that the webservice will not be disabled).'),
+                        'title' => $this->l('Enable Site'),
+                        'desc' => $this->l('Activate or deactivate your site (It is a good idea to deactivate your site while you perform maintenance. Please note that the webservice will not be disabled).'),
                         'validation' => 'isBool',
                         'cast' => 'intval',
                         'type' => 'bool'

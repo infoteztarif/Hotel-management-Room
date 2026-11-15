@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -46,7 +46,7 @@ class TabCore extends ObjectModel
     /** @var int hide_host_mode */
     public $hide_host_mode = false;
 
-    const TAB_MODULE_LIST_URL = _PS_TAB_MODULE_LIST_URL_;
+    const TAB_MODULE_LIST_URL = _QLO_TAB_MODULE_LIST_URL_;
 
     /**
      * @see ObjectModel::$definition
@@ -563,6 +563,7 @@ class TabCore extends ObjectModel
     public static function getTabModulesList($id_tab)
     {
         $modules_list = array('default_list' => array(), 'slider_list' => array());
+
         $xml_tab_modules_list = false;
 
         if (file_exists(_PS_ROOT_DIR_.Module::CACHE_FILE_TAB_MODULES_LIST)) {

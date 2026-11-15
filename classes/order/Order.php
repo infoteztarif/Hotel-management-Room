@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,6 +30,9 @@ class OrderCore extends ObjectModel
     const ROUND_LINE = 2;
     const ROUND_TOTAL = 3;
 
+    // payment type for the customer on checkout page
+    const ORDER_PAYMENT_TYPE_FULL = 1;
+    const ORDER_PAYMENT_TYPE_ADVANCE = 2;
 
     /** @var int Delivery address id */
     public $id_address_delivery;
@@ -147,6 +150,9 @@ class OrderCore extends ObjectModel
     /** @var string Delivery creation date */
     public $delivery_date;
 
+    /** @var string source */
+    public $source;
+
     /** @var bool Order validity: current order status is logable (usually paid and not canceled) */
     public $valid;
 
@@ -172,6 +178,16 @@ class OrderCore extends ObjectModel
     public $round_type;
 
     /**
+    * @var int is_advance_payment used to determine if this order is paid as advance payment or full payment
+    */
+    public $is_advance_payment;
+
+    /**
+    * @var int advance_paid_amount used to save paid amount for the advance payment
+    */
+    public $advance_paid_amount;
+
+    /**
      * @see ObjectModel::$definition
      */
     public static $definition = array(
@@ -186,7 +202,7 @@ class OrderCore extends ObjectModel
             'id_shop' =>                    array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'id_lang' =>                    array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
             'id_customer' =>                array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
-            'id_carrier' =>                array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+            'id_carrier' =>                array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'current_state' =>                array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'secure_key' =>                array('type' => self::TYPE_STRING, 'validate' => 'isMd5'),
             'payment' =>                    array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true),
@@ -219,8 +235,11 @@ class OrderCore extends ObjectModel
             'delivery_number' =>            array('type' => self::TYPE_INT),
             'invoice_date' =>                array('type' => self::TYPE_DATE),
             'delivery_date' =>                array('type' => self::TYPE_DATE),
+            'source' =>                        array('type' => self::TYPE_STRING),
             'valid' =>                        array('type' => self::TYPE_BOOL),
             'reference' =>                    array('type' => self::TYPE_STRING),
+            'is_advance_payment' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'default' => 0),
+            'advance_paid_amount' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
             'date_add' =>                    array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
             'date_upd' =>                    array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
         ),
@@ -237,7 +256,6 @@ class OrderCore extends ObjectModel
             'id_currency' => array('xlink_resource'=> 'currencies'),
             'id_lang' => array('xlink_resource'=> 'languages'),
             'id_customer' => array('xlink_resource'=> 'customers'),
-            'id_carrier' => array('xlink_resource'=> 'carriers'),
             'current_state' => array(
                 'xlink_resource'=> 'order_states',
                 'setter' => 'setWsCurrentState'
@@ -245,31 +263,38 @@ class OrderCore extends ObjectModel
             'module' => array('required' => true),
             'invoice_number' => array(),
             'invoice_date' => array(),
-            'delivery_number' => array(),
-            'delivery_date' => array(),
             'valid' => array(),
             'date_add' => array(),
             'date_upd' => array(),
-            'shipping_number' => array(
-                'getter' => 'getWsShippingNumber',
-                'setter' => 'setWsShippingNumber'
-            ),
+        ),
+        'hidden_fields' => array (
+            'total_shipping',
+            'total_shipping_tax_incl',
+            'total_shipping_tax_excl',
+            'carrier_tax_rate',
+            'id_carrier',
+            'total_wrapping',
+            'total_wrapping_tax_incl',
+            'total_wrapping_tax_excl',
+            'delivery_date',
+            'delivery_number',
+            'shipping_number',
+            'id_shop',
+            'id_shop_group',
+            'recyclable',
+            'gift',
+            'gift_message',
+            'mobile_theme',
+            'round_mode',
+            'round_type',
+            'reference',
         ),
         'associations' => array(
-            'order_rows' => array('resource' => 'order_row', 'setter' => false, 'virtual_entity' => true,
-                'fields' => array(
-                    'id' =>  array(),
-                    'product_id' => array('required' => true),
-                    'product_attribute_id' => array('required' => true),
-                    'product_quantity' => array('required' => true),
-                    'product_name' => array('setter' => false),
-                    'product_reference' => array('setter' => false),
-                    'product_ean13' => array('setter' => false),
-                    'product_upc' => array('setter' => false),
-                    'product_price' => array('setter' => false),
-                    'unit_price_tax_incl' => array('setter' => false),
-                    'unit_price_tax_excl' => array('setter' => false),
-                )),
+            'bookings' => array(
+                'resource' => 'booking',
+                'setter' => false,
+                'virtual_entity' => true
+            ),
         ),
 
     );
@@ -709,8 +734,7 @@ class OrderCore extends ObjectModel
 				SELECT `image_shop`.id_image
 				FROM `'._DB_PREFIX_.'image` i'.
                 Shop::addSqlAssociation('image', 'i', true, 'image_shop.cover=1').'
-				WHERE i.id_product = '.(int)$product['product_id']
-            );
+				WHERE i.id_product = '.(int)$product['product_id']);
         }
 
         $product['image'] = null;
@@ -754,17 +778,17 @@ class OrderCore extends ObjectModel
         if (count($products) < 1) {
             return false;
         }
+
         $virtual = true;
+
         foreach ($products as $product) {
-            $pd = ProductDownload::getIdFromIdProduct((int)$product['product_id']);
-            if ($pd && Validate::isUnsignedInt($pd) && $product['download_hash'] && $product['display_filename'] != '') {
-                if ($strict === false) {
-                    return true;
-                }
-            } else {
-                $virtual &= false;
+            if ($strict === false && (bool)$product['is_virtual']) {
+                return true;
             }
+
+            $virtual &= (bool)$product['is_virtual'];
         }
+
         return $virtual;
     }
 
@@ -887,11 +911,12 @@ class OrderCore extends ObjectModel
         }
 
         $res = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-		SELECT o.*, (SELECT SUM(od.`product_quantity`) FROM `'._DB_PREFIX_.'order_detail` od WHERE od.`id_order` = o.`id_order`) nb_products
-		FROM `'._DB_PREFIX_.'orders` o
-		WHERE o.`id_customer` = '.(int)$id_customer.'
-		GROUP BY o.`id_order`
-		ORDER BY o.`date_add` DESC');
+        SELECT o.*, (SELECT SUM(od.`product_quantity`) FROM `'._DB_PREFIX_.'order_detail` od WHERE od.`id_order` = o.`id_order`) nb_products
+        FROM `'._DB_PREFIX_.'orders` o
+        WHERE o.`id_customer` = '.(int)$id_customer.
+        Shop::addSqlRestriction(Shop::SHARE_ORDER).'
+        GROUP BY o.`id_order`
+        ORDER BY o.`date_add` DESC');
         if (!$res) {
             return array();
         }
@@ -1151,24 +1176,28 @@ class OrderCore extends ObjectModel
 
     /**
      * Can this order be returned by the client?
-     *
      * @return bool
-     */
+    */
     public function isReturnable()
     {
-        if (Configuration::get('PS_ORDER_RETURN', null, null, $this->id_shop) && $this->isPaidAndShipped()) {
-            return $this->getNumberOfDays();
-        }
+        $objBookingDetail = new HotelBookingDetail();
+        if ($bookingInfo = $objBookingDetail->getBookingDataByOrderId($this->id)) {
+            $idHotel = reset($bookingInfo)['id_hotel'];
+            $objHotelBranch = new HotelBranchInformation($idHotel);
 
+            // check if global as well as hotel refund is allowed
+            return (Configuration::get('WK_ORDER_REFUND_ALLOWED') && $objHotelBranch->active_refund);
+        }
         return false;
     }
 
     public static function getLastInvoiceNumber()
     {
-        return Db::getInstance()->getValue('
-			SELECT MAX(`number`)
-			FROM `'._DB_PREFIX_.'order_invoice`
-		');
+        $sql = 'SELECT MAX(`number`) FROM `'._DB_PREFIX_.'order_invoice`';
+        if (Configuration::get('PS_INVOICE_RESET')) {
+            $sql .= ' WHERE DATE_FORMAT(`date_add`, "%Y") = '.(int)date('Y');
+        }
+        return Db::getInstance()->getValue($sql);
     }
 
     public static function setLastInvoiceNumber($order_invoice_id, $id_shop)
@@ -1188,8 +1217,13 @@ class OrderCore extends ObjectModel
         if ($number) {
             $sql .= (int)$number;
         } else {
-            $sql .= '(SELECT new_number FROM (SELECT (MAX(`number`) + 1) AS new_number
-			FROM `'._DB_PREFIX_.'order_invoice`) AS result)';
+            // Find the next number
+            $new_number_sql = 'SELECT (MAX(`number`) + 1) AS new_number
+                FROM `'._DB_PREFIX_.'order_invoice`'.(Configuration::get('PS_INVOICE_RESET') ?
+                ' WHERE DATE_FORMAT(`date_add`, "%Y") = '.(int)date('Y') : '');
+            $new_number = DB::getInstance()->getValue($new_number_sql);
+
+            $sql .= (int)$new_number;
         }
 
         $sql .= ' WHERE `id_order_invoice` = '.(int)$order_invoice_id;
@@ -1206,8 +1240,7 @@ class OrderCore extends ObjectModel
         return Db::getInstance()->getValue('
 			SELECT `number`
 			FROM `'._DB_PREFIX_.'order_invoice`
-			WHERE `id_order_invoice` = '.(int)$order_invoice_id
-        );
+			WHERE `id_order_invoice` = '.(int)$order_invoice_id);
     }
 
     /**
@@ -1216,7 +1249,7 @@ class OrderCore extends ObjectModel
     public function setInvoice($use_existing_payment = false)
     {
         if (!$this->hasInvoice()) {
-            if ($id = (int)$this->hasDelivery()) {
+            if ($id = (int)$this->getOrderInvoiceIdIfHasDelivery()) {
                 $order_invoice = new OrderInvoice($id);
             } else {
                 $order_invoice = new OrderInvoice();
@@ -1254,6 +1287,7 @@ class OrderCore extends ObjectModel
 				UPDATE `'._DB_PREFIX_.'order_detail`
 				SET `id_order_invoice` = '.(int)$order_invoice->id.'
 				WHERE `id_order` = '.(int)$order_invoice->id_order);
+            Cache::clean('objectmodel_OrderDetail_*');
 
             // Update order payment
             if ($use_existing_payment) {
@@ -1409,8 +1443,7 @@ class OrderCore extends ObjectModel
         return Db::getInstance()->getValue('
 			SELECT `delivery_number`
 			FROM `'._DB_PREFIX_.'order_invoice`
-			WHERE `id_order_invoice` = '.(int)$order_invoice_id
-        );
+			WHERE `id_order_invoice` = '.(int)$order_invoice_id);
     }
 
     public function setDelivery()
@@ -1568,6 +1601,7 @@ class OrderCore extends ObjectModel
     {
         /** @var PaymentModule $payment_module */
         $payment_module = Module::getInstanceByName($this->module);
+        $payment_module->orderSource = $this->source;
         $customer = new Customer($this->id_customer);
         $payment_module->validateOrder($this->id_cart, Configuration::get('PS_OS_WS_PAYMENT'), $this->total_paid, $this->payment, null, array(), null, false, $customer->secure_key);
         $this->id = $payment_module->currentOrder;
@@ -1656,8 +1690,7 @@ class OrderCore extends ObjectModel
 		FROM `'._DB_PREFIX_.'order_detail_tax` odt
 		LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON (od.`id_order_detail` = odt.`id_order_detail`)
 		WHERE od.`id_order` = '.(int)$this->id.'
-		AND od.`tax_computation_method` = '.(int)TaxCalculator::ONE_AFTER_ANOTHER_METHOD
-        );
+		AND od.`tax_computation_method` = '.(int)TaxCalculator::ONE_AFTER_ANOTHER_METHOD);
     }
 
     /**
@@ -1880,19 +1913,22 @@ class OrderCore extends ObjectModel
     }
 
     /**
-     * Get the sum of total_paid_tax_incl of the orders with similar reference
-     *
-     * @since 1.5.0.1
+     * Get the sum of total_paid_tax_incl/advance_paid_amount of the orders with similar reference
+     * @param integer $getAdvancePaid (send 1 if want total advance paid amount)
      * @return float
      */
-    public function getOrdersTotalPaid()
+    public function getOrdersTotalPaid($getAdvancePaid = 0)
     {
-        return Db::getInstance()->getValue('
-			SELECT SUM(total_paid_tax_incl)
-			FROM `'._DB_PREFIX_.'orders`
-			WHERE `reference` = \''.pSQL($this->reference).'\'
-			AND `id_cart` = '.(int)$this->id_cart
-        );
+        $sql = 'SELECT';
+        if ($getAdvancePaid) {
+            $sql .= ' SUM(advance_paid_amount)';
+        } else {
+            $sql .= ' SUM(total_paid_tax_incl)';
+        }
+        $sql .=  'FROM `'._DB_PREFIX_.'orders` WHERE `reference` = \''.pSQL($this->reference).
+        '\' AND `id_cart` = '.(int)$this->id_cart;
+
+        return Db::getInstance()->getValue($sql);
     }
 
     /**
@@ -2020,8 +2056,7 @@ class OrderCore extends ObjectModel
         return Db::getInstance()->executeS('
 		SELECT `ecotax_tax_rate`, SUM(`ecotax`) as `ecotax_tax_excl`, SUM(`ecotax`) as `ecotax_tax_incl`
 		FROM `'._DB_PREFIX_.'order_detail`
-		WHERE `id_order` = '.(int)$this->id
-        );
+		WHERE `id_order` = '.(int)$this->id);
     }
 
     /**
@@ -2046,12 +2081,21 @@ class OrderCore extends ObjectModel
      */
     public function hasDelivery()
     {
-        return (bool)Db::getInstance()->getValue('
+        return (bool)$this->getOrderInvoiceIdIfHasDelivery();
+    }
+
+    /**
+     * Get order invoice id if has delivery return id_order_invoice if this order has already a delivery slip
+     *
+     * @return int
+     */
+    public function getOrderInvoiceIdIfHasDelivery()
+    {
+        return (int)Db::getInstance()->getValue('
 			SELECT `id_order_invoice`
 			FROM `'._DB_PREFIX_.'order_invoice`
 			WHERE `id_order` =  '.(int)$this->id.'
-			AND `delivery_number` > 0'
-        );
+			AND `delivery_number` > 0');
     }
 
     /**
@@ -2228,7 +2272,7 @@ class OrderCore extends ObjectModel
         return true;
     }
 
-    
+
     /**
      * By default this function was made for invoice, to compute tax amounts and balance delta (because of computation made on round values).
      * If you provide $limitToOrderDetails, only these item will be taken into account. This option is usefull for order slip for example,
@@ -2273,12 +2317,7 @@ class OrderCore extends ObjectModel
             }
         }
 
-        $products_tax    = $this->total_products_wt - $this->total_products;
-        $discounts_tax    = $this->total_discounts_tax_incl - $this->total_discounts_tax_excl;
-
-        // We add $free_shipping_tax because when there is free shipping, the tax that would
-        // be paid if there wasn't is included in $discounts_tax.
-        $expected_total_tax = $products_tax - $discounts_tax + $free_shipping_tax;
+        $expected_total_tax = $this->total_products_wt - $this->total_products;
         $actual_total_tax = 0;
         $actual_total_base = 0;
 
@@ -2424,6 +2463,62 @@ class OrderCore extends ObjectModel
             'INNER JOIN '._DB_PREFIX_.'order_detail_tax odt ON odt.id_order_detail = od.id_order_detail '.
             'INNER JOIN '._DB_PREFIX_.'tax t ON t.id_tax = odt.id_tax '.
             'WHERE o.id_order = '.(int)$this->id
+        );
+    }
+
+    public static function getAllOrdersByCartId($id_cart)
+    {
+        return Db::getInstance()->executeS('SELECT  * FROM '._DB_PREFIX_.'orders WHERE id_cart = '.(int)$id_cart);
+    }
+
+    // Order is considered as refunded if all bookings are requested for refund and all are with refunded status
+    // $refundFlag [ORDER_RETURN_STATE_FLAG_REFUNDED || ORDER_RETURN_STATE_FLAG_DENIED]
+    public function hasCompletelyRefunded($refundFlag = 0)
+    {
+        if ($refundBookings = OrderReturn::getOrdersReturnDetail($this->id)) {
+            $objHotelBooking = new HotelBookingdetail();
+            if ($orderBookings = $objHotelBooking->getOrderCurrentDataByOrderId($this->id)) {
+                if (count($refundBookings) == count($orderBookings)) {
+                    if ($refundFlag) {
+                        foreach ($refundBookings as $refundRow) {
+                            if (Validate::isLoadedObject(
+                                $objReturnState = new OrderReturnState($refundRow['current_state']
+                            ))) {
+                                if ($refundFlag == OrderReturnState::ORDER_RETURN_STATE_FLAG_REFUNDED
+                                    && !$objReturnState->refunded
+                                ) {
+                                    return false;
+                                }
+                                if ($refundFlag == OrderReturnState::ORDER_RETURN_STATE_FLAG_DENIED
+                                    && !$objReturnState->denied
+                                ) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Order is considered as denied if all bookings are requested for refund and all are with denied status
+    public function orderRefundHasBeenDenied()
+    {
+        if (OrderReturn::getOrdersReturn($this->id_customer, $this->id)) {
+
+        }
+
+        return false;
+    }
+
+    public function getWsBookings()
+    {
+        return Db::getInstance()->executeS(
+            'SELECT `id` FROM `'._DB_PREFIX_.'htl_booking_detail` WHERE `id_order` = '.(int)$this->id.' ORDER BY `id` ASC'
         );
     }
 }

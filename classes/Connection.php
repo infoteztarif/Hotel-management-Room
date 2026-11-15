@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -136,7 +136,7 @@ class ConnectionCore extends ObjectModel
 					'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).'
 				ORDER BY `date_add` DESC';
         $result = Db::getInstance()->getRow($sql, false);
-        if (!$result['id_guest'] && (int)$cookie->id_guest) {
+        if (!isset($result['id_guest']) && (int)$cookie->id_guest) {
             // The old connections details are removed from the database in order to spare some memory
             Connection::cleanConnectionsPages();
 

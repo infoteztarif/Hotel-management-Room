@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,12 +18,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 <script type="text/javascript">
-	var id_cart = {$cart->id|intval};
+	{if isset($cart->id) && $cart->id}
+		var id_cart = {$cart->id|intval};
+	{/if}
 	var id_customer = 0;
 	var admin_order_tab_link = "{$link->getAdminLink('AdminOrders')|addslashes}";
 	var changed_shipping_price = false;
@@ -121,7 +123,7 @@
 				$('#voucher').val(data.name);
 				add_cart_rule(data.id_cart_rule);
 			});
-		{if $cart->id}
+		{if isset($cart->id) && $cart->id}
 			setupCustomer({$cart->id_customer|intval});
 			useCart('{$cart->id|intval}');
 		{/if}
@@ -568,8 +570,10 @@
 		$('#summary_part').show();
 		var address_link = $('#new_address').attr('href');
 		id_customer = idCustomer;
-		//id_cart = 0;
-		id_cart = "{$cart->id}";
+		id_cart = 0;
+		{if isset($cart->id) && $cart->id}
+			id_cart = "{$cart->id}";
+		{/if}
 		$('#new_address').attr('href', address_link.replace(/id_customer=[0-9]+/, 'id_customer='+id_customer));
 		$.ajax({
 			type:"POST",
@@ -636,15 +640,29 @@
 			$('#carrier_form').show();
 			$('#delivery_option').html(html);
 			$('#carriers_err').hide();
-			$("button[name=\"submitAddOrder\"]").removeAttr("disabled");
 		}
 		else
 		{
 			$('#carrier_form').hide();
 			$('#carriers_err').show().html('{l s='No carrier can be applied to this order'}');
+		}
+	}
 
-			// commented by webkul to enable button in case of ordering virtual product
-			//$("button[name=\"submitAddOrder\"]").attr("disabled", "disabled");
+	// commented by webkul to enable button in case of ordering virtual product
+	function checkVirtualProduct(products, delivery_option_list) {
+		if (delivery_option_list.length == 0 && products.length > 0) {
+			var find = 1;
+			$.each(products, function () {
+				if (find == 1) {
+					this.is_virtual == 1 ? find = 1 : find = 0;
+				}
+			});
+			if (find == 1) {
+				$("button[name=\"submitAddOrder\"]").removeAttr("disabled");
+			}
+			else {
+				$("button[name=\"submitAddOrder\"]").attr("disabled", "disabled");
+			}
 		}
 	}
 
@@ -679,7 +697,7 @@
 					else
 						customization_errors = false;
 					$('#products_found').show();
-					products_found += '<label class="control-label col-lg-3">{l s='Product'}</label><div class="col-lg-6"><select id="id_product" onclick="display_product_attributes();display_product_customizations();"></div>';
+					products_found += '<label class="control-label col-lg-3">{l s='Product'}</label><div class="col-lg-6"><select id="id_product" onchange="display_product_attributes();display_product_customizations();"></div>';
 					attributes_html += '<label class="control-label col-lg-3">{l s='Combination'}</label><div class="col-lg-6">';
 					$.each(res.products, function() {
 						products_found += '<option '+(this.combinations.length > 0 ? 'rel="'+this.qty_in_stock+'"' : '')+' value="'+this.id_product+'">'+this.name+(this.combinations.length == 0 ? ' - '+this.formatted_price : '')+'</option>';
@@ -869,6 +887,7 @@
 		*/
 
 		updateDeliveryOptionList(jsonSummary.delivery_option_list);
+		checkVirtualProduct(jsonSummary.summary.products,jsonSummary.delivery_option_list);
 
 		if (jsonSummary.cart.gift == 1)
 			$('#order_gift').attr('checked', true);
@@ -893,6 +912,7 @@
 		$('#total_taxes').html(formatCurrency(parseFloat(jsonSummary.summary.total_tax), currency_format, currency_sign, currency_blank));
 		$('#total_without_taxes').html(formatCurrency(parseFloat(jsonSummary.summary.total_price_without_tax), currency_format, currency_sign, currency_blank));
 		$('#total_with_taxes').html(formatCurrency(parseFloat(jsonSummary.summary.total_price), currency_format, currency_sign, currency_blank));
+		$('#total_extra_demands').html(formatCurrency(parseFloat(jsonSummary.summary.total_extra_demands_tax_exc), currency_format, currency_sign, currency_blank));
 		$('#total_products').html(formatCurrency(parseFloat(jsonSummary.summary.total_products), currency_format, currency_sign, currency_blank));
 		id_currency = jsonSummary.cart.id_currency;
 		$('#id_currency option').removeAttr('selected');
@@ -963,7 +983,6 @@
 		//refresh form customization
 		searchProducts();
 
-		addProductProcess();
 	}
 
 	function addProductProcess()
@@ -1092,6 +1111,7 @@
 				address_invoice_detail = this.formated_address;
 				invoice_address_edit_link = "{$link->getAdminLink('AdminAddresses')}&id_address="+this.id_address+"&updateaddress&realedit=1&liteDisplaying=1&submitFormAjax=1#";
 			}
+
 			if(this.id_address == id_address_delivery)
 			{
 				address_delivery_detail = this.formated_address;
@@ -1162,8 +1182,8 @@
 </script>
 
 <div class="leadin">{block name="leadin"}{/block}</div>
-{include file='controllers/orders/current_cart_details_data.tpl'}
-	<div class="panel form-horizontal" id="customer_part">
+{include file='controllers/orders/_current_cart_details_data.tpl'}
+	<div class="panel form-horizontal" id="customer_part" {if isset($is_order_created) && $is_order_created}style="display:none;"{/if}>
 		<div class="panel-heading">
 			<i class="icon-user"></i>
 			{l s='Customer'}
@@ -1197,7 +1217,7 @@
 		<div class="row">
 			<div id="customers"></div>
 		</div>
-		<!-- <div id="carts">
+		{*<div id="carts">
 			<button type="button" id="show_old_carts" class="btn btn-default pull-right" data-toggle="collapse" data-target="#old_carts_orders">
 				<i class="icon-caret-down"></i>
 			</button>
@@ -1249,7 +1269,7 @@
 					</table>
 				</div>
 			</div>
-		</div> --><!-- by webkul to hide unnessesary content -->
+		</div> -->*}<!-- by webkul to hide unnessesary content -->
 	</div>
 
 <form class="form-horizontal" action="{$link->getAdminLink('AdminOrders')|escape:'html':'UTF-8'}&amp;submitAdd{$table|escape:'html':'UTF-8'}=1" method="post" autocomplete="off" style="display:none" id="cart_detail_form">
@@ -1261,7 +1281,7 @@
 		<div class="form-group">
 			<input type="hidden" value="{$cart->id}" id="id_cart" name="id_cart" />
 		</div>
-		<!-- <div class="form-group">
+		{*<div class="form-group">
 			<label class="control-label col-lg-3">
 				<span title="" data-toggle="tooltip" class="label-tooltip" data-original-title="{l s='Search for an existing product by typing the first letters of its name.'}">
 					{l s='Search for a product'}
@@ -1283,7 +1303,7 @@
 			<div id="product_list" class="form-group"></div>
 			<div id="attributes_list" class="form-group"></div> -->
 			<!-- @TODO: please be kind refacto -->
-			<!-- <div class="form-group">
+			<div class="form-group">
 				<div class="col-lg-9 col-lg-offset-3">
 					<iframe id="customization_list" seamless>
 						<html>
@@ -1344,7 +1364,7 @@
 			<div class="col-lg-9 col-lg-offset-3">
 				<div class="alert alert-warning">{l s='The prices are without taxes.'}</div>
 			</div>
-		</div> --><!-- by webkul to hide unnessesary content -->
+		</div> *}<!-- by webkul to hide unnessesary content -->
 
 
 		<div class="form-group">
@@ -1552,8 +1572,14 @@
 			<div class="row">
 				<div class="col-lg-2">
 					<div class="data-focus">
-						<span>{l s='Total products'}</span><br/>
+						<span>{l s='Total rooms (Tax excl.)'}</span><br/>
 						<span id="total_products" class="size_l text-success"></span>
+					</div>
+				</div>
+				<div class="col-lg-2">
+					<div class="data-focus">
+						<span>{l s='Total additinal facilties (Tax excl.)'}</span><br/>
+						<span id="total_extra_demands" class="size_l text-success"></span>
 					</div>
 				</div>
 				<div class="col-lg-2">
@@ -1562,22 +1588,16 @@
 						<span id="total_vouchers" class="size_l text-danger"></span>
 					</div>
 				</div>
-				<!-- <div class="col-lg-2">
-					<div class="data-focus">
-						<span>{l s='Total shipping (Tax excl.)'}</span><br/>
-						<span id="total_shipping" class="size_l"></span>
-					</div>
-				</div> --><!-- by webkul to hide unnessesary content -->
-				<div class="col-lg-2">
-					<div class="data-focus">
-						<span>{l s='Total taxes'}</span><br/>
-						<span id="total_taxes" class="size_l"></span>
-					</div>
-				</div>
 				<div class="col-lg-2">
 					<div class="data-focus">
 						<span>{l s='Total (Tax excl.)'}</span><br/>
 						<span id="total_without_taxes" class="size_l"></span>
+					</div>
+				</div>
+				<div class="col-lg-2">
+					<div class="data-focus">
+						<span>{l s='Total taxes'}</span><br/>
+						<span id="total_taxes" class="size_l"></span>
 					</div>
 				</div>
 				<div class="col-lg-2">

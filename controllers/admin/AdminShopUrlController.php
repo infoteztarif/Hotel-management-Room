@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -281,7 +281,7 @@ class AdminShopUrlControllerCore extends AdminController
         }
 
         $this->tpl_form_vars = array(
-            'js_shop_url' => Tools::jsonEncode($list_shop_with_url)
+            'js_shop_url' => json_encode($list_shop_with_url)
         );
 
         $this->fields_value = array(

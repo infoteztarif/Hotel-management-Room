@@ -1,5 +1,5 @@
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -153,202 +153,142 @@ function sendOrderMessage()
 	return false;
 }
 
-
-// by webkul , ajax for saving data for refund request
 $(document).ready(function(){
-	$('body').on('click', '.roomRequestForRefund', function()
-	{
-		var id_order = $(this).data('id_order');
-		var id_product = $(this).data('id_product');
-		var id_currency = $(this).data('id_currency');
-		var id_customer = $(this).data('id_customer');
-		var num_rooms = $(this).data('num_rooms');
-		var date_from = $(this).data('date_from');
-		var date_to = $(this).data('date_to');
-		var amount = $(this).data('amount');
-		$current = $(this);
-
-		$.fancybox({
-			href: "#reason_fancybox_content",
-			width: 600,
-		    autoSize : true,
-		    autoScale : true,
-		    maxWidth : '100%',
-			'hideOnContentClick': false,
-			beforeLoad: function ()
-			{
-				$('#cancel_req_id_order').val(id_order);
-				$('#cancel_req_id_product').val(id_product);
-				$('#cancel_req_id_currency').val(id_currency);
-				$('#cancel_req_id_customer').val(id_customer);
-				$('#cancel_req_num_rooms').val(num_rooms);
-				$('#cancel_req_date_from').val(date_from);
-				$('#cancel_req_date_to').val(date_to);
-				$('#cancel_req_amount').val(amount);
-			},
-			beforeClose: function ()
-			{
-				$('#cancel_req_id_order, #cancel_req_id_product, #cancel_req_id_currency, #cancel_req_id_customer, #cancel_req_num_rooms, #cancel_req_date_from, #cancel_req_date_to, #amount #reasonForRefund, .reasonForRefund').val('');
-				$('.cancel_req_amount').hide();
-				$('#reasonForRefund').css('border','1px solid #d6d4d4');
-				$('.required_err').hide();
-			}
-		});
+	// If customer clicks for refund request then toggle refund request fields
+	$('body').on('click', '#order_refund_request', function(e) {
+		e.preventDefault();
+		if ($(this).attr('refund_fields_on') == 0) {
+			$('.standard_refund_fields').show();
+			$(this).attr('refund_fields_on', 1);
+			$(this).addClass('cancel_request_btn');
+			$(this).html('<i class="icon-close"></i> ' + cancel_req_txt);
+		} else {
+			$('.standard_refund_fields').hide();
+			$(this).attr('refund_fields_on', 0);
+			$(this).removeClass('cancel_request_btn');
+			$(this).text(cancel_booking_txt);
+		}
 	});
 
-	$('body').on('click', '.totalOrdercancellation_btn', function()
-	{
-		var order_data = $(this).data('order_data');
-		var id_currency = $(this).data('id_currency');
-		var id_customer = $(this).data('id_customer');
-		var id_order = $(this).data('id_order');
-		
-		$.fancybox({
-			href: "#reason_fancybox_content",
-			width: 600,
-		    autoSize : true,
-		    autoScale : true,
-		    maxWidth : '100%',
-			'hideOnContentClick': false,
-			beforeLoad: function ()
-			{
-				$('#cancel_req_id_currency').val(id_currency);
-				$('#cancel_req_id_order').val(id_order);
-				$('#cancel_req_id_customer').val(id_customer);
-				$('#cancel_req_total_order_data').val(JSON.stringify(order_data));
-			},
-			beforeClose: function ()
-			{
-				$('#cancel_req_id_currency, #cancel_req_id_order, #cancel_req_id_customer, #cancel_req_total_order_data, #reasonForRefund').val('');
-				$('.cancel_req_amount').hide();
-				$('#reasonForRefund').css('border','1px solid #d6d4d4');
-				$('.required_err').hide();
-			}
-		});
+	$('body').on('click', '#order_refund_request_submit', function(e) {
+		e.preventDefault();
+
+		// get the checked bookings to refund
+		var bookings_to_refund = $("input[name='bookings_to_refund[]']:checked").map(function(){return $(this).val();}).get();
+		//  check if at least one room is selected for refund request
+		if (bookings_to_refund.length) {
+			bookings_to_refund = JSON.stringify(bookings_to_refund);
+
+			$.fancybox({
+				href: "#reason_fancybox_content",
+				minWidth : 500,
+				autoScale : true,
+				autoSize : true,
+				'hideOnContentClick': false,
+				beforeLoad: function () {
+					$('#htlRefundReasonForm #bookings_to_refund').val(bookings_to_refund);
+				},
+				beforeClose: function () {
+					$('#bookings_to_refund').val('');
+					$('.cancel_req_amount').hide();
+					$('.reasonForRefund').css('border','1px solid #d6d4d4');
+					$('.required_err').hide();
+				}
+			});
+		} else {
+			showErrorMessage(no_bookings_selected);
+		}
 	});
 
-	$('body').on('click', '#submit_refund_reason', function()
-	{
-		var order_data = $('#cancel_req_total_order_data').val();
-		if (order_data)
-		{
-			var cancellation_reason = $('#reasonForRefund').val();
-			var id_order = $('#cancel_req_id_order').val();
-			var id_currency = $('#cancel_req_id_currency').val();
-			var id_customer = $('#cancel_req_id_customer').val();
+	$('body').on('click', '#submit_refund_reason', function() {
+		var bookings_to_refund = $('#htlRefundReasonForm #bookings_to_refund').val();
+		if (bookings_to_refund) {
+			var cancellation_reason = $('.reasonForRefund').val();
+			var id_order = $(this).data('id_order');
 
-			if ($('#reasonForRefund').val() == '')
-			{
+			if (cancellation_reason == '') {
 				$('.required_err').show();
-				$('#reasonForRefund').css('border','1px solid #AA1F00');
-			}
-			else
-			{
+				$('.reasonForRefund').css('border','1px solid #AA1F00');
+			} else {
+				$(".loading_overlay").show();
+
+				$('#submit_refund_reason').attr('disabled', 'disabled');
 				$.ajax({
 			        data:{
-			        	total_order_data: order_data,
-	    				contentType: "application/json; charset=UTF-8",
-			            id_customer : id_customer,
-			            id_order : id_order,
-						id_currency : id_currency,
+						contentType: "application/json; charset=UTF-8",
+						id_order: id_order,
+			        	bookings_to_refund: bookings_to_refund,
 						cancellation_reason : cancellation_reason,
-						saveTotalOrderRefundInfo : true,
+						ajax : true,
+						method: 'submitRefundRequest',
 			        },
 			        method:'POST',
-			        dataType:'json',
+			        dataType:'JSON',
 			        url:historyUrl,
-			        success:function(data)
-			        {
-			        	if (data.mail_err)
-			        	{
-			        		alert(mail_sending_err);
-			        	}
-			        	if (data.status == 'success')
-			        	{
-			        		$('.totalOrdercancellation_div').hide();
-			        		$(".roomRequestForRefund").parent().siblings('.stage_name').html('<p>'+wait_stage_msg+'</p>');
-			        		$(".roomRequestForRefund").parent().siblings('.status_name').html('<p>'+pending_state_msg+'</p>');
-			        		$(".roomRequestForRefund").parent().html('<p>'+req_sent_msg+'</p>');
-			        		$.fancybox.close();
-			        	}
-			        	else
-			        	{
-			        		alert(refund_request_sending_error);
-			        	}
+			        success:function(data) {
+			        	if (data.status == '1') {
+							$(".roomRequestForRefund").parent().html('<p>'+req_sent_msg+'</p>');
+							showSuccessMessage(refund_request_success_txt);
+
+							$('.bookings_to_refund:checked').prop('disabled', true);
+
+							$.fancybox.close();
+
+							showOrder(1, $("input[name=id_order]").val(), historyUrl)
+			        	} else {
+							showErrorMessage(refund_request_sending_error);
+							$('#submit_refund_reason').attr('disabled', false);
+						}
+						$(".loading_overlay").hide();
 			        },
-			        error: function(XMLHttpRequest, textStatus, errorThrown)
-			        {
-			            alert(textStatus);
+			        error: function(XMLHttpRequest, textStatus, errorThrown) {
+						showErrorMessage(textStatus);
+						$('#submit_refund_reason').attr('disabled', false);
+						$(".loading_overlay").hide();
 			        }
 		    	});
 			}
+		} else {
+			showErrorMessage(no_bookings_selected);
 		}
-		else
-		{
-			var id_order = $('#cancel_req_id_order').val();
-			var id_room = $('#cancel_req_id_room').val();
-			var id_product = $('#cancel_req_id_product').val();
-			var id_currency = $('#cancel_req_id_currency').val();
-			var id_customer = $('#cancel_req_id_customer').val();
-			var num_rooms = $('#cancel_req_num_rooms').val();
-			var date_from = $('#cancel_req_date_from').val();
-			var date_to = $('#cancel_req_date_to').val();
-			var amount = $('#cancel_req_amount').val();
-			var cancellation_reason = $('#reasonForRefund').val();
+	});
 
-			if ($('#reasonForRefund').val() == '')
-			{
-				$('.required_err').show();
-				$('#reasonForRefund').css('border','1px solid #AA1F00');
-			}
-			else
-			{
+	// fancybox for extra bed requirement edit on checkout page
+	$('body').on('click', '.open_rooms_extra_demands', function() {
+		var idProduct = $(this).attr('id_product');
+		var idOrder = $(this).attr('id_order');
+		var dateFrom = $(this).attr('date_from');
+		var dateTo = $(this).attr('date_to');
+		$.fancybox({
+			href: "#rooms_extra_demands",
+		    autoSize : true,
+		    autoScale : true,
+			maxWidth : '100%',
+			'hideOnContentClick': false,
+			beforeLoad: function () {
 				$.ajax({
-			        data:{
-			            id_order : id_order,
-						id_product : id_product,
-						id_customer : id_customer,
-						id_currency : id_currency,
-						num_rooms : num_rooms,
-						date_from : date_from,
-						date_to : date_to,
-						amount : amount,
-						cancellation_reason : cancellation_reason,
-						saveRefundInfo : true,
-			        },
-			        method:'POST',
-			        dataType:'json',
-			        url:historyUrl,
-			        success:function(data)
-			        {
-			        	if (data.mail_err)
-			        	{
-			        		alert(mail_sending_err);
-			        	}
-
-			        	if (data.status == 'success')
-			        	{
-			        		if ($(".roomRequestForRefund").length == 1)
-			        		{
-			        			$('.totalOrdercancellation_div').hide();
-			        		}
-			        		$(".order_cancel_request_button_"+id_product+'_'+date_from+'_'+date_to).parent().siblings('.stage_name').html('<p>'+wait_stage_msg+'</p>');
-			        		$(".order_cancel_request_button_"+id_product+'_'+date_from+'_'+date_to).parent().siblings('.status_name').html('<p>'+pending_state_msg+'</p>');
-			        		$(".order_cancel_request_button_"+id_product+'_'+date_from+'_'+date_to).parent().html('<p>'+req_sent_msg+'</p>');
-			        		$.fancybox.close();
-			        	}
-			        	else
-			        	{
-			        		alert(refund_request_sending_error);
-			        	}
-			        },
-			        error: function(XMLHttpRequest, textStatus, errorThrown)
-			        {
-			            alert(textStatus);
-			        }
-		    	});
-			}
-		}
+					type: 'POST',
+					headers: {
+						"cache-control": "no-cache"
+					},
+					url: historyUrl,
+					dataType: 'html',
+					cache: false,
+					data: {
+						date_from: dateFrom,
+						date_to: dateTo,
+						id_product: idProduct,
+						id_order: idOrder,
+						method: 'getRoomTypeBookingDemands',
+						ajax: true
+					},
+					success: function(result) {
+						$('#rooms_type_extra_demands').find('#room_type_demands_desc').html('');
+						$('#rooms_type_extra_demands').find('#room_type_demands_desc').append(result);
+					},
+				});
+			},
+		});
 	});
 });
 

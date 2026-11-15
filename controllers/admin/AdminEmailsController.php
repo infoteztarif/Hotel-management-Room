@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -231,7 +231,7 @@ class AdminEmailsControllerCore extends AdminController
         $this->addJs(_PS_JS_DIR_.'/admin/email.js');
 
         Media::addJsDefL('textMsg', $this->l('This is a test message. Your server is now configured to send email.', null, true, false));
-        Media::addJsDefL('textSubject', $this->l('Test message -- Prestashop', null, true, false));
+        Media::addJsDefL('textSubject', $this->l('Test message -- QloApps', null, true, false));
         Media::addJsDefL('textSendOk', $this->l('A test email has been sent to the email address you provided.', null, true, false));
         Media::addJsDefL('textSendError', $this->l('Error: Please check your configuration', null, true, false));
         Media::addJsDefL('token_mail', $this->token);
@@ -330,9 +330,8 @@ class AdminEmailsControllerCore extends AdminController
         if ($this->tabAccess['view'] === '1') {
             $smtpChecked = (trim(Tools::getValue('mailMethod')) == 'smtp');
             $smtpServer = Tools::getValue('smtpSrv');
-            $content = urldecode(Tools::getValue('testMsg'));
-            $content = html_entity_decode($content);
-            $subject = urldecode(Tools::getValue('testSubject'));
+            $content = html_entity_decode(urldecode(Tools::getValue('testMsg')));
+            $subject = html_entity_decode(urldecode(Tools::getValue('testSubject')));
             $type = 'text/html';
             $to = Tools::getValue('testEmail');
             $from = Configuration::get('PS_SHOP_EMAIL');
@@ -348,7 +347,7 @@ class AdminEmailsControllerCore extends AdminController
             $smtpPort = Tools::getValue('smtpPort');
             $smtpEncryption = Tools::getValue('smtpEnc');
 
-            $result = Mail::sendMailTest(Tools::htmlentitiesUTF8($smtpChecked), Tools::htmlentitiesUTF8($smtpServer), Tools::htmlentitiesUTF8($content), Tools::htmlentitiesUTF8($subject), Tools::htmlentitiesUTF8($type), Tools::htmlentitiesUTF8($to), Tools::htmlentitiesUTF8($from), Tools::htmlentitiesUTF8($smtpLogin), $smtpPassword, Tools::htmlentitiesUTF8($smtpPort), Tools::htmlentitiesUTF8($smtpEncryption));
+            $result = Mail::sendMailTest(Tools::htmlentitiesUTF8($smtpChecked), Tools::htmlentitiesUTF8($smtpServer), $content, $subject, Tools::htmlentitiesUTF8($type), Tools::htmlentitiesUTF8($to), Tools::htmlentitiesUTF8($from), Tools::htmlentitiesUTF8($smtpLogin), $smtpPassword, Tools::htmlentitiesUTF8($smtpPort), Tools::htmlentitiesUTF8($smtpEncryption));
             die($result === true ? 'ok' : $result);
         }
     }

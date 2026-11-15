@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -57,7 +57,7 @@ class AdminProfilesControllerCore extends AdminController
                         ),
             'name' => array('title' => $this->l('Name'))
             );
-            
+
         $this->identifier = 'id_profile';
 
         $this->fields_form = array(
@@ -112,7 +112,43 @@ class AdminProfilesControllerCore extends AdminController
                 'icon' => 'process-icon-new'
             );
         }
-        
+
         parent::initPageHeaderToolbar();
+    }
+
+    public function processDelete()
+    {
+        if (Validate::isLoadedObject($object = $this->loadObject())) {
+            // check if any employee exists of this deleting profile before delete
+            $profileEmployees = Employee::getEmployeesByProfile($object->id);
+            if (empty($profileEmployees)) {
+                return parent::processDelete();
+            } else {
+                $this->errors[] = $this->l('Failed to delete profile, because it is assigned to at least one employee.');
+            }
+        } else {
+            $this->errors[] = $this->l('An error occurred while deleting the profile.').' '.$this->l('(cannot load object)');
+        }
+
+        return false;
+    }
+
+    protected function processBulkDelete()
+    {
+        if (is_array($this->boxes) && !empty($this->boxes)) {
+            foreach ($this->boxes as $idProfile) {
+                // check if any employee exists of this deleting profile before delete
+                $profileEmployees = Employee::getEmployeesByProfile($idProfile);
+                if (!empty($profileEmployees)) {
+                    $this->errors[] = $this->l('Failed to delete profile with id').' - #'.$idProfile.' '.$this->l('because it is assigned to at least one employee. Please remove it from selection.');
+                }
+            }
+        }
+
+        if (empty($this->errors)) {
+            return parent::processBulkDelete();
+        }
+
+        return false;
     }
 }

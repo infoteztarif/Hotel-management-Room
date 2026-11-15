@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -90,12 +90,12 @@
 			</li>
 			{/if}
 			{if isset($module_update_link)}
-			<li>
-				<a id="desc-module-update" class="toolbar_btn" href="{$module_update_link}" title="{l s='Update'}">
-					<i class="process-icon-refresh"></i>
-					<div>{l s='Check update'}</div>
-				</a>
-			</li>
+				{* <li>
+					<a id="desc-module-update" class="toolbar_btn" href="{$module_update_link}" title="{l s='Update'}">
+						<i class="process-icon-refresh"></i>
+						<div>{l s='Check update'}</div>
+					</a>
+				</li> *}
 			{/if}
 			<li>
 				<a id="desc-module-hook" class="toolbar_btn" href="{$module_hook_link}" title="{l s='Manage hooks'}">

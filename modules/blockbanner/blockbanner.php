@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2016 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2016 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -33,7 +33,7 @@ class BlockBanner extends Module
 	{
 		$this->name = 'blockbanner';
 		$this->tab = 'front_office_features';
-		$this->version = '1.4.0';
+		$this->version = '1.4.2';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -42,7 +42,7 @@ class BlockBanner extends Module
 
 		$this->displayName = $this->l('Banner block');
 		$this->description = $this->l('Displays a banner at the top of the shop.');
-		$this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
+		$this->ps_versions_compliancy = array('min' => '1.6', 'max' => '1.6.99.99');
 	}
 
 	public function install()
@@ -93,9 +93,10 @@ class BlockBanner extends Module
 		if (!$this->isCached('blockbanner.tpl', $this->getCacheId()))
 		{
 			$imgname = Configuration::get('BLOCKBANNER_IMG', $this->context->language->id);
+			$imgUrl = $this->context->link->getMediaLink($this->_path.'img/'.$imgname); // by webkul
 
-			if ($imgname && file_exists(_PS_MODULE_DIR_.$this->name.DIRECTORY_SEPARATOR.'img'.DIRECTORY_SEPARATOR.$imgname))
-				$this->smarty->assign('banner_img', $this->context->link->protocol_content.Tools::getMediaServer($imgname).$this->_path.'img/'.$imgname);
+			if ($imgname && (bool)Tools::file_get_contents($imgUrl)) // by webkul
+				$this->smarty->assign('banner_img', $imgUrl);
 
 			$this->smarty->assign(array(
 				'banner_link' => Configuration::get('BLOCKBANNER_LINK', $this->context->language->id),
@@ -142,13 +143,12 @@ class BlockBanner extends Module
 						$ext = substr($_FILES['BLOCKBANNER_IMG_'.$lang['id_lang']]['name'], strrpos($_FILES['BLOCKBANNER_IMG_'.$lang['id_lang']]['name'], '.') + 1);
 						$file_name = md5($_FILES['BLOCKBANNER_IMG_'.$lang['id_lang']]['name']).'.'.$ext;
 
-						if (!move_uploaded_file($_FILES['BLOCKBANNER_IMG_'.$lang['id_lang']]['tmp_name'], dirname(__FILE__).DIRECTORY_SEPARATOR.'img'.DIRECTORY_SEPARATOR.$file_name))
+						if (!ImageManager::resize($_FILES['BLOCKBANNER_IMG_'.$lang['id_lang']]['tmp_name'], dirname(__FILE__).DIRECTORY_SEPARATOR.'img'.DIRECTORY_SEPARATOR.$file_name)) { // by webkul
 							return $this->displayError($this->l('An error occurred while attempting to upload the file.'));
-						else
-						{
+						} else {
 							if (Configuration::hasContext('BLOCKBANNER_IMG', $lang['id_lang'], Shop::getContext())
 								&& Configuration::get('BLOCKBANNER_IMG', $lang['id_lang']) != $file_name)
-								@unlink(dirname(__FILE__).DIRECTORY_SEPARATOR.'img'.DIRECTORY_SEPARATOR.Configuration::get('BLOCKBANNER_IMG', $lang['id_lang']));
+								Tools::deleteFile(dirname(__FILE__).DIRECTORY_SEPARATOR.'img'.DIRECTORY_SEPARATOR.Configuration::get('BLOCKBANNER_IMG', $lang['id_lang']));
 
 							$values['BLOCKBANNER_IMG'][$lang['id_lang']] = $file_name;
 						}
@@ -227,7 +227,7 @@ class BlockBanner extends Module
 		$helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
 		$helper->token = Tools::getAdminTokenLite('AdminModules');
 		$helper->tpl_vars = array(
-			'uri' => $this->getPathUri(),
+			'uri' => $this->context->link->getMediaLink($this->getPathUri()), // by webkul
 			'fields_value' => $this->getConfigFieldsValues(),
 			'languages' => $this->context->controller->getLanguages(),
 			'id_language' => $this->context->language->id

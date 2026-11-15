@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -173,10 +173,11 @@ class WebserviceOutputXMLCore implements WebserviceOutputInterface
     }
     public function overrideContent($content)
     {
+        // changed QloApps in place of prestashop
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
-        $xml .= '<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">'."\n";
+        $xml .= '<qloapps xmlns:xlink="http://www.w3.org/1999/xlink">'."\n";
         $xml .= $content;
-        $xml .= '</prestashop>'."\n";
+        $xml .= '</qloapps>'."\n";
         return $xml;
     }
     public function renderAssociationWrapperHeader()

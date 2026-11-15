@@ -1,109 +1,192 @@
 <?php
-if (!defined('_PS_VERSION_'))
-	exit;
+/**
+* 2010-2020 Webkul.
+*
+* NOTICE OF LICENSE
+*
+* All right is reserved,
+* Please go through this link for complete license : https://store.webkul.com/license.html
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade this module to newer
+* versions in the future. If you wish to customize this module for your
+* needs please refer to https://store.webkul.com/customisation-guidelines/ for more information.
+*
+*  @author    Webkul IN <support@webkul.com>
+*  @copyright 2010-2020 Webkul IN
+*  @license   https://store.webkul.com/license.html
+*/
 
-require_once (_PS_MODULE_DIR_.'hotelreservationsystem/classes/HotelBranchInformation.php');
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
+include_once _PS_MODULE_DIR_.'hotelreservationsystem/define.php';
+include_once dirname(__FILE__).'/classes/WkRoomSearchHelper.php';
 
 class WkRoomSearchBlock extends Module
 {
-	public function __construct()
-	{
-		$this->name = 'wkroomsearchblock';
-		$this->tab = 'front_office_features';
-		$this->version = '0.0.2';
-		$this->author = 'webkul';
-		$this->need_instance = 0;
+    public function __construct()
+    {
+        $this->name = 'wkroomsearchblock';
+        $this->tab = 'front_office_features';
+        $this->version = '1.1.2';
+        $this->author = 'webkul';
+        $this->need_instance = 0;
 
-		$this->bootstrap = true;
-		parent::__construct();
+        $this->bootstrap = true;
+        parent::__construct();
 
-		$this->displayName = $this->l('Rooms Search Block');
-		$this->description = $this->l('Search rooms by search block using this module.');
-		$this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
-	}
+        $this->displayName = $this->l('QloApps Room Search Panels');
+        $this->description = $this->l('Room search blocks on different pages to search rooms as per user travel parameters.');
+        $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
+    }
 
-	public function hookDisplayHeader()
-	{
-		$is_hotel_room_search = Tools::getValue('is_hotel_rooms_search');
-		if (isset($is_hotel_room_search) && $is_hotel_room_search)
-		{
-			$hotel_cat_id = Tools::getValue('hotel_cat_id');
-			$check_in = Tools::getValue('check_in_time');
-			$check_out = Tools::getValue('check_out_time');
+    public function hookActionFrontControllerSetMedia()
+    {
+        $controller = Tools::getValue('controller');
+        // apply assets globally for all pages of search panel
+        if ('category' == $controller
+            || 'index' == $controller
+            || 'product' == $controller
+        ) {
+            $this->context->controller->addCSS($this->_path.'/views/css/wk-global-search.css');
+            $this->context->controller->addJS($this->_path.'/views/js/wk-room-search-block.js');
+            $this->context->controller->addCSS(_THEME_CSS_DIR_.'datepicker.css');
 
-			$check_in = date("Y-m-d", strtotime($check_in));
-			$check_out = date("Y-m-d", strtotime($check_out));
+            Media::addJsDef(
+                array (
+                    'autocomplete_search_url' => $this->context->link->getModuleLink(
+                        'wkroomsearchblock',
+                        'autocompletesearch'
+                    ),
+                    'no_results_found_cond' => $this->l('No results found for this search'),
+                    'hotel_name_cond' => $this->l('Please select a hotel name'),
+                    'check_in_time_cond' => $this->l('Please enter Check In time'),
+                    'check_out_time_cond' => $this->l('Please enter Check Out time'),
+                    'less_checkin_date' => $this->l('Check In date can not be before current date.'),
+                    'more_checkout_date' => $this->l('Check Out date must be greater than Check In date.'),
+                    'select_htl_txt' => $this->l('Select Hotel'),
+                )
+            );
+        }
 
-			$curr_date = date("Y-m-d");
+        // apply assets as per pages
+        if ('category' == $controller) {
+            $this->context->controller->addCSS(_PS_MODULE_DIR_.$this->name.'/views/css/wk-category-search.css');
+        }
+        if ('index' == $controller) {
+            $this->context->controller->addCSS(_PS_MODULE_DIR_.$this->name.'/views/css/wk-landing-page-search.css');
+        }
+        if ('product' == $controller) {
+            $this->context->controller->addCSS(_PS_MODULE_DIR_.$this->name.'/views/css/wk-roomtype-search.css');
+            $this->context->controller->addJS(_PS_MODULE_DIR_.$this->name.'/views/js/wk-roomtype-search.js');
+        }
+    }
 
-			$error = false;
 
-			if ($hotel_cat_id == '')
-				$error = 1;
-			elseif ($check_in == '' || !Validate::isDate($check_in))
-				$error = 2;
-			elseif ($check_out == '' || !Validate::isDate($check_out))
-				$error = 3;
-			elseif ($check_in < $curr_date)
-				$error = 5;
-			elseif ($check_out <= $check_in)
-				$error = 4;
+    // search panel block on the landing page
+    public function hookDisplayAfterHookTop($params)
+    {
+        if ('index' == Tools::getValue('controller')) {
+            $objSearchHelper = new WkRoomSearchHelper();
+            $objSearchHelper->assignSearchPanelVariables();
+            return $this->display(__FILE__, 'landingPageSearch.tpl');
+        } elseif ('product' == Tools::getValue('controller')) {
+            $objSearchHelper = new WkRoomSearchHelper();
+            $objSearchHelper->assignSearchPanelVariables();
+            return $this->display(__FILE__, 'roomTypePageSearch.tpl');
+        }
+    }
 
-			if (!$error)
-			{
-				if (Configuration::get('PS_REWRITING_SETTINGS'))
-					$redirect_link = $this->context->link->getCategoryLink(new Category($hotel_cat_id, $this->context->language->id), null, $this->context->language->id).'?date_from='.$check_in.'&date_to='.$check_out;
-                else
-                	$redirect_link = $this->context->link->getCategoryLink(new Category($hotel_cat_id, $this->context->language->id), null, $this->context->language->id).'&date_from='.$check_in.'&date_to='.$check_out;
+    // In the xs sceen the booking button on the landing page
+    public function hookDisplayAfterHeaderHotelDesc()
+    {
+        return $this->display(__FILE__, 'landingPageXsBtn.tpl');
+    }
 
-				Tools::redirect($redirect_link);
-			}
-			else
-			{
-	            if (Configuration::get('PS_SSL_ENABLED') && Configuration::get('PS_SSL_ENABLED_EVERYWHERE')) 
-	            	Tools::redirect($protocol_link.Tools::getShopDomainSsl().__PS_BASE_URI__."index.php?error=".$error);
-	            else
-	            	Tools::redirect(_PS_BASE_URL_.__PS_BASE_URI__."index.php?error=".$error);
-            
-			}
-		}
+    // search panel block on the category page on left block
+    public function hookDisplayLeftColumn()
+    {
+        if ('category' == Tools::getValue('controller')) {
+            $objSearchHelper = new WkRoomSearchHelper();
+            $objSearchHelper->assignSearchPanelVariables();
+            return $this->display(__FILE__, 'categoryPageSearch.tpl');
+        }
+    }
 
-		$location_enable = Configuration::get('WK_HOTEL_LOCATION_ENABLE');
+    public function hookDisplayHeader()
+    {
+        // handle room search submit from all pages search panels
+        if (Tools::isSubmit('search_room_submit')) {
+            $this->roomSearchProcess();
+        }
+    }
 
-		$hotel_branch_obj = new HotelBranchInformation();
-		$hotel_info = $hotel_branch_obj->getActiveHotelBranchesInfo();
+    public function roomSearchProcess()
+    {
+        $hotelCategoryId = Tools::getValue('hotel_cat_id');
+        $checkIn = Tools::getValue('check_in_time');
+        $checkOut = Tools::getValue('check_out_time');
 
-		$this->context->smarty->assign('hotel_name',$hotel_info);
-		$this->context->smarty->assign('header_block_title', Configuration::get('WK_TITLE_HEADER_BLOCK'));
-		$this->context->smarty->assign('header_block_content', Configuration::get('WK_CONTENT_HEADER_BLOCK'));
-		$this->context->smarty->assign('location_enable',$location_enable);
-		
-		$this->context->controller->addJqueryUI(array('ui.datepicker'));
-		$this->context->controller->addCSS(_PS_MODULE_DIR_.$this->name.'/views/css/searchblock.css');
-		$this->context->controller->addJS(_PS_MODULE_DIR_.$this->name.'/views/js/wksearchblock.js');
-	}
+        // change dates format to acceptable format
+        $checkIn = date('Y-m-d', strtotime($checkIn));
+        $checkOut = date('Y-m-d', strtotime($checkOut));
 
-	public function hookDisplaySearchHotelPanel($params)
-	{
-		if (Tools::getValue('controller') == 'index')
-			$this->context->smarty->assign('is_index_page',1);
+        $currentDate = date('Y-m-d');
+        $maxOrderDate = Tools::getValue('max_order_date');
+        $maxOrderDate = date('Y-m-d', strtotime($maxOrderDate));
 
-		$this->context->smarty->assign('wk_id_cart',$this->context->cart->id);
+        $objSearchHelper = new WkRoomSearchHelper();
+        $this->context->controller->errors = array_merge(
+            $this->context->controller->errors,
+            $objSearchHelper->validateSearchFields()
+        );
+        // id there is no validation error the proceed to redirect on search result page
+        if (!count($this->context->controller->errors)) {
+            $urlData = array (
+                'date_from' => $checkIn,
+                'date_to' => $checkOut,
+            );
+            if (Configuration::get('PS_REWRITING_SETTINGS')) {
+                $redirectLink = $this->context->link->getCategoryLink(
+                    new Category($hotelCategoryId, $this->context->language->id),
+                    null,
+                    $this->context->language->id
+                ).'?'.http_build_query($urlData);
+            } else {
+                $redirectLink = $this->context->link->getCategoryLink(
+                    new Category($hotelCategoryId, $this->context->language->id),
+                    null,
+                    $this->context->language->id
+                ).'&'.http_build_query($urlData);
+            }
+            Tools::redirect($redirectLink);
+        }
+    }
 
-		if (Tools::getValue('error')) 
-		{
-			$this->context->smarty->assign('error', Tools::getValue('error'));
-		}
+    public function install()
+    {
+        if (!parent::install()
+            || !$this->registerModuleHooks()
+        ) {
+            return false;
+        }
+        return true;
+    }
 
-		return $this->display(__FILE__, 'roomseachblock.tpl');
-	}
-
-	public function install()
-	{
-		if (!parent::install()
-			|| !$this->registerHook('displayHeader')
-			|| !$this->registerHook('displaySearchHotelPanel'))
-			return false;
-		return true;
-	}
+    private function registerModuleHooks()
+    {
+        return $this->registerHook(
+            array(
+                'displayHeader',
+                'displayLeftColumn',
+                'actionFrontControllerSetMedia',
+                'displayAfterHookTop',
+                'displayAfterHeaderHotelDesc',
+                'displayAddModuleSettingLink',
+            )
+        );
+    }
 }

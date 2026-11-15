@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -376,6 +376,24 @@ abstract class InstallControllerHttp
         return $this->language->getInformation('forum');
     }
 
+    // Get link to contact for this language
+    public function getContactLink()
+    {
+        return $this->language->getInformation('contact');
+    }
+
+    // Get link to install help for this language
+    public function getInstallHelpLink()
+    {
+        return $this->language->getInformation('install_help');
+    }
+
+    // Get link to qloapps services for this language
+    public function getServicesLink()
+    {
+        return $this->language->getInformation('services');
+    }
+
     /**
      * Get link to blog for this language
      *
@@ -412,7 +430,7 @@ abstract class InstallControllerHttp
         if (!$success && empty($message)) {
             $message = print_r(@error_get_last(), true);
         }
-        die(Tools::jsonEncode(array(
+        die(json_encode(array(
             'success' => (bool)$success,
             'message' => $message,
             // 'memory' => round(memory_get_peak_usage()/1024/1024, 2).' Mo',

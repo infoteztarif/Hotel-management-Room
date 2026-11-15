@@ -69,9 +69,9 @@
     <tab id="Products" id_parent="Catalog" active="1" hide_host_mode="0">
       <class_name>AdminProducts</class_name>
     </tab>
-    <tab id="Categories" id_parent="Catalog" active="1" hide_host_mode="0">
+    <!-- <tab id="Categories" id_parent="Catalog" active="1" hide_host_mode="0">
       <class_name>AdminCategories</class_name>
-    </tab>
+    </tab> -->
     <!-- <tab id="Monitoring" id_parent="Catalog" active="1" hide_host_mode="0">
       <class_name>AdminTracking</class_name>
     </tab> -->
@@ -90,18 +90,18 @@
     <tab id="Tags" id_parent="Catalog" active="1" hide_host_mode="0">
       <class_name>AdminTags</class_name>
     </tab>
-    <tab id="Attachments" id_parent="Catalog" active="1" hide_host_mode="0">
+    <!-- <tab id="Attachments" id_parent="Catalog" active="1" hide_host_mode="0">
       <class_name>AdminAttachments</class_name>
-    </tab>
+    </tab> -->
     <tab id="Orders_1" id_parent="Orders" active="1" hide_host_mode="0">
       <class_name>AdminOrders</class_name>
     </tab>
     <tab id="Invoices" id_parent="Orders" active="1" hide_host_mode="0">
       <class_name>AdminInvoices</class_name>
     </tab>
-    <tab id="Merchandise_Returns" id_parent="Orders" active="1" hide_host_mode="0">
+    <!-- <tab id="Merchandise_Returns" id_parent="Orders" active="1" hide_host_mode="0">
       <class_name>AdminReturn</class_name>
-    </tab>
+    </tab> -->
     <!-- <tab id="Delivery_Slips" id_parent="Orders" active="1" hide_host_mode="0">
       <class_name>AdminDeliverySlip</class_name>
     </tab> -->
@@ -144,9 +144,9 @@
     <tab id="Catalog_Price_Rules" id_parent="Price_Rules" active="1" hide_host_mode="0">
       <class_name>AdminSpecificPriceRule</class_name>
     </tab>
-    <tab id="Marketing" id_parent="Price_Rules" active="1" hide_host_mode="0">
+    <!-- <tab id="Marketing" id_parent="Price_Rules" active="1" hide_host_mode="0">
       <class_name>AdminMarketing</class_name>
-    </tab>
+    </tab> -->
 	<!-- <tab id="Carriers" id_parent="Shipping" active="1" hide_host_mode="0">
       <class_name>AdminCarriers</class_name>
 	</tab>
@@ -186,9 +186,9 @@
     <tab id="Modules_1" id_parent="Modules" active="1" hide_host_mode="0">
       <class_name>AdminModules</class_name>
     </tab>
-    <tab id="Modules_Themes_Catalog" id_parent="Modules" active="1" hide_host_mode="0">
+    <!-- <tab id="Modules_Themes_Catalog" id_parent="Modules" active="1" hide_host_mode="0">
       <class_name>AdminAddonsCatalog</class_name>
-    </tab>
+    </tab> -->
     <tab id="Positions" id_parent="Modules" active="1" hide_host_mode="0">
       <class_name>AdminModulesPositions</class_name>
     </tab>

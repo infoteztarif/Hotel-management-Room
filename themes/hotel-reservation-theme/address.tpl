@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -189,6 +189,8 @@
 		<div class="required form-group" id="adress_alias">
 			<label for="alias">{l s='Please assign an address title for future reference.'} <sup>*</sup></label>
 			<input type="text" id="alias" class="is_required validate form-control" data-validate="{$address_validation.alias.validate}" name="alias" value="{if isset($smarty.post.alias)}{$smarty.post.alias}{elseif isset($address->alias)}{$address->alias|escape:'html':'UTF-8'}{elseif !$select_address}{l s='My address'}{/if}" />
+
+			{hook h='displayGDPRConsent' moduleName='addressform'}
 		</div>
 		<p class="submit2">
 			{if isset($id_address)}<input type="hidden" name="id_address" value="{$id_address|intval}" />{/if}

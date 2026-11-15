@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -185,6 +185,7 @@ class AdminCountriesControllerCore extends AdminController
                 'title' => $this->l('Countries'),
                 'icon' => 'icon-globe'
             ),
+            'description' => $this->l('After changing \'Zip/postal code format\' for a country, please make sure to  update the correct zip/postal code for hotels in that country.'),
             'input' => array(
                 array(
                     'type' => 'text',
@@ -222,7 +223,7 @@ class AdminCountriesControllerCore extends AdminController
                     'label' => $this->l('Default currency'),
                     'name' => 'id_currency',
                     'options' => array(
-                        'query' => Currency::getCurrencies(),
+                        'query' => Currency::getCurrencies(false, true, true),
                         'id' => 'id_currency',
                         'name' => 'name',
                         'default' => array(
@@ -266,7 +267,7 @@ class AdminCountriesControllerCore extends AdminController
                     'label' => $this->l('Zip/postal code format'),
                     'name' => 'zip_code_format',
                     'required' => true,
-                    'desc' => $this->l('Indicate the format of the postal code: use L for a letter, N for a number, and C for the country\'s ISO 3166-1 alpha-2 code. For example, NNNNN for the United States, France, Poland and many other; LNNNNLLL for Argentina, etc. If you do not want PrestaShop to verify the postal code for this country, leave it blank.')
+                    'desc' => $this->l('Indicate the format of the postal code: use L for a letter, N for a number, and C for the country\'s ISO 3166-1 alpha-2 code. For example, NNNNN for the United States, France, Poland and many other; LNNNNLLL for Argentina, etc. If you do not want Qloapps to verify the postal code for this country, leave it blank.')
                 ),
                 array(
                     'type' => 'address_layout',

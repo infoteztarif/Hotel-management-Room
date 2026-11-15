@@ -1,5 +1,9 @@
 /* product desc */
 /* primary_block ***************************************************************************** */
+.columns-container {
+  background-color: #FAFAFA;
+}
+
 .primary_block {
   margin-bottom: 40px; }
 
@@ -23,8 +27,8 @@
 
 .primary_block .pb-left-column img {
   max-width: 100%;
+  height: auto; }
 
-  /*height: 100%;*/ }
 a.fancybox-nav {
   outline: 0; }
 
@@ -33,15 +37,13 @@ a.fancybox-nav {
   position: relative;
   display: block;
   cursor: pointer;
-  padding: 5px;
-  /*border: 1px solid #dbdbdb;*//*by webkul*/
   background: #fff; }
-  @media (max-width: 767px) {
-    .pb-left-column #image-block {
-      width: 280px;
-      margin: 0 auto; } }
+  @media (min-width: 768px) {
+    .pb-left-column #image-block-cont {
+      padding-left: 0px; } }
   .pb-left-column #image-block img {
     background: #fbfbfb;
+    border-radius: 4px;
     width: 100%; }
   .pb-left-column #image-block #view_full_size .span_link {
     position: absolute;
@@ -83,49 +85,68 @@ a.fancybox-nav {
 
 /* miniatures */
 .pb-left-column #views_block {
-  margin-top: 10px; }
+  /* margin-top: 10px;  */
+}
+
   @media (max-width: 767px) {
     .pb-left-column #views_block {
-      width: 280px;
+      position: relative;
       margin: 10px auto 0px auto; } }
 
 #thumbs_list {
   overflow: hidden;
   float: left;
-  width: 392px; }
+  width: 100%;
+  height: 590px;
+}
   @media (min-width: 992px) and (max-width: 1199px) {
     #thumbs_list {
-      width: 294px; } }
+      height: 420px; } }
   @media (min-width: 768px) and (max-width: 991px) {
     #thumbs_list {
-      width: 164px; } }
+      height: 290px; } }
   @media (max-width: 767px) {
     #thumbs_list {
-      width: 196px; } }
+      height: 90px;
+      float: none;
+        margin: auto;} }
   #thumbs_list ul#thumbs_list_frame {
     list-style-type: none;
     padding-left: 0;
     overflow: hidden;
-    height: 90px; }
+    margin: auto; }
+    @media (max-width: 767px) {
+      #thumbs_list ul#thumbs_list_frame {
+        height: 90px;
+      }
+    }
   #thumbs_list li {
-    float: left;
     height: 90px;
     width: 90px;
     cursor: pointer;
-    border: 1px solid #dbdbdb;
-    margin-right: 8px;
+    margin: auto;
+    margin-bottom: 10px;
     line-height: 0;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     box-sizing: border-box; }
-    @media (min-width: 768px) and (max-width: 991px) {
+    #thumbs_list li.last {
+      margin-bottom: 0px;
+    }
+    @media (min-width: 992px) and (max-width: 1199px) {
       #thumbs_list li {
         width: 76px;
-        height: 76px;
-        margin-right: 6px; } }
+        height: 76px; } }
+    @media (max-width: 767px) {
+      #thumbs_list li {
+        margin-right: 10px;
+        float: left;}
+        #thumbs_list li.last {
+          margin-right: 0px;
+        } }
+
     #thumbs_list li a {
       display: block;
-      border: 3px solid #fff;
       -moz-transition: all 0.3s ease;
       -o-transition: all 0.3s ease;
       -webkit-transition: all 0.3s ease;
@@ -137,16 +158,13 @@ a.fancybox-nav {
       #thumbs_list li a:hover, #thumbs_list li a.shown {
         border-color: #dbdbdb; }
     #thumbs_list li img {
-      border: 1px solid #fff;
+      border: 1px solid #dbdbdb;
+      border-radius: 4px;
       width: 100%;
       height: 100%;
       -moz-box-sizing: border-box;
       -webkit-box-sizing: border-box;
       box-sizing: border-box; }
-      @media (min-width: 768px) and (max-width: 991px) {
-        #thumbs_list li img {
-          width: 68px;
-          height: 68px; } }
 
 .show-right-column.hide-left-column #thumbs_list, .hide-right-column.show-left-column #thumbs_list {
   width: 294px; }
@@ -195,40 +213,55 @@ span.view_scroll_spacer {
 
 #view_scroll_left,
 #view_scroll_right {
-  margin-top: 38px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: auto;
   height: 20px;
   width: 20px;
   line-height: 0;
   font-size: 0;
   overflow: hidden; }
-  @media (min-width: 768px) and (max-width: 991px) {
-    #view_scroll_left,
-    #view_scroll_right {
-      margin-top: 28px; } }
+
   #view_scroll_left:before,
   #view_scroll_right:before {
-    padding-left: 2px;
-    color: #c0c0c0;
+    color: #ffffff;
     font-family: "FontAwesome";
-    font-size: 20px;
+    font-size: 22px;
     line-height: 22px; }
   #view_scroll_left:hover:before,
   #view_scroll_right:hover:before {
-    color: #333; }
+    color: #c0c0c0; }
 
 #view_scroll_right {
-  float: left; }
+  bottom: 4px; }
   #view_scroll_right:before {
-    content: "\f138"; }
+    content: "\f13a"; }
 
 #view_scroll_left {
-  margin-top: 0; }
+  top: 4px; }
   #view_scroll_left:before {
-    content: "\f137";
-    padding-right: 2px; }
+    content: "\f139";
+  }
+
+  @media (max-width: 767px) {
+    #view_scroll_left,
+    #view_scroll_right {
+      top: 40%;
+      margin: 0; }
+
+    #view_scroll_right {
+      left: unset;}
+      #view_scroll_right:before {
+        content: "\f138"; }
+
+    #view_scroll_left {
+      right: unset;}
+      #view_scroll_left:before {
+        content: "\f137"; } }
 
 .resetimg {
-  padding: 10px 0 0; }
+  margin: 0px; }
   .resetimg #resetImages i {
     margin-right: 6px; }
 
@@ -709,12 +742,9 @@ table.table-product-discounts {
 
 /* quantity_wanted */
 #quantity_wanted_p input {
-  width: 78px;
-  height: 27px;
-  padding: 0 6px;
+  width: 100%;
   float: left;
-  border: 1px solid #d6d4d4;
-  line-height: 27px; }
+  line-height: 25px; }
 /*#quantity_wanted_p .btn {
   float: left;
   margin-left: 3px; }*/
@@ -727,8 +757,7 @@ table.table-product-discounts {
   margin-left: 5px;
   padding-top: 3px;}
 #quantity_wanted_p label {
-  display: block;
-  margin-bottom: 7px; }
+  display: block;}
 
 /* availability_statut */
 #availability_statut span#availability_label,
@@ -887,7 +916,6 @@ table.table-product-discounts {
         padding: 0 5px;
         height: 22px;
         width: 100%;
-        border: 1px solid #d6d4d4;
         font-size: 12px;
         color: #666; }
   #send_friend_form .submit {
@@ -1064,90 +1092,54 @@ Quick View Styles
 
 
 /****************CSS by webkul on product page********************/
-
-.book_now_submit
-{
-  background-color: #7bae39;
-  border: 1px solid #629222;
+#add_to_cart {
+  margin: 0px;}
+#add_to_cart .book_now_submit {
+  background-color: #36BA46;
+  border: 1px solid #36BA46;
+  border-radius: 4px;
   color: #ffffff;
-  font-size: 18px;
-  font-family: inherit;
   font-weight: bold;
-  padding-bottom: 13px;
-  padding-top: 13px;
   width: 100%;
-}
-.booking_room_fields
-{
-  padding-left: 20px;
-  padding-right: 20px;
-}
-.booking_room_fields input
-{
-  height: 30px!important;
-  color: #A2A2A2;
-  font-size:13px;
-  font-family: inherit;
-  font-weight:700;
-  padding-left: 13px;
-}
-.booking_room_fields label
-{
-  color: #404040;
-  font-size:14px;
-  font-family: inherit;
-  font-weight:700;
-}
-.content_prices
-{
-  background-color: #404040;
-}
-.total_price_block
-{
-  color: #404040;
-  font-size: 19px;
-  font-weight: 600;
-  padding-top: 5px;
-}
-.total_price_block p
-{
-  overflow: auto;
-  background-color: #f2f2f2;
-  border: 1px solid #bdc2c9;
-  display: inline-block;
-  padding: 15px 5px;
-}
-
+  text-transform: uppercase;
+  padding: 15px;}
+.booking_room_fields .hasDatepicker {
+  cursor: text;}
+.booking_room_fields .htl_location_block p {
+  line-height: 25px;
+  font-size: 18px;
+  color: #000;
+  margin-bottom: 25px;}
+.booking_room_fields .form-group {
+  margin-bottom: 20px;}
+.content_prices {
+  background-color: #404040;}
+.total_price_block p {
+  font-size: 28px;
+  color: #000;}
+.total_price_block label {
+  margin-bottom: 10px;}
 .arrow-down {
   border-left: 14px solid transparent;
     border-right: 14px solid transparent;
     border-top: 14px solid #404040;
     display: inline-block;
     height: 0;
-    width: 0;
-}
-.arrow-down-div
-{
-  text-align: center;
-}
+    width: 0;}
+.arrow-down-div {
+  text-align: center;}
 .booking_total_price
 {
   font-family: inherit;
   color: #ffffff;
-    padding: 20px 10px;
-    text-align: center;
-    margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-}
+  padding: 20px 10px;
+  text-align: center;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;}
 .total_booking_price_block
 {
-  background-color: #404040;
-}
-.booking-form
-{
-  border: 1px solid #cccccc;
-}
+  background-color: #404040;}
 .product_description_tabs
 {
   font-family: inherit;
@@ -1155,88 +1147,89 @@ Quick View Styles
     font-size: 18px;
     font-weight: 700;
     border-bottom: none!important;
-    padding-left: 20px;
-}
+    padding-left: 20px;}
 .product_description_tabs li.selected
 {
   font-family: inherit;
     color: #404040;
     font-size: 18px;
     font-weight: 700;
-    border-bottom: 2px solid #BF9958;
-}
-.product_description_tabs li.active
-{
+    border-bottom: 2px solid #379aef;}
+.product_description_tabs li.active {
   font-family: inherit;
-    color: #404040;
-    font-size: 18px;
-    font-weight: 700;
-    border-bottom: 3px solid #BF9958;
-}
+  color: #404040;
+  font-size: 18px;
+  font-weight: 700;}
+  .product_description_tabs li.active:after {
+    content: '';
+    position: absolute;
+    top: 36px;
+    width: 100%;
+    height: 4px;
+    background: #379aef;}
 .product_description_tabs_contents
 {
   margin-top: 0px!important;
-  padding: 20px;
-  border: 1px solid #cccccc;
+  line-height: 25px;}
+.idTabHrefShort {
+  font-size: 14px;
+  color: #000000!important;
+  text-align: center;
+  border: none!important;}
+.room_info_heading {
+  margin-bottom: 5px;
+  font-weight: 700;
+  opacity: 0.5;
+  font-size: 12px;
+  color: #000000;
+  text-transform: uppercase;}
+.room_info_content {
+  font-size: 14px;
+  color: #000000;}
+  .room_info_content .refund-rule-name {
+    font-weight: 600;}
+  .room_info_content .rm_ftr_wrapper {
+    white-space: nowrap;
+    overflow: hidden;
+    line-height: 28px;}
+      .room_info_content .rm_ftr_wrapper img {
+        width: 13px;}
+
+.non_refundable_txt {
+  font-weight: 600;
+  font-size: 14px;}
+.info_margin_div {
+  font-size: 14px;
+  color: #333333;
   line-height: 25px;
-}
-.idTabHrefShort
-{
-  border: none!important;
-}
-.room_info_heading
-{
-  font-family: inherit;
-    color: #BF9958;
-    font-size: 20px;
-    font-weight: 700;
-    border-bottom: 1px solid #cccccc;
-  padding-bottom: 10px;
-}
-.room_info_content
-{
-  font-family: inherit;
-    color: #404040;
-    font-size: 16px;
-    font-weight: 400;
-    padding-top: 10px;
-}
-.info_margin_div
-{
-  margin-bottom: 40px;
-}
-.hotel_name_block
-{
-  font-family: inherit;
-    color: #404040;
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 10px;
-}
+  margin-bottom: 25px;}
+  #refund_policies_tab .info_margin_div {
+    margin-bottom: 10px;}
+
+.hotel_name_block {
+  font-family: OpenSans;
+  font-size: 22px;
+  color: #000000;
+  margin-bottom: 5px;}
 .room_hotel_name_block
 {
-  padding-top: 20px;
-  padding-bottom: 20px;
-}
+  padding-bottom: 12px;}
 .room_rating_block
 {
   font-family: inherit;
     color: #777777;
     font-size: 14px;
-    font-weight: 400;
-}
+    font-weight: 400;}
 .room_rating_block span
 {
-  margin-left: 10px;
-}
+  margin-left: 10px;}
 .room_description p
 {
   font-family: inherit;
     color: #404040;
     font-size: 16px;
     font-weight: 400;
-    padding-top: 10px;
-}
+    padding-top: 10px;}
 .room_unavailability_qty_error_div
 {
   display: none;
@@ -1245,8 +1238,7 @@ Quick View Styles
     font-size: 13px;
     margin-bottom: 10px;
     padding: 2px;
-    text-align: center;
-}
+    text-align: center;}
 
 .room_unavailability_date_error_div
 {
@@ -1256,153 +1248,226 @@ Quick View Styles
     font-size: 13px;
     margin-bottom: 10px;
     padding: 2px;
-    text-align: center;
-}
-
-
-/*datepicker on search css*/
-.ui-datepicker-year {
-    font-family: inherit;
-    font-size: 18px;
-    font-weight: 400;
-    color: #404040;
-}
-
-.ui-datepicker-month {
-    color: #404040;
-    font-family: 'PT Serif', serif;
-    font-size: 18px;
-    font-weight: 400;
-}
-.ui-datepicker-calendar thead th {
-    color: #bf9958;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 400 !important;
-}
-
-.ui-datepicker-unselectable
-{
-  color: #9A9A9A!important;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 400 !important;
-}
-
-.ui-state-default
-{
-  text-align: center!important;
-  color: #404040!important;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 400 !important;
-  border: none!important;
-  background: none !important;
-}
-
-.ui-icon-circle-triangle-w
-{
-  border: none!important;
-  background-position: -97px 1px;
-}
-
-.ui-icon-circle-triangle-e
-{
-  border: none!important;
-  background-position: -33px 1px;
-}
-
-.ui-state-hover
-{
-  cursor: pointer;
-  border: none!important;
-  background: none !important;
-}
-
-.ui-state-highlight
-{
-  border-radius: 50%;
-  background-color: #BF9958;
-}
-
-.product_page_search
-{
-  background-color: #404040;
-    margin-bottom: 15px!important;
-  padding-top: 15px;
-}
-
-.product_page_search .location_search_results_ul
-{
-  width: 90%!important;
-}
-
-.product_page_search .location_search_results_ul li
-{
-  border-top: 1px solid #cccccc;
-}
-
-.product_page_search #search_room_submit
-{
-  margin-top: 23px;
-    padding: 9.2px 40px!important;
-}
+    text-align: center;}
 
 .room_ratting_yes
 {
   background-position: 48px 22px;
   display: inline-block;
     height: 22px;
-    width: 22px;
-}
-
+    width: 22px;}
 .room_ratting_no
 {
   background-position: 74px 22px;
   display: inline-block;
     height: 22px;
-    width: 22px;
-}
-
-.num_reviews
-{
-  margin-left: 10px;
-  font-weight: 400;
-  color: #777777;
+    width: 22px;}
+.num_reviews {
   font-size: 14px;
-  font-family: 'PT Serif', serif;
-}
-
-.search_block_container div label 
-{
-    color: #ffffff;
-}
-
-.search_block_container.product_page_search
-{
-  margin-top: 0px;
-}
-
-.sold_out_alert
-{
-  margin-bottom: 20px;
-  background-color: #ffa0a0;
-  border: 1px solid #cccccc;
-  color: #9f1010;
+  color: #0000FF;
+  margin-left: 10px;}
+.sold_out_alert, .order_restrict_alert {
+  color: #FF4B4B;
   display: block;
-  font-size: 15px;
-  font-weight: 700;
-  padding: 10px 5px;
-  text-align: center;
-}
-.num_quantity_alert p
-{
-  background-color: #e86464;
-  border: 1px solid #ca3636;
-  color: #ffffff;
-  font-family: PT Serif;
+  font-size: 16px;
+  font-weight: 700;}
+.num_quantity_alert {
   font-size: 14px;
-  font-weight: 400;
-  margin-top: 10px;
-  padding: 5px 10px;
+  color: #FF4B4B;
+  font-weight: 700;}
+
+/*for search block background*/
+.idTabHrefShort:hover {
+  color: #333;}
+
+.room_type_old_price {
+  text-decoration: line-through;
+  color:#979797;
+  font-size:15px;}
+  #center_column .button-medium {
+    background-color: #1292FF;
+    box-shadow: 0 0px 20px 0 rgba(0,0,0,0.34);
+    border-radius: 2px;
+    padding: 0px 50px;}
+    #center_column .button-medium > span {
+      font-size: 14px;
+      padding: 11px;
+      font-weight: 600;
+      color: #FFFFFF;
+      text-transform: uppercase;
+      text-align: center;}
+
+
+#quantity_wanted_p .rm_qty_cont {
+  width: 100%;
+  margin-right: 15px;}
+#quantity_wanted_p .qty_sec_cont {
+  width: 100%;
+  margin: 0px;
+  float: left;}
+#quantity_wanted_p .qty_input_cont {
+  float: left;
+  width: 126px;}
+#quantity_wanted_p .qty_input_cont input {
+  border-radius: 4px 0px 0px 4px;}
+#quantity_wanted_p .qty_direction {
+    width: 22px;
+    float: left;}
+#quantity_wanted_p .qty_direction a {
+  padding: 2px 5px;
+  border-left: 0px;
+  border-color: #999;}
+.product_wrapper .circle-small {
+  opacity: 0.5;
+  font-size: 16px;
+  font-weight: 700;
+  margin-right: 3px;
+  background: #FFFFFF;}
+.room_info_content span.col-sm-4 {
+  margin-bottom: 5px;}
+.product_wrapper .input-date {
+  background: transparent url(../img/icon/icon-calendar.svg) no-repeat scroll 92% 50%!important;
+  background-size: 16px!important;}
+.product_wrapper input {
+  background-color: transparent!important;
+  border: 1px solid #999999;
+  box-shadow: 0 1px 0 0 rgba(0,0,0,0.13);
+  height: 48px;
+  border-radius: 4px;
+  color: #333;
+  font-size: 14px;
+  padding: 0px 15px;}
+.product_wrapper textarea {
+  background-color: transparent!important;
+  border: 1px solid #999999;
+  box-shadow: 0 1px 0 0 rgba(0,0,0,0.13);
+  height: 48px;
+  border-radius: 4px;
+  color: #333;
+  font-size: 14px;
+  padding: 0px 15px;}
+.product_wrapper label {
+  display: block;
+  font-size: 14px;
+  color: #333;}
+.product_wrapper .price_desc_block label {
+  opacity: 0.5;
 }
+.booking_room_fields .htl_location_block label {
+  opacity: 0.5;
+  margin-bottom: 10px;
+  text-transform: uppercase;}
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
+  background-color: transparent;
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .num_avail_rooms_alert {
+    float: left!important;}
+  .booking_room_fields .form-group {
+    width: 100%;}}
+@media (min-width: 320px) and (max-width: 767px) {
+  .product_wrapper .input-date {
+      background-position: 97% 50%!important;}}
+@media (max-width: 450px) {
+  .num_avail_rooms_alert {
+    float: left!important;}
+  .booking_room_fields .form-group {
+    width: 100%;}}
+
+/* room type extra demands container */
+.room_demands_container_overlay {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.05);
+  z-index: 100;
+}
+#product select {
+  max-width: 100%;
+  background-color: #fff;
+  height: 40px;
+  border-radius: 4px;
+  padding: 3px 5px;
+  color: #333;
+  border: 1px solid #d6d4d4;
+}
+.room_demands_container .room_demand_block {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 14px;
+}
+.room_demands_container .checkbox {
+  margin-top: 2px;
+}
+.room_demands_container label {
+  opacity: 0.5;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+}
+.separator-hr-mg-10 {
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+.price_desc_block {
+  font-size: 18px;
+}
+.price_desc_block .total_rooms_price_block {
+  color: #333;
+}
+.price_desc_block .extra_demands_price_block {
+  color: #299DFF;
+}
+.price_desc_block .plus-sign {
+  font-size: 24px;
+  color: #505050;
+}
+
+/* extra demands Css */
+#rooms_extra_demands {
+  position: relative;
+  font-size: 16px;}
+.room_extra_demands .open_rooms_extra_demands {
+	font-size:12px;
+	font-weight: 600;
+	color: #0000FF;}
+#rooms_extra_demands .demand_header {
+	padding-bottom: 15px;}
+#rooms_extra_demands .room_demand_detail .demand_detail_price_block {
+	font-size: 14px;
+	margin-bottom: 15px;}
+#rooms_extra_demands .rooms_extra_demands_head {
+	margin-bottom: 18px;}
+#rooms_extra_demands .card {
+	padding-bottom: 0px;}
+#rooms_extra_demands .room_demand_block {
+	margin-bottom: 15px;
+	color: #333;
+	font-size: 14px;}
+#rooms_extra_demands .checkbox {
+	margin-top: 3px;}
+#rooms_extra_demands label {
+	opacity: 0.5;
+	margin-bottom: 15px;
+	text-transform: uppercase;}
+
+/* fancybox accordian css */
+/* #rooms_extra_demands .accordion, #rooms_extra_demands .accordion * {
+	-webkit-box-sizing:border-box;
+	-moz-box-sizing:border-box;
+	box-sizing:border-box;}
+#rooms_extra_demands .accordion {
+	overflow:hidden;
+	border-bottom: 1px solid #CCCCCC;}
+#rooms_extra_demands .accordion-section-title {
+	width:100%;
+	display:inline-block;
+	transition:all linear 0.15s;
+	color:#252525 !important;
+	text-decoration:none !important;}
+#rooms_extra_demands .accordion-section-content {
+	display:none;
+	border-top: 1px solid #eee;
+	padding-top: 15px;} */

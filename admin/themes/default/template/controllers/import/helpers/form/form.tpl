@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 **
 * NOTICE OF LICENSE
 **
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 **
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -38,9 +38,9 @@
 			</h3>
 			<div class="alert alert-info">
 				<ul class="list-unstyled">
-					<li>{l s='You can read information on CSV import at:'}
+					{* <li>{l s='You can read information on CSV import at:'}
 						<a href="http://doc.prestashop.com/display/PS16/CSV+Import+Parameters" class="_blank">http://doc.prestashop.com/display/PS16/CSV+Import+Parameters</a>
-					</li>
+					</li> *}
 					<li>{l s='Read more about the CSV format at:'}
 						<a href="http://en.wikipedia.org/wiki/Comma-separated_values" class="_blank">http://en.wikipedia.org/wiki/Comma-separated_values</a>
 					</li>
@@ -463,7 +463,7 @@
 			$('#csv_file_uploader').toggle();
 		})
 		//show selected csv if exists
-		var selected = '{$csv_selected}';
+		var selected = '{$csv_selected|@addcslashes:'\''}';
 		if(selected){
 			$('#csv_file_selected').show();
 			$('#csv_file_uploader').hide();

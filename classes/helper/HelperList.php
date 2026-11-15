@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -195,7 +195,7 @@ class HelperListCore extends Helper
                 $position_group_identifier = Category::getRootCategory()->id;
             }
 
-            $positions = array_map(create_function('$elem', 'return (int)($elem[\'position\']);'), $this->_list);
+            $positions = array_map(function ($elem) { return (int)($elem['position']); }, $this->_list);
             sort($positions);
         }
 
@@ -296,6 +296,13 @@ class HelperListCore extends Helper
                         $path_to_image = _PS_IMG_DIR_.$params['image'].'/'.Image::getImgFolderStatic($tr['id_image']).(int)$tr['id_image'].'.'.$this->imageType;
                     }
                     $this->_list[$index][$key] = ImageManager::thumbnail($path_to_image, $this->table.'_mini_'.$item_id.'_'.$this->context->shop->id.'.'.$this->imageType, 45, $this->imageType);
+
+                    // @todo find way to use media link insted of hook
+                    // by webkul for overriding images field if using media server.
+                    Hook::exec(
+                        'actionRenderListImageModifier',
+                        array('key' => $key, 'field' => $params, 'item_id' => $item_id, 'image_type' => $this->imageType, 'list' => &$this->_list[$index])
+                    );
                 } elseif (isset($params['icon']) && isset($tr[$key]) && (isset($params['icon'][$tr[$key]]) || isset($params['icon']['default']))) {
                     if (!$this->bootstrap) {
                         if (isset($params['icon'][$tr[$key]]) && is_array($params['icon'][$tr[$key]])) {
@@ -428,7 +435,7 @@ class HelperListCore extends Helper
             'token' => $token != null ? $token : $this->token,
             'action' => self::$cache_lang['Details'],
             'params' => $ajax_params,
-            'json_params' => Tools::jsonEncode($ajax_params)
+            'json_params' => json_encode($ajax_params)
         ));
         return $tpl->fetch();
     }
@@ -599,6 +606,11 @@ class HelperListCore extends Helper
                 $value = Tools::getValue($value_key);
             }
 
+            $value = Context::getContext()->cookie->{$value_key};
+            if (!$value && Tools::getIsset($value_key)) {
+                $value = Tools::getValue($value_key);
+            }
+
             switch ($params['type']) {
                 case 'bool':
                     if (isset($params['ajax']) && $params['ajax']) {
@@ -609,9 +621,9 @@ class HelperListCore extends Helper
                 case 'date':
                 case 'datetime':
                     if (is_string($value)) {
-                        $value = Tools::unSerialize($value);
+                        $value = json_decode($value, true);
                     }
-                    if (!Validate::isCleanHtml($value[0]) || !Validate::isCleanHtml($value[1])) {
+                    if (isset($value[0]) && !Validate::isCleanHtml($value[0]) || isset($value[1]) && !Validate::isCleanHtml($value[1])) {
                         $value = '';
                     }
                     $name = $this->list_id.'Filter_'.(isset($params['filter_key']) ? $params['filter_key'] : $key);
@@ -668,7 +680,6 @@ class HelperListCore extends Helper
             'pagination' => $this->_pagination,
             'list_total' => $this->listTotal,
             'sql' => isset($this->sql) && $this->sql ? str_replace('\n', ' ', str_replace('\r', '', $this->sql)) : false,
-            'token' => $this->token,
             'table' => $this->table,
             'bulk_actions' => $this->bulk_actions,
             'show_toolbar' => $this->show_toolbar,
@@ -698,7 +709,8 @@ class HelperListCore extends Helper
             'name' => isset($name) ? $name : null,
             'name_id' => isset($name_id) ? $name_id : null,
             'row_hover' => $this->row_hover,
-            'list_id' => isset($this->list_id) ? $this->list_id : $this->table
+            'list_id' => isset($this->list_id) ? $this->list_id : $this->table,
+            'token' => $this->token,
         ), $this->tpl_vars));
 
         return $this->header_tpl->fetch();
@@ -743,7 +755,8 @@ class HelperListCore extends Helper
 
         $this->footer_tpl->assign(array_merge($this->tpl_vars, array(
             'current' => $this->currentIndex,
-            'list_id' => $this->list_id
+            'list_id' => $this->list_id,
+            'token' => $this->token,
         )));
         return $this->footer_tpl->fetch();
     }

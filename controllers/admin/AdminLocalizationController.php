@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -337,7 +337,7 @@ class AdminLocalizationControllerCore extends AdminController
                 array(
                     'type'     => 'radio',
                     'label'  => $this->l('Download pack data'),
-                    'desc'     => $this->l('If set to yes then the localization pack will be downloaded from prestashop.com. Otherwise the local xml file found in the localization folder of your PrestaShop installation will be used.'),
+                    'desc'     => $this->l('If set to yes then the localization pack will be downloaded from prestashop.com. Otherwise the local xml file found in the localization folder of your Qloapps installation will be used.'),
                     'name'     => 'download_updated_pack',
                     'is_bool'=> true,
                     'values' => array(
@@ -356,7 +356,7 @@ class AdminLocalizationControllerCore extends AdminController
             ),
             'submit' => array(
                 'title' => $this->l('Import'),
-                'icon' => 'process-icon-import',
+                'icon' => 'process-icon-download',
                 'name' => 'submitLocalizationPack'
             ),
         );

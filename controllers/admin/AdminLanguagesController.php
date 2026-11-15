@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -543,7 +543,7 @@ class AdminLanguagesControllerCore extends AdminController
 
         // Get all iso code available
         if ($lang_packs = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='.Tools::getValue('ps_version').'&iso_lang='.Tools::strtolower(Tools::getValue('iso_lang')))) {
-            $result = Tools::jsonDecode($lang_packs);
+            $result = json_decode($lang_packs);
             if ($lang_packs !== '' && $result && !isset($result->error)) {
                 $this->status = 'ok';
                 $this->content = $lang_packs;
@@ -568,7 +568,7 @@ class AdminLanguagesControllerCore extends AdminController
         parent::afterImageUpload();
 
         if (($id_lang = (int)Tools::getValue('id_lang')) &&
-             isset($_FILES) && count($_FILES) && file_exists(_PS_LANG_IMG_DIR_.$id_lang.'.jpg')) {
+             isset($_FILES) && count($_FILES) && (bool)Tools::file_get_contents($this->context->link->getMediaLink(_THEME_LANG_DIR_.$id_lang.'.jpg'))) { //by webkul
             $current_file = _PS_TMP_IMG_DIR_.'lang_mini_'.$id_lang.'_'.$this->context->shop->id.'.jpg';
 
             if (file_exists($current_file)) {

@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -49,9 +49,6 @@
 					<th data-sort-ignore="true" data-hide="phone,tablet" class="item">{l s='Payment'}</th>
 					<th class="item">{l s='Status'}</th>
 
-					<!-- By webkul to show refund status of the order-->
-					<th class="item">{l s='Refund Status'}</th>
-
 					<th data-sort-ignore="true" data-hide="phone,tablet" class="item">{l s='Invoice'}</th>
 					<th data-sort-ignore="true" data-hide="phone,tablet" class="last_item">&nbsp;</th>
 				</tr>
@@ -60,9 +57,10 @@
 				{foreach from=$orders item=order name=myLoop}
 					<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{else}item{/if} {if $smarty.foreach.myLoop.index % 2}alternate_item{/if}">
 						<td class="history_link bold">
-							{if isset($order.invoice) && $order.invoice && isset($order.virtual) && $order.virtual}
+							{* By webkul- no downloadable products *}
+							{* {if isset($order.invoice) && $order.invoice && isset($order.virtual) && $order.virtual}
 								<img class="icon" src="{$img_dir}icon/download_product.gif"	alt="{l s='Products to download'}" title="{l s='Products to download'}" />
-							{/if}
+							{/if} *}
 							<a class="color-myaccount" href="javascript:showOrder(1, {$order.id_order|intval}, '{$link->getPageLink('order-detail', true)|escape:'html':'UTF-8'}');">
 								{Order::getUniqReferenceOf($order.id_order)}
 							</a>
@@ -91,37 +89,6 @@
 							{/if}
 						</td>
 
-						<!-- By webkul to show refund status of the order-->
-						<td class="history_refund _status">
-							{if isset($order_refund_info)}
-								{if isset($order_refund_info[$order.id_order])}
-									{if isset($order_refund_info[$order.id_order]['waitting']) && $order_refund_info[$order.id_order]['waitting']}
-										<p class="ref_req_wait">
-											{l s="Waitting Requests"} : {$order_refund_info[{$order.id_order}]['waitting']}
-										</p>
-									{/if}
-									{if isset($order_refund_info[$order.id_order]['accepted']) && $order_refund_info[$order.id_order]['accepted']}
-										<p class="ref_req_accept">
-											{l s="Accepted Requests"} : {$order_refund_info[{$order.id_order}]['accepted']}
-										</p>
-									{/if}
-									{if isset($order_refund_info[$order.id_order]['rejected']) && $order_refund_info[$order.id_order]['rejected']}
-										<p class="ref_req_reject">
-											{l s="Rejected Requests"} : {$order_refund_info[{$order.id_order}]['rejected']}
-										</p>
-									{/if}
-									{if isset($order_refund_info[$order.id_order]['refunded']) && $order_refund_info[$order.id_order]['refunded']}
-										<p class="ref_req_refund">
-											{l s="Refunded Requests"} : {$order_refund_info[{$order.id_order}]['refunded']}
-										</p>
-									{/if}
-								{else}
-									--
-								{/if}
-							{/if}
-						</td>
-						<!-- end -->
-						
 						<td class="history_invoice">
 							{if (isset($order.invoice) && $order.invoice && isset($order.invoice_number) && $order.invoice_number) && isset($invoiceAllowed) && $invoiceAllowed == true}
 								<a class="link-button" href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order={$order.id_order}")|escape:'html':'UTF-8'}" title="{l s='Invoice'}" target="_blank">
@@ -174,8 +141,12 @@
 {strip}
 	{addJsDef historyUrl=$link->getPageLink("orderdetail", true)|escape:'quotes':'UTF-8'}
 	{addJsDefL name=req_sent_msg}{l s='Request Sent..' js=1}{/addJsDefL}
-	{addJsDefL name=wait_stage_msg}{l s='Waitting' js=1}{/addJsDefL}
+	{addJsDefL name=wait_stage_msg}{l s='Waiting' js=1}{/addJsDefL}
 	{addJsDefL name=pending_state_msg}{l s='Pending...' js=1}{/addJsDefL}
 	{addJsDefL name=mail_sending_err}{l s='Some error occurred while sending mail to the customer' js=1}{/addJsDefL}
-	{addJsDefL name=refund_request_sending_error}{l s='Some error occurred while processing request for order cancellation.' js=1}{/addJsDefL}
+	{addJsDefL name=refund_request_sending_error}{l s='Some error occurred while processing request for booking cancelation.' js=1}{/addJsDefL}
+	{addJsDefL name=no_bookings_selected}{l s='No rooms selected. Please select at least one room.' js=1}{/addJsDefL}
+	{addJsDefL name=refund_request_success_txt}{l s='Request for booking cancelation is successffully created.' js=1}{/addJsDefL}
+	{addJsDefL name=cancel_req_txt}{l s='Cancel Request' js=1}{/addJsDefL}
+	{addJsDefL name=cancel_booking_txt}{l s='Cancel Bookings' js=1}{/addJsDefL}
 {/strip}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -70,7 +70,7 @@ class AdminDashboardControllerCore extends AdminController
     {
         $forms = array();
         $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-        $carriers = Carrier::getCarriers($this->context->language->id, true);
+        $carriers = Carrier::getCarriers($this->context->language->id, true, false, false, null, 'ALL_CARRIERS');
         $modules = Module::getModulesOnDisk(true);
 
         $forms = array(
@@ -200,7 +200,8 @@ class AdminDashboardControllerCore extends AdminController
         // 	'Save' => $this->l('Save', 'AdminStatsTab')
         // );
 
-        if ($this->context->cookie->__get('stats_date_update') < strtotime(date('Y-m-d'))) {
+        $test_stats_date_update = $this->context->cookie->__get('stats_date_update');
+        if (!empty($test_stats_date_update) && $this->context->cookie->__get('stats_date_update') < strtotime(date('Y-m-d'))) {
             switch ($this->context->employee->preselect_date_range) {
                 case 'day':
                     $date_from = date('Y-m-d');
@@ -263,10 +264,11 @@ class AdminDashboardControllerCore extends AdminController
         $this->tpl_view_vars = array(
             'date_from' => $this->context->employee->stats_date_from,
             'date_to' => $this->context->employee->stats_date_to,
+            'hookDashboardTop' => Hook::exec('dashboardTop', $params),
             'hookDashboardZoneOne' => Hook::exec('dashboardZoneOne', $params),
             'hookDashboardZoneTwo' => Hook::exec('dashboardZoneTwo', $params),
             //'translations' => $translations,
-            'action' => '#',
+            'action' => self::$currentIndex,
             'warning' => $this->getWarningDomainName(),
             'new_version_url' => Tools::getCurrentUrlProtocolPrefix()._PS_API_DOMAIN_.'/version/check_version.php?v='._PS_VERSION_.'&lang='.$this->context->language->iso_code.'&autoupgrade='.(int)(Module::isInstalled('autoupgrade') && Module::isEnabled('autoupgrade')).'&hosted_mode='.(int)defined('_PS_HOST_MODE_'),
             'dashboard_use_push' => Configuration::get('PS_DASHBOARD_USE_PUSH'),
@@ -322,6 +324,7 @@ class AdminDashboardControllerCore extends AdminController
                 }
 
                 $this->context->employee->update();
+                Tools::redirectAdmin(self::$currentIndex);
             }
         }
 
@@ -365,10 +368,10 @@ class AdminDashboardControllerCore extends AdminController
             'compare_from' => $this->context->employee->stats_compare_from,
             'compare_to' => $this->context->employee->stats_compare_to,
             'dashboard_use_push' => (int)Tools::getValue('dashboard_use_push'),
-            'extra' => (int)Tools::getValue('extra')
+            'extra' => Tools::getValue('extra')
         );
 
-        die(Tools::jsonEncode(Hook::exec('dashboardData', $params, $id_module, true, true, (int)Tools::getValue('dashboard_use_push'))));
+        die(json_encode(Hook::exec('dashboardData', $params, $id_module, true, true, (int)Tools::getValue('dashboard_use_push'))));
     }
 
     public function ajaxProcessSetSimulationMode()
@@ -435,7 +438,7 @@ class AdminDashboardControllerCore extends AdminController
                 }
             }
         }
-        die(Tools::jsonEncode($return));
+        die(json_encode($return));
     }
 
     public function ajaxProcessSaveDashConfig()
@@ -473,6 +476,6 @@ class AdminDashboardControllerCore extends AdminController
             $return['widget_html'] = $module_obj->$hook($params);
         }
 
-        die(Tools::jsonEncode($return));
+        die(json_encode($return));
     }
 }

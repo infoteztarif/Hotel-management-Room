@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -153,7 +153,7 @@ class AdminQuickAccessesControllerCore extends AdminController
     public function getQuickAccessesList()
     {
         $links = QuickAccess::getQuickAccesses($this->context->language->id);
-        return Tools::jsonEncode(array_map(array($this, 'getLinkToken'), $links));
+        return json_encode(array_map(array($this, 'getLinkToken'), $links));
     }
 
     public function getLinkToken($item)
@@ -195,7 +195,7 @@ class AdminQuickAccessesControllerCore extends AdminController
         $this->errors = array_unique($this->errors);
         if (!empty($this->errors)) {
             $this->errors['has_errors'] = true;
-            $this->ajaxDie(Tools::jsonEncode($this->errors));
+            $this->ajaxDie(json_encode($this->errors));
             return false;
         }
         return $this->getQuickAccessesList();

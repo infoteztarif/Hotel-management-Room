@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -77,7 +77,7 @@ class AdminAdminPreferencesControllerCore extends AdminController
                     ),
                     'PS_COOKIE_LIFETIME_BO' => array(
                         'title' => $this->l('Lifetime of back office cookies'),
-                        'hint' => $this->l('Set the amount of hours during which the back office cookies are valid. After that amount of time, the PrestaShop user will have to log in again.'),
+                        'hint' => $this->l('Set the amount of hours during which the back office cookies are valid. After that amount of time, the Qloapps user will have to log in again.'),
                         'validation' => 'isInt',
                         'cast' => 'intval',
                         'type' => 'text',

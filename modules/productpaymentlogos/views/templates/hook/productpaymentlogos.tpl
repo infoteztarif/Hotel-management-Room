@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2016 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2016 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,7 +27,7 @@
 	<div class="box-security">
     <h5 class="product-heading-h5">{$banner_title|escape:'htmlall':'UTF-8'}</h5>
   	{if $banner_link != ''}<a href="{$banner_link|escape:'htmlall':'UTF-8'}" title="{$banner_title|escape:'htmlall':'UTF-8'}">{/if}
-		<img src="{$module_dir}{$banner_img|escape:'htmlall':'UTF-8'}" alt="{$banner_title|escape:'htmlall':'UTF-8'}" class="img-responsive" />
+		<img src="{$link->getMediaLink("`$module_dir`$banner_img|escape:'htmlall':'UTF-8'")}" alt="{$banner_title|escape:'htmlall':'UTF-8'}" class="img-responsive" />
 	{if $banner_link != ''}</a>{/if}
     </div>
 </div>

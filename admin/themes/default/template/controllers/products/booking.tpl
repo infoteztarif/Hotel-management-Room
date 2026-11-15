@@ -1,12 +1,12 @@
 {if isset($product->id) && isset($htl_config)}
 	<div id="product-configuration" class="panel product-tab">
 		<input type="hidden" name="submitted_tabs[]" value="Booking"/>
-		<h3 class="tab"> <i class="icon-info"></i> {l s='Booking Information' mod='hotelreservationsystem'}</h3>
+		<h3 class="tab"> <i class="icon-info"></i> {l s='Booking Information'}</h3>
 
 		<div class="form-group">
 			<div class="col-sm-1"></div>
 			<label for="from_date" class="control-label col-sm-1 required">
-				<span title="" data-toggle="tooltip" class="label-tooltip" data-original-title="{l s='Booking Date starts from'}">{l s='From' mod='hotelreservationsystem'}</span>
+				<span title="" data-toggle="tooltip" class="label-tooltip" data-original-title="{l s='Booking date starts from'}">{l s='From'}</span>
 			</label>
 			<div class="col-sm-2">
 				<input type="hidden" id="checkTabClick" value="0" name="checkTabClick">
@@ -14,7 +14,7 @@
 			</div>
 
 			<label for="to_date" class="control-label col-sm-1 required">
-				<span title="" data-toggle="tooltip" class="label-tooltip" data-original-title="{l s='Booking Date upto'}">{l s='To' mod='hotelreservationsystem'}</span>
+				<span title="" data-toggle="tooltip" class="label-tooltip" data-original-title="{l s='Booking date upto'}">{l s='To'}</span>
 			</label>
 			<div class="col-sm-2">
 				<input type="text" name="to_date" class="form-control" id="to_date" value="{$date_to}">
@@ -44,13 +44,13 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<div class="col-sm-5 htl_room_data_cont">
 				<div class="row">
 					<div class="col-sm-6">
 						<div class="row">
 							<div class="col-sm-12 htl_room_cat_data">
-								<p class="room_cat_header">{l s='Total Rooms' mod='hotelreservationsystem'}</p>
+								<p class="room_cat_header">{l s='Total Rooms'}</p>
 								<p class="room_cat_data">{$booking_data['stats']['total_rooms']}</p>
 							</div>
 						</div>
@@ -59,7 +59,7 @@
 					<div class="col-sm-6">
 						<div class="row">
 							<div class="col-sm-12 htl_room_cat_data no_border">
-								<p class="room_cat_header">{l s='Partially Available' mod='hotelreservationsystem'}</p>
+								<p class="room_cat_header">{l s='Partially Available'}</p>
 								<p class="room_cat_data">{$booking_data['stats']['num_part_avai']}</p>
 							</div>
 						</div>
@@ -70,7 +70,7 @@
 					<div class="col-sm-6">
 						<div class="row">
 							<div class="col-sm-12 htl_room_cat_data">
-								<p class="room_cat_header">{l s='Available Rooms' mod='hotelreservationsystem'}</p>
+								<p class="room_cat_header">{l s='Available Rooms'}</p>
 								<p class="room_cat_data">{$booking_data['stats']['num_avail']}</p>
 							</div>
 						</div>
@@ -79,7 +79,7 @@
 					<div class="col-sm-6">
 						<div class="row">
 							<div class="col-sm-12 htl_room_cat_data no_border">
-								<p class="room_cat_header">{l s='Booked Rooms' mod='hotelreservationsystem'}</p>
+								<p class="room_cat_header">{l s='Booked Rooms'}</p>
 								<p class="room_cat_data">{$booking_data['stats']['num_booked']}</p>
 							</div>
 						</div>
@@ -90,7 +90,7 @@
 					<div class="col-sm-6">
 						<div class="row">
 							<div class="col-sm-12 htl_room_cat_data">
-								<p class="room_cat_header">{l s='Unavailable Rooms' mod='hotelreservationsystem'}</p>
+								<p class="room_cat_header">{l s='Unavailable Rooms'}</p>
 								<p class="room_cat_data">{$booking_data['stats']['num_unavail']}</p>
 							</div>
 						</div>
@@ -101,28 +101,28 @@
 				<div class="row">
 					<div class="col-sm-6 indi_cont clearfix">
 						<div class="color_indicate bg-green"></div>
-						<span class="indi_label">{l s='Available Rooms' mod='hotelreservationsystem'}</span>
+						<span class="indi_label">{l s='Available Rooms'}</span>
 					</div>
 					<div class="col-sm-6 indi_cont clearfix">
 						<div class="color_indicate bg-yellow"></div>
-						<span class="indi_label">{l s='Partially Available' mod='hotelreservationsystem'}</span>
+						<span class="indi_label">{l s='Partially Available'}</span>
 					</div>
 					<div class="col-sm-6 indi_cont clearfix">
 						<div class="color_indicate bg-red"></div>
-						<span class="indi_label">{l s='Unavailable Rooms' mod='hotelreservationsystem'}</span>
+						<span class="indi_label">{l s='Unavailable Rooms'}</span>
 					</div>
 					<div class="col-sm-6 indi_cont clearfix">
 						<div class="color_indicate bg-gray"></div>
-						<span class="indi_label">{l s='Hold For Maintenance' mod='hotelreservationsystem'}</span>
+						<span class="indi_label">{l s='Hold For Maintenance'}</span>
 					</div>
 				</div>
 			</div>
 		</div>
-		
+
 		<div class="panel-footer">
 			<a href="{$link->getAdminLink('AdminProducts')|escape:'html':'UTF-8'}{if isset($smarty.request.page) && $smarty.request.page > 1}&amp;submitFilterproduct={$smarty.request.page|intval}{/if}" class="btn btn-default">
 				<i class="process-icon-cancel"></i>
-				{l s='Cancel' mod='hotelreservationsystem'}
+				{l s='Cancel'}
 			</a>
 			<button type="submit" name="submitAddproductAndStay" class="btn btn-default pull-right" disabled="disabled" id="stayBookingTab">
 				<i class="process-icon-loading"></i>
@@ -132,15 +132,15 @@
 	</div>
 
 	<div class="panel">
-		<h3 class="tab"> <i class="icon-list"></i> {l s='LIST OF HOTEL ROOMS' mod='hotelreservationsystem'}</h3>
+		<h3 class="tab"> <i class="icon-list"></i> {l s='LIST OF HOTEL ROOMS'}</h3>
 		<div class="form-group">
 			<div class="table-responsive">
 				<table class="table">
 					<thead>
 						<tr>
-							<th>{l s='Room No.' mod='hotelreservationsystem'}</th>
-							<th>{l s='Status' mod='hotelreservationsystem'}</th>
-							<th>{l s='Message' mod='hotelreservationsystem'}</th>
+							<th>{l s='Room No.'}</th>
+							<th>{l s='Status'}</th>
+							<th>{l s='Message'}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -149,7 +149,7 @@
 								{foreach from=$b_val key=data_k item=data_v}
 									<tr>
 										<td>{$data_v['room_num']}</td>
-										<td>{l s='Available' mod='hotelreservationsystem'}</td>
+										<td>{l s='Available'}</td>
 										<td>{$data_v['room_comment']}</td>
 									</tr>
 								{/foreach}
@@ -157,7 +157,7 @@
 								{foreach from=$b_val key=data_k item=data_v}
 									<tr>
 										<td>{$data_v['room_num']}</td>
-										<td>{l s='Unavailable' mod='hotelreservationsystem'}</td>
+										<td>{l s='Unavailable'}</td>
 										<td>{$data_v['room_comment']}</td>
 									</tr>
 								{/foreach}
@@ -166,23 +166,23 @@
 									<tr>
 										<td>{$data_v['room_num']}</td>
 										<td>
-											{if $data_v['booking_status'] == 2}
-												{l s='Alloted' mod='hotelreservationsystem'}
-											{elseif $data_v['booking_status'] == 3}
-												{l s='Checked-in' mod='hotelreservationsystem'}
-											{elseif $data_v['booking_status'] == 4}
-												{l s='Checked-out' mod='hotelreservationsystem'}
+											{if $data_v['detail'][0]['booking_status'] == 1}
+												{l s='Alloted'}
+											{elseif $data_v['detail'][0]['booking_status'] == 2}
+												{l s='Checked-in'}
+											{elseif $data_v['detail'][0]['booking_status'] == 3}
+												{l s='Checked-out'}
 											{/if}
 										</td>
-										<td>{$data_v['comment']}</td>
+										<td>{$data_v['detail'][0]['comment']}</td>
 									</tr>
 								{/foreach}
 							{elseif ($b_key == 'partially_available') && !empty($b_val)}
 								{foreach from=$b_val key=data_k item=data_v}
 									<tr>
 										<td>{$data_v['room_num']}</td>
-										<td>{l s='Partially Available' mod='hotelreservationsystem'}</td>
-										<td>{$data_v['comment']}</td>
+										<td>{l s='Partially Available'}</td>
+										<td>{if isset($data_v['comment'])}{$data_v['comment']}{/if}</td>
 									</tr>
 								{/foreach}
 							{/if}
@@ -197,25 +197,49 @@
 <script type="text/javascript">
 
 $(document).ready(function()
-{	
+{
 	var booking_calendar_data = '{$booking_calendar_data|@json_encode}';
 	var check_css_condition_var = '{$check_css_condition_var}';
 	var check_calendar_var = '{$check_calendar_var}';
 
-	$("#from_date, #to_date").datepicker(
-	{
-		dateFormat: 'yy-mm-dd'
-	});
+	$("#from_date").datepicker({
+        dateFormat: 'yy-mm-dd',
+        onSelect: function(selectedDate) {
+            var date_format = selectedDate.split("-");
+            var selectedDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date(date_format[0], date_format[1] - 1, date_format[2])));
+            selectedDate.setDate(selectedDate.getDate() + 1);
+            $("#to_date").datepicker("option", "minDate", selectedDate);
+        },
+    });
+
+    $("#to_date").datepicker({
+        dateFormat: 'yy-mm-dd',
+        beforeShow: function (input, instance) {
+            var datefrom = $('#from_date').val();
+            if (typeof datefrom != 'undefined' && datefrom != '') {
+                var date_format = datefrom.split("-");
+                var selectedDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date(date_format[0], date_format[1] - 1, date_format[2])));
+                selectedDate.setDate(selectedDate.getDate()+1);
+                $("#to_date").datepicker("option", "minDate", selectedDate);
+            } else {
+                var date_format = new Date();
+                var selectedDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date()));
+                selectedDate.setDate(selectedDate.getDate()+1);
+                $("#to_date").datepicker("option", "minDate", selectedDate);
+            }
+        }
+    });
+
 	if (booking_calendar_data != 'null' && check_css_condition_var && check_calendar_var)
 	{
 		if (typeof(booking_calendar_data) != 'undefined')
 	    {
 	        var calendar_data = JSON.parse(booking_calendar_data);
 
-	        $(".hotel_date").datepicker(
-	        {
+	        $(".hotel_date").datepicker({
 	            defaultDate: new Date(),
-	            dateFormat: 'yy-mm-dd',
+	            dateFormat: 'dd-mm-yy',
+	            minDate: 0,
 	            onChangeMonthYear: function(year, month)
 	            {
 	                if (check_calendar_var)
@@ -263,7 +287,7 @@ $(document).ready(function()
 	                {
 	                    if (key === dmy)
 	                    {
-	                        msg = 'Total Available : '+value.stats.num_avail+'&#013;Total Partail Available : '+value.stats.num_part_avai+'&#013;Total Unvailable : '+value.stats.num_unavail+'&#013;Total Booked : '+value.stats.num_booked;
+	                        msg = 'Total Available : '+value.stats.num_avail+'&#013;Total Partial Available : '+value.stats.num_part_avai+'&#013;Total Unavailable : '+value.stats.num_unavail+'&#013;Total Booked : '+value.stats.num_booked;
 	                        flag = 1;
 	                        return 1;
 	                    }
@@ -276,16 +300,18 @@ $(document).ready(function()
 	                    return [true];
 	            }
 	        });
-	        
+
 	        var count = $("."+check_css_condition_var).length;
 	        //$("td."+check_css_condition_var).eq(0).css('border-radius','50% 0 0 50%');
-	        $("td."+check_css_condition_var).eq(count-1).css('border-radius','0 50% 50% 0');    
+	        $("td."+check_css_condition_var).eq(count-1).css('border-radius','0 50% 50% 0');
 	    }
 	    else
 	    {
 	    	$(".hotel_date").datepicker(
 	        {
-	            dateFormat: 'yy-mm-dd'
+	            defaultDate: new Date(),
+	            dateFormat: 'dd-mm-yy',
+	            minDate: 0,
 	        });
 	    }
 	}
@@ -295,5 +321,5 @@ $(document).ready(function()
     	$("#checkTabClick").val(1);
     });
 });
-	
+
 </script>

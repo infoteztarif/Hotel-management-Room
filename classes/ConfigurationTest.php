@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,7 +31,7 @@ class ConfigurationTestCore
         '/classes/log/index.php',
         '/classes/cache/index.php',
         '/config/index.php',
-        '/tools/tar/Archive_Tar.php',
+        '/tools/tar/Tar.php',
         '/tools/pear/PEAR.php',
         '/controllers/admin/AdminLoginController.php',
         '/css/index.php',
@@ -83,10 +83,19 @@ class ConfigurationTestCore
                 ),
                 'phpversion' => false,
                 'gd' => false,
-                'mysql_support' => false,
+                'pdo_mysql' => false,
                 'config_dir' => 'config',
                 'files' => false,
                 'mails_dir' => 'mails',
+                'openssl' => false,
+                'curl' => false,
+                'soap' => false,
+                'simplexml' => false,
+                'memory_limit' => false,
+                'upload_max_filesize' => false,
+                'max_execution_time' => false,
+                'fopen' => false,
+                'zip' => false,
             ));
         }
 
@@ -103,14 +112,11 @@ class ConfigurationTestCore
     {
         return array(
             'new_phpversion' => false,
-            'fopen' => false,
             'register_globals' => false,
             'gz' => false,
-            'mcrypt' => false,
             'mbstring' => false,
             'magicquotes' => false,
             'dom' => false,
-            'pdo_mysql' => false,
         );
     }
 
@@ -139,17 +145,17 @@ class ConfigurationTestCore
 
     public static function test_phpversion()
     {
-        return version_compare(substr(phpversion(), 0, 5), '5.2.0', '>=');
+        return version_compare(substr(phpversion(), 0, 5), '5.6.0', '>=');
     }
 
     public static function test_new_phpversion()
     {
-        return version_compare(substr(phpversion(), 0, 5), '5.4.0', '>=');
+        return version_compare(substr(phpversion(), 0, 5), '5.6.0', '>=');
     }
 
     public static function test_mysql_support()
     {
-        return extension_loaded('mysql') || extension_loaded('mysqli') || extension_loaded('pdo_mysql');
+        return extension_loaded('mysqli') || extension_loaded('pdo_mysql');
     }
 
     public static function test_pdo_mysql()
@@ -157,15 +163,63 @@ class ConfigurationTestCore
         return extension_loaded('pdo_mysql');
     }
 
+    public static function test_curl()
+    {
+        return extension_loaded('curl');
+    }
+
+    public static function test_soap()
+    {
+        return extension_loaded('soap');
+    }
+
+    public static function test_simplexml()
+    {
+        return extension_loaded('simplexml');
+    }
+
     public static function test_magicquotes()
     {
-        return !get_magic_quotes_gpc();
+        return function_exists('get_magic_quotes_gpc') ? !get_magic_quotes_gpc() : true;
     }
 
     public static function test_upload()
     {
         return ini_get('file_uploads');
     }
+
+    public static function test_upload_max_filesize()
+    {
+        $upload_max_filesize = preg_replace('/[^0-9\.-]/', '', ini_get('upload_max_filesize'));
+        if ($upload_max_filesize >= 16) {
+            return true;
+        }
+        return false;
+    }
+
+    public static function test_max_execution_time()
+    {
+        $max_execution_time = preg_replace('/[^0-9\.-]/', '', ini_get('max_execution_time'));
+        if ($max_execution_time == 0 || $max_execution_time >= 500) {
+            return true;
+        }
+        return false;
+    }
+
+    public static function test_memory_limit()
+    {
+        $memoryLimit = preg_replace('/[^0-9\.-]/', '', ini_get('memory_limit'));
+        if ($memoryLimit == -1 || $memoryLimit >= 128) {
+            return true;
+        }
+        return false;
+    }
+
+    public static function test_zip()
+    {
+        return extension_loaded('zip');
+    }
+
 
     public static function test_fopen()
     {
@@ -346,9 +400,9 @@ class ConfigurationTestCore
         return function_exists('mb_strtolower');
     }
 
-    public static function test_mcrypt()
+    public static function test_openssl()
     {
-        return function_exists('mcrypt_encrypt');
+        return function_exists('openssl_encrypt');
     }
 
     public static function test_sessions()

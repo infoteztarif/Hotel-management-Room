@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -178,7 +178,7 @@ class ThemeCore extends ObjectModel
 
         if (file_exists(_PS_ROOT_DIR_.'/config/xml/themes/'.$theme->directory.'.xml')) {
             $config_file = _PS_ROOT_DIR_.'/config/xml/themes/'.$theme->directory.'.xml';
-        } elseif ($theme->name == 'hotel-theme') {
+        } elseif ($theme->name == 'hotel-reservation-theme') {
             $config_file = _PS_ROOT_DIR_.'/config/xml/themes/default.xml';
         } else {
             $config_file = false;
@@ -197,7 +197,7 @@ class ThemeCore extends ObjectModel
                     $theme_arr['author_'.$key] = (string)$value;
                 }
 
-                if ($theme_arr['theme_name'] == 'hotel-theme') {
+                if ($theme_arr['theme_name'] == 'hotel-reservation-theme') {
                     $theme_arr['tc'] = Module::isEnabled('wkthemeconfigurator');
                 }
             }

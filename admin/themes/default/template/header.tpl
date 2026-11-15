@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -84,7 +84,15 @@
 {/if}
 {if isset($css_files)}
 {foreach from=$css_files key=css_uri item=media}
-	<link href="{$css_uri|escape:'html':'UTF-8'}" rel="stylesheet" type="text/css"/>
+	{if $css_uri == 'lteIE9'}
+		<!--[if lte IE 9]>
+		{foreach from=$css_files[$css_uri] key=css_uriie9 item=mediaie9}
+		<link rel="stylesheet" href="{$css_uriie9|escape:'html':'UTF-8'}" type="text/css" media="{$mediaie9|escape:'html':'UTF-8'}" />
+		{/foreach}
+		<![endif]-->
+	{else}
+		<link rel="stylesheet" href="{$css_uri|escape:'html':'UTF-8'}" type="text/css" media="{$media|escape:'html':'UTF-8'}" />
+	{/if}
 {/foreach}
 {/if}
 	{if (isset($js_def) && count($js_def) || isset($js_files) && count($js_files))}
@@ -114,7 +122,7 @@
 					<i class="icon-reorder"></i>
 				</button>
 				<a id="header_shopversion" href="{$default_tab_link|escape:'html':'UTF-8'}">
-					<span id="shop_version">{$version}</span>
+					<span id="shop_version">{$qloapps_version}</span>
 				</a>
 				{* Shop *}
 				{if isset($is_multishop) && $is_multishop && $shop_list && (isset($multishop_context) && $multishop_context & Shop::CONTEXT_GROUP || $multishop_context & Shop::CONTEXT_SHOP)}
@@ -288,26 +296,23 @@
 				</script>
 {/if}
 				<ul id="header_employee_box">
-					{if (!isset($logged_on_addons) || !$logged_on_addons) && (isset($display_addons_connection) && $display_addons_connection)}
-						<li class="hidden-sm hidden-xs">
-							<a href="#" class="addons_connect toolbar_btn" data-toggle="modal" data-target="#modal_addons_connect" title="{l s='Connect to PrestaShop Marketplace account'}">
-								<i class="icon-chain-broken"></i>
-								<span class="string-long">{l s='Connect to PrestaShop Marketplace account'}</span>
-								<span class="string-short">{l s='PrestaShop Marketplace'}</span>
-							</a>
-						</li>
-					{/if}
-{if {$base_url}}
+					<li class="hidden-sm hidden-xs">
+						<a target="_blank" href="https://qloapps.com/addons/" class="toolbar_btn" title="{l s='Explore Qloapps Addons'}">
+							<i class="icon-chain-broken"></i>
+							{l s='Explore Qloapps Addons'}
+						</a>
+					</li>
+					{if {$base_url}}
 					<li>
 						<a href="{if isset($base_url_tc)}{$base_url_tc|escape:'html':'UTF-8'}{else}{$base_url|escape:'html':'UTF-8'}{/if}" id="header_foaccess" class="_blank" title="{l s='View my shop'}">
-							<span class="string-long">{l s='My shop'}</span>
-							<span class="string-short">{l s='Shop'}</span>
+							<span class="string-long">{l s='My site'}</span>
+							<span class="string-short">{l s='Site'}</span>
 						</a>
 						{if isset($maintenance_mode) && $maintenance_mode == true}
 							<span class="maintenance-mode">
 								&mdash;
 								<span class="label-tooltip" data-toggle="tooltip" data-placement="bottom" data-html="true"
-								title="<p class='text-left text-nowrap'><strong>{l s='Your shop is in maintenance.'}</strong></p><p class='text-left'>{l s='Your visitors and customers cannot access your shop while in maintenance mode.%s To manage the maintenance settings, go to Preferences > Maintenance.' sprintf='<br />'}</p>">{l s='Maintenance mode'}</span>
+								title="<p class='text-left text-nowrap'><strong>{l s='Your site is in maintenance.'}</strong></p><p class='text-left'>{l s='Your visitors and customers cannot access your shop while in maintenance mode.%s To manage the maintenance settings, go to Preferences > Maintenance.' sprintf='<br />'}</p>">{l s='Maintenance mode'}</span>
 							</span>
 						{/if}
 					</li>

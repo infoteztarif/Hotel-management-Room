@@ -40,7 +40,7 @@ class Cheque extends PaymentModule
 	{
 		$this->name = 'cheque';
 		$this->tab = 'payments_gateways';
-		$this->version = '2.6.0';
+		$this->version = '2.6.5';
 		$this->author = 'PrestaShop';
 		$this->controllers = array('payment', 'validation');
 		$this->is_eu_compatible = 1;
@@ -63,8 +63,11 @@ class Cheque extends PaymentModule
 
 		if ((!isset($this->chequeName) || !isset($this->address) || empty($this->chequeName) || empty($this->address)))
 			$this->warning = $this->l('The "Pay to the order of" and "Address" fields must be configured before using this module.');
-		if (!count(Currency::checkPaymentCurrencies($this->id)))
+
+		$currencies = Currency::checkPaymentCurrencies($this->id);
+		if (!$currencies || !count($currencies)) {
 			$this->warning = $this->l('No currency has been set for this module.');
+		}
 
 		$this->extra_mail_vars = array(
 											'{cheque_name}' => Configuration::get('CHEQUE_NAME'),
@@ -166,32 +169,37 @@ class Cheque extends PaymentModule
 
 	public function hookPaymentReturn($params)
 	{
-		if (!$this->active)
-			return;
-
-		$state = $params['objOrder']->getCurrentState();
-		if (in_array($state, array(Configuration::get('PS_OS_CHEQUE'), Configuration::get('PS_OS_OUTOFSTOCK'), Configuration::get('PS_OS_OUTOFSTOCK_UNPAID'))))
-		{
-			if (Configuration::get('WK_ALLOW_ADVANCED_PAYMENT')) 
-			{
-				$obj_customer_adv = new HotelCustomerAdvancedPayment();
-				$order_total = $obj_customer_adv->getOrdertTotal(0, 0, $params['objOrder']->id);
-			}
-			else
-				$order_total = $params['total_to_pay'];
-			
-			$this->smarty->assign(array(
-				'total_to_pay' => Tools::displayPrice($order_total, $params['currencyObj'], false),
-				'chequeName' => $this->chequeName,
-				'chequeAddress' => Tools::nl2br($this->address),
-				'status' => 'ok',
-				'id_order' => $params['objOrder']->id
-			));
-			if (isset($params['objOrder']->reference) && !empty($params['objOrder']->reference))
-				$this->smarty->assign('reference', $params['objOrder']->reference);
+		if (!$this->active) {
+            return;
 		}
-		else
-			$this->smarty->assign('status', 'failed');
+		$objOrder = $params['objOrder'];
+        $orderState = $objOrder->getCurrentState();
+        if (in_array(
+			$orderState,
+			array(
+				Configuration::get('PS_OS_CHEQUE'),
+				Configuration::get('PS_OS_OUTOFSTOCK'),
+				Configuration::get('PS_OS_OUTOFSTOCK_UNPAID')
+			)
+		)) {
+			$objCart = new Cart($objOrder->id_cart);
+            if ($objCart->is_advance_payment) {
+                $cartTotal = $objOrder->getOrdersTotalPaid(1);
+            } else {
+                $cartTotal = $objOrder->getOrdersTotalPaid();
+			}
+
+			$smartyVars['total_to_pay'] = Tools::displayPrice($cartTotal, $params['currencyObj'], false);
+            $smartyVars['chequeName'] = $this->chequeName;
+            $smartyVars['chequeAddress'] = Tools::nl2br($this->address);
+            $smartyVars['status'] = 'ok';
+            $smartyVars['id_order'] = $objOrder->id;
+            $smartyVars['reference'] = $objOrder->reference;
+		} else {
+			$smartyVars['status'] = 'failed';
+		}
+
+		$this->smarty->assign($smartyVars);
 		return $this->display(__FILE__, 'payment_return.tpl');
 	}
 

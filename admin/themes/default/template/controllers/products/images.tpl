@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -35,11 +35,15 @@
 			<label class="control-label col-lg-3 file_upload_label">
 				<span class="label-tooltip" data-toggle="tooltip"
 					title="{l s='Format:'} JPG, GIF, PNG. {l s='Filesize:'} {$max_image_size|string_format:"%.2f"} {l s='MB max.'}">
-					{if isset($id_image)}{l s='Edit this product\'s image:'}{else}{l s='Add a new image to this product'}{/if}
+					{if isset($id_image)}{l s='Edit this room type\'s image:'}{else}{l s='Add a new image to this room type'}{/if}
 				</span>
 			</label>
 			<div class="col-lg-9">
 				{$image_uploader}
+			</div>
+			<div class="col-lg-9 col-lg-offset-3">
+				<div class="help-block">{l s='Please upload a square image (Recommended resolution 800 x 800px)'}
+				</div>
 			</div>
 		</div>
 		<div class="form-group">
@@ -111,9 +115,9 @@
 	<table id="lineType" style="display:none;">
 		<tr id="image_id">
 			<td>
-				<a href="{$smarty.const._THEME_PROD_DIR_}image_path.jpg" class="fancybox">
+				<a href="{$link->getMediaLink("`$smarty.const._THEME_PROD_DIR_`image_path.jpg")}" class="fancybox"> {* by webkul to get media link *}
 					<img
-						src="{$smarty.const._THEME_PROD_DIR_}{$iso_lang}-default-{$imageType}.jpg"
+						src="{$link->getMediaLink("`$smarty.const._THEME_PROD_DIR_`$iso_lang-default-`$imageType`.jpg")}"
 						alt="legend"
 						title="legend"
 						class="img-thumbnail" />
@@ -173,6 +177,7 @@
 				return $1 ? $1 + path : $0;
 			});
 			line = line.replace(/image_path/g, path);
+			line = line.replace(/\.jpg"\s/g, '.jpg?time=' + new Date().getTime() + '" ');
 			line = line.replace(/image_position/g, position);
 			line = line.replace(/legend/g, legend);
 			line = line.replace(/icon-check-empty/g, cover);
@@ -205,7 +210,7 @@
 				}
 				else
 					assoc = false;
-				imageLine({$image->id}, "{$image->getExistingImgPath()}", {$image->position}, "{if $image->cover}icon-check-sign{else}icon-check-empty{/if}", assoc, "{$image->legend[$default_language]|@addcslashes:'\"'}");
+				imageLine({$image->id}, "{$image->getExistingImgPath()}", {$image->position}, "{if $image->cover}icon-check-sign{else}icon-check-empty{/if}", assoc, "{$image->legend[$default_language]|escape:'htmlall'}");
 			{/foreach}
 			{literal}
 			var originalOrder = false;
@@ -267,7 +272,7 @@
 			{
 				e.preventDefault();
 				id = $(this).parent().parent().attr('id');
-				if (confirm("{/literal}{l s='Are you sure?' js=1}{literal}"))
+				if (confirm("{/literal}{l s='Delete selected item?' js=1}{literal}"))
 				doAdminAjax({
 						"action":"deleteProductImage",
 						"id_image":id,

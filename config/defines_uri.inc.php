@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 /* Theme URLs */
-define('_PS_DEFAULT_THEME_NAME_',        'hotel-theme');
+define('_PS_DEFAULT_THEME_NAME_',        'default-bootstrap');
 define('_PS_THEME_DIR_',                _PS_ROOT_DIR_.'/themes/'._THEME_NAME_.'/');
 define('_THEMES_DIR_',                    __PS_BASE_URI__.'themes/');
 define('_THEME_DIR_',                    _THEMES_DIR_._THEME_NAME_.'/');
@@ -82,6 +82,7 @@ define('_MODULE_DIR_',                    __PS_BASE_URI__.'modules/');
 /* Define API URLs if not defined before */
 Tools::safeDefine('_PS_API_DOMAIN_',                'api.prestashop.com');
 Tools::safeDefine('_PS_API_URL_',                    'http://'._PS_API_DOMAIN_);
-Tools::safeDefine('_PS_TAB_MODULE_LIST_URL_',        _PS_API_URL_.'/xml/tab_modules_list.xml');
-Tools::safeDefine('_PS_API_MODULES_LIST_16_',        _PS_API_DOMAIN_.'/xml/modules_list_16.xml');
 Tools::safeDefine('_PS_CURRENCY_FEED_URL_',            _PS_API_URL_.'/xml/currencies.xml');
+Tools::safeDefine('_QLO_API_DOMAIN_',                'api.qloapps.com');
+Tools::safeDefine('_QLO_API_URL_',                    'http://'._QLO_API_DOMAIN_);
+Tools::safeDefine('_QLO_TAB_MODULE_LIST_URL_',        _QLO_API_URL_.'/xml/tab_modules_list.xml');

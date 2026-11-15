@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -73,6 +73,16 @@ class AdminAddressesControllerCore extends AdminController
             'postcode' => array('title' => $this->l('Zip/Postal Code'), 'align' => 'right'),
             'city' => array('title' => $this->l('City')),
             'country' => array('title' => $this->l('Country'), 'type' => 'select', 'list' => $this->countries_array, 'filter_key' => 'cl!id_country'));
+
+
+        // START send access query information to the admin controller
+        $this->access_select = ' SELECT a.`id_address` FROM '._DB_PREFIX_.'address a';
+        $this->access_join = ' INNER JOIN '._DB_PREFIX_.'customer cust ON (cust.id_customer = a.id_customer)';
+        $this->access_join .= ' INNER JOIN '._DB_PREFIX_.'orders ord ON (cust.id_customer = ord.id_customer)';
+        $this->access_join .= ' INNER JOIN '._DB_PREFIX_.'htl_booking_detail hbd ON (hbd.id_order = ord.id_order)';
+        if ($acsHtls = HotelBranchInformation::getProfileAccessedHotels($this->context->employee->id_profile, 1, 1)) {
+            $this->access_where = ' WHERE hbd.id_hotel IN ('.implode(',', $acsHtls).')';
+        }
 
         parent::__construct();
 
@@ -317,7 +327,9 @@ class AdminAddressesControllerCore extends AdminController
                     'name' => 'phone',
                     'required' => in_array('phone', $required_fields) || Configuration::get('PS_ONE_PHONE_AT_LEAST'),
                     'col' => '4',
-                    'hint' => Configuration::get('PS_ONE_PHONE_AT_LEAST') ? sprintf($this->l('You must register at least one phone number.')) : ''
+                    Configuration::get('PS_ONE_PHONE_AT_LEAST') ?
+                    'hint' : '' => Configuration::get('PS_ONE_PHONE_AT_LEAST') ?
+                    sprintf($this->l('You must register at least one phone number.')) : ''
                 );
             } elseif ($addr_field_item == 'phone_mobile') {
                 $temp_fields[] = array(
@@ -326,7 +338,9 @@ class AdminAddressesControllerCore extends AdminController
                     'name' => 'phone_mobile',
                     'required' =>  in_array('phone_mobile', $required_fields) || Configuration::get('PS_ONE_PHONE_AT_LEAST'),
                     'col' => '4',
-                    'hint' => Configuration::get('PS_ONE_PHONE_AT_LEAST') ? sprintf($this->l('You must register at least one phone number.')) : ''
+                    Configuration::get('PS_ONE_PHONE_AT_LEAST') ?
+                    'hint' : '' => Configuration::get('PS_ONE_PHONE_AT_LEAST') ?
+                    sprintf($this->l('You must register at least one phone number.')) : ''
                 );
             }
         }
@@ -481,7 +495,7 @@ class AdminAddressesControllerCore extends AdminController
             $customer = Customer::searchByName($email);
             if (!empty($customer)) {
                 $customer = $customer['0'];
-                echo Tools::jsonEncode(array('infos' => pSQL($customer['firstname']).'_'.pSQL($customer['lastname']).'_'.pSQL($customer['company'])));
+                echo json_encode(array('infos' => pSQL($customer['firstname']).'_'.pSQL($customer['lastname']).'_'.pSQL($customer['company'])));
             }
         }
         die;

@@ -1,23 +1,37 @@
+/**
+* 2010-2019 Webkul.
+*
+* NOTICE OF LICENSE
+*
+* All right is reserved,
+* Please go through this link for complete license : https://store.webkul.com/license.html
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade this module to newer
+* versions in the future. If you wish to customize this module for your
+* needs please refer to https://store.webkul.com/customisation-guidelines/ for more information.
+*
+*  @author    Webkul IN <support@webkul.com>
+*  @copyright 2010-2019 Webkul IN
+*  @license   https://store.webkul.com/license.html
+*/
+
 $(document).ready(function()
 {
-	$('#htl_features_link').on('click', function(){
-		$('html ,body').animate({
-			scrollTop:$('#features_block').offset().top}, 2000);
-	});
-
-	$('#htl_testimonial_link').on('click', function(){
-		$('html ,body').animate({
-			scrollTop:$('#testimonial_block').offset().top}, 2000);
-	});
-	
-	$('#htl_contact_link').on('click', function(){
-		$('html ,body').animate({
-			scrollTop:$('#footer').offset().top}, 2000);
-	});
-
-	$('#htl_our_rooms_link').on('click', function(){
-		$('html ,body').animate({
-			scrollTop:$('#htmlcontent_home').offset().top}, 2000);
+	$(document).on("click", ".navigation-link", function(e) {
+		if (typeof $(this).context.hash !== 'undefined') {
+			var block = $(this).context.hash;
+		}
+		if (block !== 'undefined' && block) {
+			$('html, body').animate(
+				{scrollTop:$(block).offset().top},
+				1000
+			);
+			if (currentPage == 'index') {
+				return false;
+			}
+		}
 	});
 
 	$(".nav_toggle").on("click", function()

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -114,8 +114,17 @@ class CustomerMessageCore extends ObjectModel
     public function delete()
     {
         if (!empty($this->file_name)) {
-            @unlink(_PS_UPLOAD_DIR_.$this->file_name);
+            Tools::deleteFile(_PS_UPLOAD_DIR_.$this->file_name); // by webkul use deleteFile insted of unlink
         }
         return parent::delete();
+    }
+    
+    public static function getMessagesByDate($date)
+    {
+        return Db::getInstance()->getValue(
+            'SELECT COUNT(cm.`id_customer_message`)
+            FROM `'._DB_PREFIX_.'customer_message` cm
+            WHERE cm.`date_add` BETWEEN "'.pSQL($date).' 00:00:00" AND "'.pSQL($date).' 23:59:59"'
+        );
     }
 }

@@ -17,7 +17,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -474,4 +474,9 @@ $(document).ready(function() {
 
 	//scroll_if_anchor(window.location.hash);
 	$("body").on("click", "a.anchor", scroll_if_anchor);
+
+	// Unselect the room types when room types with no hotel access are selected.
+	$('.no-htl-access-option').on('click', function() {
+		$(this).prop('selected', false);
+	});
 }); //end dom ready

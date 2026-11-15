@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -79,7 +79,7 @@
 				{l s='Modify translations'}
 			</h3>
 			<p class="alert alert-info">
-				{l s='Here you can modify translations for every line of text inside PrestaShop.'}<br />
+				{l s='Here you can modify translations for every line of text inside Qloapps.'}<br />
 				{l s='First, select a type of translation (such as "Back office" or "Installed modules"), and then select the language you want to translate strings in.'}
 			</p>
 			<div class="form-group">
@@ -136,7 +136,7 @@
 			</h3>
 			<div id="submitAddLangContent" class="form-group">
 				<p class="alert alert-info">
-					{l s='You can add or update a language directly from the PrestaShop website here.'}<br/>
+					{l s='You can add or update a language directly from the Qloapps website here.'}<br/>
 					{l s='If you choose to update an existing language pack, all of your previous customizations in the theme named "Default-bootstrap" will be lost. This includes front office expressions and default email templates.'}
 				</p>
 				{if $packs_to_update || $packs_to_install}
@@ -161,7 +161,7 @@
 					</div>
 
 				{else}
-					<p class="text-danger">{l s='Cannot connect to the PrestaShop website to get the language list.'}</p>
+					<p class="text-danger">{l s='Cannot connect to the Qloapps website to get the language list.'}</p>
 				{/if}
 			</div>
 			<div class="panel-footer">

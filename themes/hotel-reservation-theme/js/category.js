@@ -1,5 +1,5 @@
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,8 +32,8 @@ $(window).resize(function(){
 
 $(document).on('click', '.lnk_more', function(e){
 	e.preventDefault();
-	$('#category_description_short').hide(); 
-	$('#category_description_full').show(); 
+	$('#category_description_short').hide();
+	$('#category_description_full').show();
 	$(this).hide();
 });
 
@@ -89,7 +89,7 @@ $(document).on('click', '.cat_rm_quantity_down', function(e){
 });
 
 
-$(document).on('keyup', '.cat_quantity_wanted', function(e)
+$(document).on('focusout', '.cat_quantity_wanted', function(e)
 {
 	var qty_wntd = $(this).val();
 	if (qty_wntd == '' || !$.isNumeric(qty_wntd))
@@ -120,8 +120,7 @@ $(document).on('keyup', '.cat_quantity_wanted', function(e)
 			},
 			success: function(result)
 			{
-				if (result.msg == 'success')
-				{
+				if (result.msg == 'success') {
 					total_price = result.total_price;
 					total_price = parseFloat(total_price);
 
@@ -130,16 +129,22 @@ $(document).on('keyup', '.cat_quantity_wanted', function(e)
 					$('.total_price_block p').text(price);
 					$cornt_obj.closest(".rm_qty_cont").siblings(".rm_book_btn").attr('cat_rm_book_nm_days', result.num_days);
 					$('.cat_remain_rm_qty_'+$cornt_obj.attr('id_room_product')).text(result.avail_rooms);
-				}
-				else if (result.msg == 'unavailable_quantity')
-				{	
+				} else if (result.msg == 'unavailable_quantity') {
 					$cornt_obj.val(result.avail_rooms);
-				}
-				else
-				{
-					alert(some_error_cond);					
+				} else {
+					alert(some_error_cond);
 				}
 			}
 	    });
 	}
 });
+
+/*Set maxDate for Order resrict date*/
+	/*$(document).ready(function(){
+		if (max_order_date) {
+			var max_order_date_format = $.datepicker.formatDate('dd M yy', new Date(max_order_date));
+			$( "#check_in_time" ).datepicker( "option", "maxDate", max_order_date_format);
+			$( "#check_out_time" ).datepicker( "option", "maxDate", max_order_date_format);
+		}
+	});*/
+/*End*/

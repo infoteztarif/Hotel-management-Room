@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2015 PrestaShop
+ * 2007-2017 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -19,7 +19,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author    PrestaShop SA <contact@prestashop.com>
- *  @copyright 2007-2015 PrestaShop SA
+ *  @copyright 2007-2017 PrestaShop SA
  *  @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  */
@@ -60,8 +60,8 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
     /** @var int Shop ID */
     protected $id_shop = null;
 
-    /** @var array|null List of shop IDs */
-    public $id_shop_list = null;
+    /** @var array List of shop IDs */
+    public $id_shop_list = array();
 
     /** @var bool */
     protected $get_shop_from_context = true;
@@ -128,6 +128,9 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
 
     /** @var string Path to image directory. Used for image deletion. */
     protected $image_dir = null;
+
+    /** @var string image name used for image deletion. */ //by webkul
+    protected $image_name = null;
 
     /** @var String file type of image files. */
     protected $image_format = 'jpg';
@@ -554,7 +557,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
 					SELECT *
 					FROM `'._DB_PREFIX_.bqSQL($definition['table']).'`
 					WHERE `'.bqSQL($definition['primary']).'` = '.(int)$this->id
-                );
+        );
         if (!$res) {
             return false;
         }
@@ -563,7 +566,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
         foreach ($res as $field => &$value) {
             if (isset($definition['fields'][$field])) {
                 $value = ObjectModel::formatValue($value, $definition['fields'][$field]['type'], false, true,
-                                                  !empty($definition['fields'][$field]['allow_null']));
+                    !empty($definition['fields'][$field]['allow_null']));
             }
         }
 
@@ -586,7 +589,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
                 foreach ($row as $field => &$value) {
                     if (isset($definition['fields'][$field])) {
                         $value = ObjectModel::formatValue($value, $definition['fields'][$field]['type'], false, true,
-                                                          !empty($definition['fields'][$field]['allow_null']));
+                            !empty($definition['fields'][$field]['allow_null']));
                     }
                 }
             }
@@ -625,7 +628,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
         $this->clearCache();
 
         // Automatically fill dates
-        if (array_key_exists('date_upd', $this)) {
+        if (property_exists($this, 'date_upd')) {
             $this->date_upd = date('Y-m-d H:i:s');
             if (isset($this->update_fields) && is_array($this->update_fields) && count($this->update_fields)) {
                 $this->update_fields['date_upd'] = true;
@@ -633,7 +636,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
         }
 
         // Automatically fill dates
-        if (array_key_exists('date_add', $this) && $this->date_add == null) {
+        if (property_exists($this, 'date_add') && $this->date_add == null) {
             $this->date_add = date('Y-m-d H:i:s');
             if (isset($this->update_fields) && is_array($this->update_fields) && count($this->update_fields)) {
                 $this->update_fields['date_add'] = true;
@@ -675,10 +678,18 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
                 // A little explanation of what we do here : we want to create multishop entry when update is called, but
                 // only if we are in a shop context (if we are in all context, we just want to update entries that alread exists)
                 $shop_exists = Db::getInstance()->getValue('SELECT '.$this->def['primary'].' FROM '._DB_PREFIX_.$this->def['table'].'_shop WHERE '.$where);
+
                 if ($shop_exists) {
-                    $result &= Db::getInstance()->update($this->def['table'].'_shop', $fields, $where, 0, $null_values);
+                    if (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_SHOP) {
+                        foreach ($fields as $key => $val) {
+                            if (!array_key_exists($key, (array)$this->update_fields)) {
+                                unset($fields[$key]);
+                            }
+                        }
+                    }
+                    $result &= Db::getInstance()->update($this->def['table'] . '_shop', $fields, $where, 0, $null_values);
                 } elseif (Shop::getContext() == Shop::CONTEXT_SHOP) {
-                    $result &= Db::getInstance()->insert($this->def['table'].'_shop', $all_fields, $null_values);
+                    $result &= Db::getInstance()->insert($this->def['table'] . '_shop', $all_fields, $null_values);
                 }
             }
         }
@@ -807,7 +818,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
     public function toggleStatus()
     {
         // Object must have a variable called 'active'
-        if (!array_key_exists('active', $this)) {
+        if (!property_exists($this, 'active')) {
             throw new PrestaShopException('property "active" is missing in object '.get_class($this));
         }
 
@@ -899,7 +910,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
                 continue;
             }
 
-            if (is_array($this->update_fields) && empty($this->update_fields[$field])) {
+            if (is_array($this->update_fields) && empty($this->update_fields[$field]) && isset($this->def['fields'][$field]['shop']) && $this->def['fields'][$field]['shop']) {
                 continue;
             }
 
@@ -1146,9 +1157,17 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
             // Checking for fields validity
             // Hack for postcode required for country which does not have postcodes
             if (!empty($value) || $value === '0' || ($field == 'postcode' && $value == '0')) {
-                if (isset($data['validate']) && !Validate::$data['validate']($value) && (!empty($value) || $data['required'])) {
-                    $errors[$field] = '<b>'.self::displayFieldName($field, get_class($this), $htmlentities).'</b> '.Tools::displayError('is invalid.');
-                } else {
+                $validation_error = false;
+                if (isset($data['validate'])) {
+                    $data_validate = $data['validate'];
+                    if (!Validate::$data_validate($value) && (!empty($value) || $data['required'])) {
+                        $errors[$field] = '<b>'.self::displayFieldName($field, get_class($this), $htmlentities).
+                            '</b> '.Tools::displayError('is invalid.');
+                        $validation_error = true;
+                    }
+                }
+
+                if (!$validation_error) {
                     if (isset($data['copy_post']) && !$data['copy_post']) {
                         continue;
                     }
@@ -1239,10 +1258,10 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
             }
             if (isset($details['validate'])) {
                 $current_field['validateMethod'] = (
-                                array_key_exists('validateMethod', $resource_parameters['fields'][$field_name]) ?
+                    array_key_exists('validateMethod', $resource_parameters['fields'][$field_name]) ?
                                 array_merge($resource_parameters['fields'][$field_name]['validateMethod'], array($details['validate'])) :
                                 array($details['validate'])
-                            );
+                );
             }
             $resource_parameters['fields'][$field_name] = array_merge($resource_parameters['fields'][$field_name], $current_field);
 
@@ -1649,9 +1668,16 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
         if ($force_delete || !$this->hasMultishopEntries()) {
             /* Deleting object images and thumbnails (cache) */
             if ($this->image_dir) {
-                if (file_exists($this->image_dir.$this->id.'.'.$this->image_format)
-                    && !unlink($this->image_dir.$this->id.'.'.$this->image_format)) {
-                    return false;
+                if ($this->image_name) { // by webkul
+                    if (file_exists($this->image_dir.$this->image_name.'.'.$this->image_format)
+                        && !unlink($this->image_dir.$this->image_name.'.'.$this->image_format)) {
+                        return false;
+                    }
+                } else {
+                    if (file_exists($this->image_dir.$this->id.'.'.$this->image_format)
+                       && !unlink($this->image_dir.$this->id.'.'.$this->image_format)) {
+                        return false;
+                    }
                 }
             }
             if (file_exists(_PS_TMP_IMG_DIR_.$this->def['table'].'_'.$this->id.'.'.$this->image_format)
@@ -1665,9 +1691,16 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
 
             $types = ImageType::getImagesTypes();
             foreach ($types as $image_type) {
-                if (file_exists($this->image_dir.$this->id.'-'.stripslashes($image_type['name']).'.'.$this->image_format)
-                && !unlink($this->image_dir.$this->id.'-'.stripslashes($image_type['name']).'.'.$this->image_format)) {
-                    return false;
+                if ($this->image_name) { // by webkul
+                    if (file_exists($this->image_dir.$this->id.'-'.stripslashes($image_type['name']).'.'.$this->image_format)
+                        && !unlink($this->image_dir.$this->id.'-'.stripslashes($image_type['name']).'.'.$this->image_format)) {
+                        return false;
+                    }
+                } else {
+                    if (file_exists($this->image_dir.$this->id.'-'.stripslashes($image_type['name']).'.'.$this->image_format)
+                        && !unlink($this->image_dir.$this->id.'-'.stripslashes($image_type['name']).'.'.$this->image_format)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -1685,10 +1718,12 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
      */
     public static function existsInDatabase($id_entity, $table)
     {
-        $row = Db::getInstance()->getRow('
+        $row = Db::getInstance()->getRow(
+            '
 			SELECT `id_'.bqSQL($table).'` as id
 			FROM `'._DB_PREFIX_.bqSQL($table).'` e
-			WHERE e.`id_'.bqSQL($table).'` = '.(int)$id_entity, false
+			WHERE e.`id_'.bqSQL($table).'` = '.(int)$id_entity,
+            false
         );
 
         return isset($row['id']);
@@ -1735,7 +1770,7 @@ abstract class ObjectModelCore implements Core_Foundation_Database_EntityInterfa
         }
 
         foreach ($data as $key => $value) {
-            if (array_key_exists($key, $this)) {
+            if (property_exists($this, $key)) {
                 $this->$key = $value;
             }
         }

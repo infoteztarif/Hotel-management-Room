@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -132,7 +132,7 @@ define('_PS_PRICE_DISPLAY_PRECISION_', Configuration::get('PS_PRICE_DISPLAY_PREC
 define('_PS_PRICE_COMPUTE_PRECISION_', _PS_PRICE_DISPLAY_PRECISION_);
 
 if (Configuration::get('PS_USE_HTMLPURIFIER')) {
-    require_once(_PS_TOOL_DIR_.'htmlpurifier/HTMLPurifier.standalone.php');
+    require_once(_PS_TOOL_DIR_.'htmlpurifier/HTMLPurifier.auto.php');
 }
 
 /* Load all languages */
@@ -199,6 +199,10 @@ if (!isset($language) || !Validate::isLoadedObject($language)) {
 }
 $context->language = $language;
 
+/* Get smarty */
+require_once($currentDir.'/smarty.config.inc.php');
+$context->smarty = $smarty;
+
 if (!defined('_PS_ADMIN_DIR_')) {
     if (isset($cookie->id_customer) && (int)$cookie->id_customer) {
         $customer = new Customer($cookie->id_customer);
@@ -260,6 +264,4 @@ if (!defined('_MEDIA_SERVER_3_')) {
     define('_MEDIA_SERVER_3_', Configuration::get('PS_MEDIA_SERVER_3'));
 }
 
-/* Get smarty */
-require_once($currentDir.'/smarty.config.inc.php');
-$context->smarty = $smarty;
+require_once (_PS_ROOT_DIR_.'/modules/hotelreservationsystem/define.php');

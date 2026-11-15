@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 global $smarty;
-$smarty->setTemplateDir(_PS_THEME_DIR_.'tpl');
+$smarty->setTemplateDir(_PS_THEME_DIR_);
 
 if (Configuration::get('PS_HTML_THEME_COMPRESSION')) {
     $smarty->registerFilter('output', 'smartyMinifyHTML');
@@ -34,7 +34,7 @@ if (Configuration::get('PS_JS_HTML_THEME_COMPRESSION')) {
     $smarty->registerFilter('output', 'smartyPackJSinHTML');
 }
 
-function smartyTranslate($params, &$smarty)
+function smartyTranslate($params, $smarty)
 {
     global $_LANG;
 
@@ -48,7 +48,47 @@ function smartyTranslate($params, &$smarty)
         $params['mod'] = false;
     }
     if (!isset($params['sprintf'])) {
-        $params['sprintf'] = null;
+        $params['sprintf'] = array();
+    }
+
+    if (!isset($params['d'])) {
+        $params['d'] = null;
+    }
+
+    if (!is_null($params['d'])) {
+        if (isset($params['tags'])) {
+            $backTrace = debug_backtrace();
+
+            $errorMessage = sprintf(
+                'Unable to translate "%s" in %s. tags() is not supported anymore, please use sprintf().',
+                $params['s'],
+                $backTrace[0]['args'][1]->template_resource
+            );
+
+            if (_PS_MODE_DEV_) {
+                throw new Exception($errorMessage);
+            } else {
+                PrestaShopLogger::addLog($errorMessage);
+            }
+        }
+
+        if (!is_array($params['sprintf'])) {
+            $backTrace = debug_backtrace();
+
+            $errorMessage = sprintf(
+                'Unable to translate "%s" in %s. sprintf() parameter should be an array.',
+                $params['s'],
+                $backTrace[0]['args'][1]->template_resource
+            );
+
+            if (_PS_MODE_DEV_) {
+                throw new Exception($errorMessage);
+            } else {
+                PrestaShopLogger::addLog($errorMessage);
+
+                return $params['s'];
+            }
+        }
     }
 
     $string = str_replace('\'', '\\\'', $params['s']);

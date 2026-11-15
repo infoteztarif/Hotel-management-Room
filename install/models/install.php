@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,10 +19,11 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
+require_once (_PS_TOOL_DIR_.'defuse/php-encryption/defuse-crypto.phar');
 
 class InstallModelInstall extends InstallAbstractModel
 {
@@ -69,28 +70,25 @@ class InstallModelInstall extends InstallAbstractModel
             $this->setError($this->language->l('%s folder is not writable (check permissions)', dirname(self::SETTINGS_FILE)));
             return false;
         }
+        $key = \Defuse\Crypto\Key::createNewRandomKey();
 
         // Generate settings content and write file
         $settings_constants = array(
-            '_DB_SERVER_' =>            $database_server,
-            '_DB_NAME_' =>                $database_name,
-            '_DB_USER_' =>                $database_login,
-            '_DB_PASSWD_' =>            $database_password,
-            '_DB_PREFIX_' =>            $database_prefix,
-            '_MYSQL_ENGINE_' =>        $database_engine,
-            '_PS_CACHING_SYSTEM_' =>    'CacheMemcache',
-            '_PS_CACHE_ENABLED_' =>    '0',
-            '_COOKIE_KEY_' =>            Tools::passwdGen(56),
-            '_COOKIE_IV_' =>            Tools::passwdGen(8),
-            '_PS_CREATION_DATE_' =>    date('Y-m-d'),
-            '_PS_VERSION_' =>            _PS_INSTALL_VERSION_,
+            '_DB_SERVER_' => $database_server,
+            '_DB_NAME_' => $database_name,
+            '_DB_USER_' => $database_login,
+            '_DB_PASSWD_' => $database_password,
+            '_DB_PREFIX_' => $database_prefix,
+            '_MYSQL_ENGINE_' => $database_engine,
+            '_PS_CACHING_SYSTEM_' => 'CacheMemcache',
+            '_PS_CACHE_ENABLED_' => '0',
+            '_COOKIE_KEY_' => Tools::passwdGen(56),
+            '_COOKIE_IV_' => Tools::passwdGen(8),
+            '_NEW_COOKIE_KEY_' => $key->saveToAsciiSafeString(),
+            '_PS_CREATION_DATE_' => date('Y-m-d'),
+            '_PS_VERSION_' => _PS_INSTALL_VERSION_,
+            '_QLOAPPS_VERSION_' => _QLO_INSTALL_VERSION_,
         );
-
-        // If mcrypt is activated, add Rijndael 128 configuration
-        if (function_exists('mcrypt_encrypt')) {
-            $settings_constants['_RIJNDAEL_KEY_'] = Tools::passwdGen(mcrypt_get_key_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB));
-            $settings_constants['_RIJNDAEL_IV_'] = base64_encode(mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB), MCRYPT_RAND));
-        }
 
         $settings_content = "<?php\n";
 
@@ -204,7 +202,7 @@ class InstallModelInstall extends InstallAbstractModel
         }
 
         $flip_languages = array_flip($languages);
-        $id_lang =  (!empty($flip_languages[$this->language->getLanguageIso()])) ? $flip_languages[$this->language->getLanguageIso()] : 1;
+        $id_lang = (!empty($flip_languages[$this->language->getLanguageIso()])) ? $flip_languages[$this->language->getLanguageIso()] : 1;
         Configuration::updateGlobalValue('PS_LANG_DEFAULT', $id_lang);
         Configuration::updateGlobalValue('PS_VERSION_DB', _PS_INSTALL_VERSION_);
         Configuration::updateGlobalValue('PS_INSTALL_VERSION', _PS_INSTALL_VERSION_);
@@ -370,13 +368,13 @@ class InstallModelInstall extends InstallAbstractModel
         }
 
         $list = array(
-            'products' =>        _PS_PROD_IMG_DIR_,
-            'categories' =>        _PS_CAT_IMG_DIR_,
-            'manufacturers' =>    _PS_MANU_IMG_DIR_,
-            'suppliers' =>        _PS_SUPP_IMG_DIR_,
-            'scenes' =>            _PS_SCENE_IMG_DIR_,
-            'stores' =>            _PS_STORE_IMG_DIR_,
-            null =>                _PS_IMG_DIR_.'l/', // Little trick to copy images in img/l/ path with all types
+            'products' => _PS_PROD_IMG_DIR_,
+            'categories' => _PS_CAT_IMG_DIR_,
+            'manufacturers' => _PS_MANU_IMG_DIR_,
+            'suppliers' => _PS_SUPP_IMG_DIR_,
+            'scenes' => _PS_SCENE_IMG_DIR_,
+            'stores' => _PS_STORE_IMG_DIR_,
+            null => _PS_IMG_DIR_.'l/', // Little trick to copy images in img/l/ path with all types
         );
 
         foreach ($list as $cat => $dst_path) {
@@ -587,6 +585,48 @@ class InstallModelInstall extends InstallAbstractModel
             Configuration::updateGlobalValue('PS_REWRITING_SETTINGS', 0);
         }
 
+        $qloData = [
+            'shopDomain' => Tools::getHttpHost(),
+            'shopDomainSsl' => Tools::getHttpHost(),
+            'physicalUri' => __PS_BASE_URI__,
+            'email' => $data['admin_email'],
+            'firstname' => Tools::ucfirst($data['admin_firstname']),
+            'lastname' => Tools::ucfirst($data['admin_lastname']),
+            'countryCode' => $data['shop_country'],
+            'marketingConsent' => $data['marketing_consent'],
+        ];
+
+        // Qlo Notification
+        $this->setNotification($qloData);
+
+        return true;
+    }
+
+    public function setNotification($notificationData)
+    {
+        if (function_exists('curl_version')) {
+            $params = [
+                'url' => 'https://prestashop.webkul.com/hotel-reservation-clients/getNotification.php',
+                'method' => 'POST',
+                'headers' => array('Content-Type: application/json'),
+                'postdata' => json_encode($notificationData),
+            ];
+
+            $curlInit = curl_init();
+            curl_setopt($curlInit, CURLOPT_URL, $params['url']);
+            curl_setopt($curlInit, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+            curl_setopt($curlInit, CURLOPT_HTTPHEADER, $params['headers']);
+            curl_setopt($curlInit, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($curlInit, CURLOPT_CUSTOMREQUEST, $params['method']);
+            curl_setopt($curlInit, CURLOPT_RETURNTRANSFER, 1);
+            if (isset($params['postdata'])) {
+                curl_setopt($curlInit, CURLOPT_POSTFIELDS, $params['postdata']);
+            }
+            $response = curl_exec($curlInit);
+        } else {
+            // Mail Code
+        }
+
         return true;
     }
 
@@ -602,31 +642,58 @@ class InstallModelInstall extends InstallAbstractModel
         } else {
             $modules = array(
                 'hotelreservationsystem',
-                'blocknavigationmenu',
+                'wkroomsearchblock',
                 'blocknewsletter',
                 'blocksocial',
                 'wkfooterblock',
-                'wkroomsearchblock',
-                'wkhotelfiltersearchblock',
                 'wkhotelfilterblock',
                 'wkabouthotelblock',
-                'wkthemeconfigurator',
                 'wkhotelfeaturesblock',
+                'wkhotelroom',
                 'wktestimonialblock',
-                'socialsharing',
                 'bankwire',
-                'blockcart',
-                'blockmyaccount',
-                'blockuserinfo',
                 'cheque',
-                'blockcurrencies',
+                'blockmyaccount',
                 'blocklanguages',
+                'blockcurrencies',
+                'productcomments',
+                'wkfooterlangcurrencyblock',
+                'wkfooterpaymentinfoblockcontainer',
+                'wkfooteraboutblock',
+                'wkfooterpaymentblock',
+                'wkfooternotificationblock',
+                'blocknavigationmenu',
+                'dashguestcycle',
+                'dashoccupancy',
+                'dashavailability',
                 'dashactivity',
                 'dashtrends',
                 'dashgoals',
+                'dashperformance',
                 'dashproducts',
-                'wkpaypaladaptive',
-                );
+                'graphnvd3',
+                'statsdata',
+                'statsvisits',
+                'statsorigin',
+                'statslive',
+                'sekeywords',
+                'statssales',
+                'statspersonalinfos',
+                'statsforecast',
+                'statsbestcategories',
+                'statsproduct',
+                'statscheckup',
+                'statscatalog',
+                'statsbestproducts',
+                'pagesnotfound',
+                'statsnewsletter',
+                'statsregistrations',
+                'statsbestvouchers',
+                'statsbestcustomers',
+                'statsequipment',
+                'blockcart',
+                'blockuserinfo',
+            );
         }
         return $modules;
     }
@@ -634,6 +701,7 @@ class InstallModelInstall extends InstallAbstractModel
     public function getAddonsModulesList($params = array())
     {
         $addons_modules = array();
+        return $addons_modules;
         $content = Tools::addonsRequest('install-modules', $params);
         $xml = @simplexml_load_string($content, null, LIBXML_NOCDATA);
 
@@ -670,9 +738,10 @@ class InstallModelInstall extends InstallAbstractModel
 
     /**
      * PROCESS : installModules
-     * Download module from addons and Install all modules in ~/modules/ directory
+     * Download module from addons and Install all modules in ~/modules/ directory.
+     * $populateData - extra parameter sent to populate module data or not
      */
-    public function installModules($module = null)
+    public function installModules($module = null, $populateData = 1)
     {
         if ($module && !is_array($module)) {
             $module = array($module);
@@ -689,6 +758,7 @@ class InstallModelInstall extends InstallAbstractModel
             }
 
             $module = Module::getInstanceByName($module_name);
+            $module->populateData = $populateData;
             if (!$module->install()) {
                 $errors[] = $this->language->l('Cannot install module "%s"', $module_name);
             }

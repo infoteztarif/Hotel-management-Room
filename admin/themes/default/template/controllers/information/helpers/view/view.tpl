@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -128,6 +128,9 @@
 				<p>
 					<strong>{l s='MySQL engine:'}</strong> {$database.engine|escape:'html':'UTF-8'}
 				</p>
+				<p>
+					<strong>{l s='MySQL driver:'}</strong> {$database.driver|escape:'html':'UTF-8'}
+				</p>
 			</div>
 		</div>
 		{/if}
@@ -138,7 +141,7 @@
 					{l s='Store information'}
 				</h3>
 				<p>
-					<strong>{l s='PrestaShop version:'}</strong> {$shop.ps|escape:'html':'UTF-8'}
+					<strong>{l s='Qloapps version:'}</strong> {$shop.qloappsV|escape:'html':'UTF-8'}
 				</p>
 				<p>
 					<strong>{l s='Shop URL:'}</strong> {$shop.url|escape:'html':'UTF-8'}

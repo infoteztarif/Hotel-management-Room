@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -236,7 +236,7 @@ class ReferrerCore extends ObjectModel
         if ($implode) {
             $sql = 'SELECT COUNT(id_order) AS orders, SUM(total_paid_real / conversion_rate) AS sales
 					FROM '._DB_PREFIX_.'orders
-					WHERE id_order IN ('.implode($implode, ',').')
+					WHERE id_order IN ('.implode(',', $implode).')
 						'.Shop::addSqlRestriction(Shop::SHARE_ORDER).'
 						AND valid = 1';
             return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
@@ -349,6 +349,6 @@ class ReferrerCore extends ObjectModel
             'percent_fee' => Tools::displayPrice($stats_sales['sales'] * $referrer->percent_fee / 100, $currency),
         );
 
-        die('['.Tools::jsonEncode($json_array).']');
+        die('['.json_encode($json_array).']');
     }
 }

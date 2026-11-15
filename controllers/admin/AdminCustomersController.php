@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -153,6 +153,15 @@ class AdminCustomersControllerCore extends AdminController
         $this->shopLinkType = 'shop';
         $this->shopShareDatas = Shop::SHARE_CUSTOMER;
 
+
+        // START send access query information to the admin controller
+        $this->access_select = ' SELECT a.`id_customer` FROM '._DB_PREFIX_.'customer a';
+        $this->access_join = ' INNER JOIN '._DB_PREFIX_.'orders ord ON (a.id_customer = ord.id_customer)';
+        $this->access_join .= ' INNER JOIN '._DB_PREFIX_.'htl_booking_detail hbd ON (hbd.id_order = ord.id_order)';
+        if ($acsHtls = HotelBranchInformation::getProfileAccessedHotels($this->context->employee->id_profile, 1, 1)) {
+            $this->access_where = ' WHERE hbd.id_hotel IN ('.implode(',', $acsHtls).')';
+        }
+
         parent::__construct();
 
         $this->_select = '
@@ -249,8 +258,8 @@ class AdminCustomersControllerCore extends AdminController
                 /** @var Customer $customer */
                 if (($customer = $this->loadObject(true)) && Validate::isLoadedObject($customer)) {
                     array_pop($this->toolbar_title);
+                    $this->toolbar_title[] = sprintf($this->l('Information about Customer: %s'), Tools::substr($customer->firstname, 0, 1).'. '.$customer->lastname);
                 }
-                    $this->toolbar_title[] = sprintf('Information about Customer: %s', Tools::substr($customer->firstname, 0, 1).'. '.$customer->lastname);
                 break;
             case 'add':
             case 'edit':
@@ -750,7 +759,7 @@ class AdminCustomersControllerCore extends AdminController
 
             if ($order['valid']) {
                 $orders_ok[] = $order;
-                $total_ok += $order['total_paid_real_not_formated'];
+                $total_ok += $order['total_paid_real_not_formated']/$order['conversion_rate'];
             } else {
                 $orders_ko[] = $order;
             }
@@ -1095,7 +1104,7 @@ class AdminCustomersControllerCore extends AdminController
             $to_return = array('found' => false);
         }
 
-        $this->content = Tools::jsonEncode($to_return);
+        $this->content = json_encode($to_return);
     }
 
     /**

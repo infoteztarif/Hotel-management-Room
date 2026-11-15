@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -70,6 +70,7 @@ class AdminInformationControllerCore extends AdminController
                     'user' => _DB_USER_,
                     'prefix' => _DB_PREFIX_,
                     'engine' => _MYSQL_ENGINE_,
+                    'driver' => Db::getClass(),
                 ),
                 'uname' => function_exists('php_uname') ? php_uname('s').' '.php_uname('v').' '.php_uname('m') : '',
                 'apache_instaweb' => Tools::apacheModExists('mod_instaweb')
@@ -79,6 +80,7 @@ class AdminInformationControllerCore extends AdminController
         $shop_vars = array(
             'shop' => array(
                 'ps' => _PS_VERSION_,
+                'qloappsV' => _QLOAPPS_VERSION_,
                 'url' => $this->context->shop->getBaseURL(),
                 'theme' => $this->context->shop->theme_name,
             ),
@@ -125,8 +127,10 @@ class AdminInformationControllerCore extends AdminController
             'fopen' => $this->l('Allow the PHP fopen() function on your server.'),
             'register_globals' => $this->l('Set PHP "register_globals" option to "Off".'),
             'gz' => $this->l('Enable GZIP compression on your server.'),
-            'files' => $this->l('Some PrestaShop files are missing from your server.'),
-            'new_phpversion' => sprintf($this->l('You are using PHP %s version. Soon, the latest PHP version supported by PrestaShop will be PHP 5.4. To make sure you’re ready for the future, we recommend you to upgrade to PHP 5.4 now!'), phpversion())
+            'files' => $this->l('Some QloApps files are missing from your server.'),
+            'new_phpversion' => sprintf($this->l('You are using PHP %s version. Soon, the latest PHP version supported by QloApps will be PHP 5.4. To make sure you’re ready for the future, we recommend you to upgrade to PHP 5.4 now!'), phpversion()),
+            'pdo_mysql' => $this->l('PDO MySQL extension is not loaded'),
+            'openssl' => $this->l('PHP OpenSSL extension is not loaded'),
         );
 
         // Functions list to test with 'test_system'
@@ -165,13 +169,13 @@ class AdminInformationControllerCore extends AdminController
     public function displayAjaxCheckFiles()
     {
         $this->file_list = array('missing' => array(), 'updated' => array());
-        $xml = @simplexml_load_file(_PS_API_URL_.'/xml/md5/'._PS_VERSION_.'.xml');
-        if (!$xml) {
-            die(Tools::jsonEncode($this->file_list));
+        $xml = @simplexml_load_file(_QLO_API_URL_.'/xml/md5/'._QLOAPPS_VERSION_.'.xml');
+        if (!$xml || !isset($xml->ps_root_dir[0])) {
+            die(json_encode($this->file_list));
         }
 
         $this->getListOfUpdatedFiles($xml->ps_root_dir[0]);
-        die(Tools::jsonEncode($this->file_list));
+        die(json_encode($this->file_list));
     }
 
     public function getListOfUpdatedFiles(SimpleXMLElement $dir, $path = '')

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -66,7 +66,7 @@ class CookieCore
         $this->_standalone = $standalone;
         $this->_expire = is_null($expire) ? time() + 1728000 : (int)$expire;
         $this->_path = trim(($this->_standalone ? '' : Context::getContext()->shop->physical_uri).$path, '/\\').'/';
-        if ($this->_path{0} != '/') {
+        if ($this->_path[0] != '/') {
             $this->_path = '/'.$this->_path;
         }
         $this->_path = rawurlencode($this->_path);
@@ -77,12 +77,12 @@ class CookieCore
         $this->_allow_writing = true;
         $this->_salt = $this->_standalone ? str_pad('', 8, md5('ps'.__FILE__)) : _COOKIE_IV_;
         if ($this->_standalone) {
-            $this->_cipherTool = new Blowfish(str_pad('', 56, md5('ps'.__FILE__)), str_pad('', 56, md5('iv'.__FILE__)));
-        } elseif (!Configuration::get('PS_CIPHER_ALGORITHM') || !defined('_RIJNDAEL_KEY_')) {
-            $this->_cipherTool = new Blowfish(_COOKIE_KEY_, _COOKIE_IV_);
+            $asciiSafeString = \Defuse\Crypto\Encoding::saveBytesToChecksummedAsciiSafeString(Key::KEY_CURRENT_VERSION, str_pad($name, Key::KEY_BYTE_SIZE, md5(__FILE__)));
+            $this->_cipherTool = new PhpEncryption($asciiSafeString);
         } else {
-            $this->_cipherTool = new Rijndael(_RIJNDAEL_KEY_, _RIJNDAEL_IV_);
+            $this->_cipherTool = new PhpEncryption(_NEW_COOKIE_KEY_);
         }
+        
         $this->_secure = (bool)$secure;
 
         $this->update();
@@ -299,9 +299,9 @@ class CookieCore
                     $this->_content[$tmpTab2[0]] = $tmpTab2[1];
                 }
             }
-            /* Blowfish fix */
+
             if (isset($this->_content['checksum'])) {
-                $this->_content['checksum'] = (int)($this->_content['checksum']);
+                $this->_content['checksum'] = (int) $this->_content['checksum'];
             }
             //printf("\$this->_content['checksum'] = %s<br />", $this->_content['checksum']);
             //die();
@@ -330,6 +330,11 @@ class CookieCore
      */
     protected function _setcookie($cookie = null)
     {
+        $length = (ini_get('mbstring.func_overload') & 2) ? mb_strlen($cookie, ini_get('default_charset')) : strlen($cookie);
+        if ($length >= 1048576) {
+            return false;
+        }
+
         if ($cookie) {
             $content = $this->_cipherTool->encrypt($cookie);
             $time = $this->_expire;

@@ -1,6 +1,6 @@
 <?php
 /**
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -101,6 +101,9 @@ class FrontControllerCore extends Controller
 
     /** @var bool If false, does not build right page column content and hides it. */
     public $display_column_right = true;
+
+    /** @var bool If false, breadcump will not display. */
+    public $show_breadcrump = false;                    // By webkul
 
     /**
      * True if controller has already been initialized.
@@ -304,7 +307,7 @@ class FrontControllerCore extends Controller
             }
 
             if (Validate::isLoadedObject($cart) && $cart->OrderExists()) {
-                PrestaShopLogger::addLog('Frontcontroller::init - Cart cannot be loaded or an order has already been placed using this cart', 1, null, 'Cart', (int)$this->context->cookie->id_cart, true);
+                PrestaShopLogger::addLog('Frontcontroller::init - Cart cannot be loaded or a booking has already been placed using this cart', 1, null, 'Cart', (int)$this->context->cookie->id_cart, true);
                 unset($this->context->cookie->id_cart, $cart, $this->context->cookie->checkedTOS);
                 $this->context->cookie->check_cgv = false;
             }
@@ -580,6 +583,7 @@ class FrontControllerCore extends Controller
                 'HOOK_TOP'          => Hook::exec('displayTop'),
                 'HOOK_LEFT_COLUMN'  => ($this->display_column_left  ? Hook::exec('displayLeftColumn') : ''),
                 'HOOK_RIGHT_COLUMN' => ($this->display_column_right ? Hook::exec('displayRightColumn', array('cart' => $this->context->cart)) : ''),
+                'show_breadcrump'   => $this->show_breadcrump,              // By webkul
             ));
         } else {
             $this->context->smarty->assign('HOOK_MOBILE_HEADER', Hook::exec('displayMobileHeader'));
@@ -772,7 +776,7 @@ class FrontControllerCore extends Controller
         header('HTTP/1.1 503 temporarily overloaded');
         $this->context->smarty->assign(array(
             'shop_name'   => $this->context->shop->name,
-            'favicon_url' => _PS_IMG_.Configuration::get('PS_FAVICON'),
+            'favicon_url' => $this->context->link->getMediaLink(_PS_IMG_.Configuration::get('PS_FAVICON')),
             'logo_url'    => $this->context->link->getMediaLink(_PS_IMG_.Configuration::get('PS_LOGO'))
         ));
         $this->smartyOutputContent($this->getTemplatePath($this->getThemeDir().'restricted-country.tpl'));
@@ -953,7 +957,13 @@ class FrontControllerCore extends Controller
         $this->addJqueryPlugin('easing');
         $this->addJS(_PS_JS_DIR_.'tools.js');
         $this->addJS(_THEME_JS_DIR_.'global.js');
-
+        /*by webkul to show datepicker/timepicker on frontEnd*/
+        $this->addJqueryUI('ui.datepicker');
+        $this->addJS(array(
+            _PS_JS_DIR_.'jquery/plugins/timepicker/jquery-ui-timepicker-addon.js'
+        ));
+        //By webkul to show notifications
+        $this->addjQueryPlugin('growl', null, false);
         // Automatically add js files from js/autoload directory in the template
         if (@filemtime($this->getThemeDir().'js/autoload/')) {
             foreach (scandir($this->getThemeDir().'js/autoload/', 0) as $file) {
@@ -1151,7 +1161,7 @@ class FrontControllerCore extends Controller
         }
 
         // Remove the page parameter in order to get a clean URL for the pagination template
-        $current_url = preg_replace('/(\?)?(&amp;)?p=\d+/', '$1', Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']));
+        $current_url = preg_replace('/(?:(\?)|&amp;)p=\d+/', '$1', Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']));
 
         if ($this->n != $default_products_per_page || isset($this->context->cookie->nb_item_per_page)) {
             $this->context->cookie->nb_item_per_page = $this->n;
@@ -1620,7 +1630,7 @@ class FrontControllerCore extends Controller
         }
 
         return array(
-            'favicon_url'       => _PS_IMG_.Configuration::get('PS_FAVICON'),
+            'favicon_url'       => $this->context->link->getMediaLink(_PS_IMG_.Configuration::get('PS_FAVICON')),
             'logo_image_width'  => ($mobile_device == false ? Configuration::get('SHOP_LOGO_WIDTH')  : Configuration::get('SHOP_LOGO_MOBILE_WIDTH')),
             'logo_image_height' => ($mobile_device == false ? Configuration::get('SHOP_LOGO_HEIGHT') : Configuration::get('SHOP_LOGO_MOBILE_HEIGHT')),
             'logo_url'          => $logo

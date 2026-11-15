@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -27,6 +27,9 @@
 define('PS_UNPACK_NATIVE', 1);
 define('PS_UNPACK_MODIFIED', 2);
 
+/**
+ * @deprecated since v1.6.1.20
+ */
 class BlowfishCore extends Crypt_Blowfish
 {
     public function encrypt($plaintext)
@@ -374,7 +377,7 @@ class Crypt_Blowfish
         for ($i = 0; $i < 18; $i++) {
             $data = 0;
             for ($j = 4; $j > 0; $j--) {
-                $data = $data << 8 | ord($key{$k});
+                $data = $data << 8 | ord($key[$k]);
                 $k = ($k + 1) % $len;
             }
             $this->_P[$i] ^= $data;

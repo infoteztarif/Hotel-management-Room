@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -73,7 +73,6 @@ class AdminPdfControllerCore extends AdminController
             die(Tools::displayError('The order cannot be found within your database.'));
         }
 
-        $order->products = OrderSlip::getOrdersSlipProducts($order_slip->id, $order);
         $this->generatePDF($order_slip, PDF::TEMPLATE_ORDER_SLIP);
     }
 
@@ -129,7 +128,6 @@ class AdminPdfControllerCore extends AdminController
         foreach ($id_order_slips_list as $id_order_slips) {
             $order_slips[] = new OrderSlip((int)$id_order_slips);
         }
-
         $this->generatePDF($order_slips, PDF::TEMPLATE_ORDER_SLIP);
     }
 

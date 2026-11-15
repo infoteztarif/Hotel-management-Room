@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -51,40 +51,6 @@ class AdminGroupsControllerCore extends AdminController
             Configuration::get('PS_UNIDENTIFIED_GROUP'),
             Configuration::get('PS_GUEST_GROUP'),
             Configuration::get('PS_CUSTOMER_GROUP')
-        );
-
-        $this->fields_list = array(
-            'id_group' => array(
-                'title' => $this->l('ID'),
-                'align' => 'center',
-                'class' => 'fixed-width-xs'
-            ),
-            'name' => array(
-                'title' => $this->l('Group name'),
-                'filter_key' => 'b!name'
-            ),
-            'reduction' => array(
-                'title' => $this->l('Discount (%)'),
-                'align' => 'right',
-                'type' => 'percent'
-            ),
-            'nb' => array(
-                'title' => $this->l('Members'),
-                'align' => 'center',
-                'havingFilter' => true,
-            ),
-            'show_prices' => array(
-                'title' => $this->l('Show prices'),
-                'align' => 'center',
-                'type' => 'bool',
-                'callback' => 'printShowPricesIcon',
-                'orderby' => false
-            ),
-            'date_add' => array(
-                'title' => $this->l('Creation date'),
-                'type' => 'date',
-                'align' => 'right'
-            )
         );
 
         $this->addRowActionSkipList('delete', $groups_to_keep);
@@ -179,17 +145,15 @@ class AdminGroupsControllerCore extends AdminController
             $this->action = 'change_show_prices_val';
         }
 
-        if (Tools::getIsset('viewgroup')) {
-            $this->list_id = 'customer_group';
-
-            if (isset($_POST['submitReset'.$this->list_id])) {
-                $this->processResetFilters();
-            }
-        } else {
-            $this->list_id = 'group';
-        }
-
         parent::initProcess();
+    }
+
+    public function postProcess()
+    {
+        if (isset($_POST['submitResetcustomer_group'])) {
+            $this->processResetFilters('customer_group');
+        }
+        return parent::postProcess();
     }
 
     public function renderView()
@@ -236,7 +200,7 @@ class AdminGroupsControllerCore extends AdminController
             'email' => array('title' => $this->l('Email address'), 'filter_key' => 'c!email', 'orderby' => true),
             'birthday' => array('title' => $this->l('Birth date'), 'type' => 'date', 'class' => 'fixed-width-md', 'align' => 'center'),
             'date_add' => array('title' => $this->l('Registration date'), 'type' => 'date', 'class' => 'fixed-width-md', 'align' => 'center'),
-            'active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'class' => 'fixed-width-sm', 'active' => 'status', 'type' => 'bool', 'search' => false, 'orderby' => false, 'filter_key' => 'c!active')
+            'active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'class' => 'fixed-width-sm', 'type' => 'bool', 'search' => false, 'orderby' => false, 'filter_key' => 'c!active', 'callback' => 'printOptinIcon')
         ));
         $this->_select = 'c.*, a.id_group';
         $this->_join = 'LEFT JOIN `'._DB_PREFIX_.'customer` c ON (a.`id_customer` = c.`id_customer`)';
@@ -247,6 +211,12 @@ class AdminGroupsControllerCore extends AdminController
         $this->processFilter();
         return parent::renderList();
     }
+
+    public function printOptinIcon($value, $customer)
+    {
+        return ($value ? '<i class="icon-check"></i>' : '<i class="icon-remove"></i>');
+    }
+
 
     public function renderForm()
     {
@@ -445,6 +415,7 @@ class AdminGroupsControllerCore extends AdminController
     {
         if (!$this->validateDiscount(Tools::getValue('reduction'))) {
             $this->errors[] = Tools::displayError('The discount value is incorrect (must be a percentage).');
+            $this->display = 'edit';
         } else {
             $this->updateCategoryReduction();
             $object = parent::processSave();
@@ -480,7 +451,7 @@ class AdminGroupsControllerCore extends AdminController
             $result['discount'] = $category_reduction;
             $result['hasError'] = false;
         }
-        die(Tools::jsonEncode($result));
+        die(json_encode($result));
     }
 
     /**
@@ -588,10 +559,47 @@ class AdminGroupsControllerCore extends AdminController
             '<b>'.$default->name[$this->context->language->id].'</b>'
         );
 
-        $this->displayInformation($this->l('PrestaShop has three default customer groups:'));
+        $this->displayInformation($this->l('Qloapps has three default customer groups:'));
         $this->displayInformation($unidentified_group_information);
         $this->displayInformation($guest_group_information);
         $this->displayInformation($default_group_information);
+
+        $this->fields_list = array(
+            'id_group' => array(
+                'title' => $this->l('ID'),
+                'align' => 'center',
+                'class' => 'fixed-width-xs'
+            ),
+            'name' => array(
+                'title' => $this->l('Group name'),
+                'filter_key' => 'b!name'
+            ),
+            'reduction' => array(
+                'title' => $this->l('Discount (%)'),
+                'align' => 'right',
+                'type' => 'percent'
+            ),
+            'nb' => array(
+                'title' => $this->l('Members'),
+                'align' => 'center',
+                'havingFilter' => true,
+            ),
+            'show_prices' => array(
+                'title' => $this->l('Show prices'),
+                'align' => 'center',
+                'type' => 'bool',
+                'callback' => 'printShowPricesIcon',
+                'orderby' => false
+            ),
+            'date_add' => array(
+                'title' => $this->l('Creation date'),
+                'type' => 'date',
+                'align' => 'right'
+            )
+        );
+
+        $this->processFilter();
+
         return parent::renderList();
     }
 
@@ -605,7 +613,7 @@ class AdminGroupsControllerCore extends AdminController
         $href = self::$currentIndex.'&'.$this->identifier.'='.$id.'&update'.$this->table.'&token='.($token != null ? $token : $this->token);
 
         if ($this->display == 'view') {
-            $href = Context::getContext()->link->getAdminLink('AdminCustomers').'&id_customer='.(int)$id.'&updatecustomer';
+            $href = Context::getContext()->link->getAdminLink('AdminCustomers').'&id_customer='.(int)$id.'&updatecustomer&back='.urlencode($href);
         }
 
         $tpl->assign(array(

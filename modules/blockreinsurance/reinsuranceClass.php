@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2016 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2016 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,10 +28,10 @@ class reinsuranceClass extends ObjectModel
 {
 	/** @var integer reinsurance id*/
 	public $id;
-	
+
 	/** @var integer reinsurance id shop*/
 	public $id_shop;
-	
+
 	/** @var string reinsurance file name icon*/
 	public $file_name;
 
@@ -53,6 +53,24 @@ class reinsuranceClass extends ObjectModel
 			'text' =>					array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true),
 		)
 	);
+
+	public function __construct($id = null, $id_lang = null, $id_shop = null) // by webkul for object deletiom with image
+    {
+        parent::__construct($id, $id_lang, $id_shop);
+
+		$this->image_dir = _PS_MODULE_DIR_.'blockreinsurance/img/';
+        $this->image_name = explode('.', $this->file_name)[0];
+	}
+
+	public function delete() // by webkul for object deletion with image
+    {
+        if (!parent::delete()
+            || !$this->deleteImage(true)
+        ) {
+            return false;
+        }
+        return true;
+    }
 
 	public function copyFromPost()
 	{

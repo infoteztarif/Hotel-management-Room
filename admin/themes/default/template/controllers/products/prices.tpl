@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -108,7 +108,7 @@ $(document).ready(function () {
 {capture assign=priceDisplayPrecisionFormat}{'%.'|cat:$smarty.const._PS_PRICE_DISPLAY_PRECISION_|cat:'f'}{/capture}
 <div id="product-prices" class="panel product-tab">
 	<input type="hidden" name="submitted_tabs[]" value="Prices" />
-	<h3>{l s='Product price'}</h3>
+	<h3>{l s='Room type price'}</h3>
 	<div class="alert alert-info" {if !$country_display_tax_label || $tax_exclude_taxe_option}style="display:none;"{/if}>
 		{l s='You must enter either the pre-tax retail price, or the retail price with tax. The input field will be automatically calculated.'}
 	</div>
@@ -116,20 +116,20 @@ $(document).ready(function () {
 	<div class="form-group">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="wholesale_price" type="default"}</span></div>
 		<label class="control-label col-lg-2" for="wholesale_price">
-			<span class="label-tooltip" data-toggle="tooltip" title="{l s='The wholesale price is the price you paid for the product. Do not include the tax.'}">{if !$country_display_tax_label || $tax_exclude_taxe_option}{l s='Wholesale price'}{else}{l s='Pre-tax wholesale price'}{/if}</span>
+			<span class="label-tooltip" data-toggle="tooltip" title="{l s='The operating cost is the expense related to the operation of the room type. Do not include the tax.'}">{if !$country_display_tax_label || $tax_exclude_taxe_option}{l s='Operating cost'}{else}{l s='Pre-tax operating cost'}{/if}</span>
 		</label>
 		<div class="col-lg-2">
 			<div class="input-group">
 				<span class="input-group-addon">{$currency->prefix}{$currency->suffix}</span>
 				<input maxlength="27" name="wholesale_price" id="wholesale_price" type="text" value="{{toolsConvertPrice price=$product->wholesale_price}|string_format:$priceDisplayPrecisionFormat}" onchange="this.value = this.value.replace(/,/g, '.');" />
 			</div>
-			{if isset($pack) && $pack->isPack($product->id)}<p class="help-block">{l s='The sum of wholesale prices of the products in the pack is %s%s%s' sprintf=[$currency->prefix,{toolsConvertPrice price=$pack->noPackWholesalePrice($product->id)|string_format:$priceDisplayPrecisionFormat},$currency->suffix]}</p>{/if}
+			{if isset($pack) && $pack->isPack($product->id)}<p class="help-block">{l s='The sum of wholesale prices of the room types in the pack is %s%s%s' sprintf=[$currency->prefix,{toolsConvertPrice price=$pack->noPackWholesalePrice($product->id)|string_format:$priceDisplayPrecisionFormat},$currency->suffix]}</p>{/if}
 		</div>
 	</div>
 	<div class="form-group">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="price" type="price"}</span></div>
 		<label class="control-label col-lg-2" for="priceTE">
-			<span class="label-tooltip" data-toggle="tooltip" title="{l s='The pre-tax retail price is the price for which you intend sell this product to your customers. It should be higher than the pre-tax wholesale price: the difference between the two will be your margin.'}">{if !$country_display_tax_label || $tax_exclude_taxe_option}{l s='Retail price'}{else}{l s='Pre-tax retail price'}{/if}</span>
+			<span class="label-tooltip" data-toggle="tooltip" title="{l s='The pre-tax retail price is the price for which you intend sell this room type to your customers. It should be higher than the pre-tax wholesale price: the difference between the two will be your margin.'}">{if !$country_display_tax_label || $tax_exclude_taxe_option}{l s='Retail price'}{else}{l s='Pre-tax retail price'}{/if}</span>
 		</label>
 		<div class="col-lg-2">
 			<div class="input-group">
@@ -155,7 +155,7 @@ $(document).ready(function () {
 			</script>
 			<div class="row">
 				<div class="col-lg-6">
-					<select onchange="javascript:calcPrice(); unitPriceWithTax('unit');" name="id_tax_rules_group" id="id_tax_rules_group" {if $tax_exclude_taxe_option}disabled="disabled"{/if} >
+					<select onchange="javascript:calcPrice(); {*unitPriceWithTax('unit');*}" name="id_tax_rules_group" id="id_tax_rules_group" {if $tax_exclude_taxe_option}disabled="disabled"{/if} >
 						<option value="0">{l s='No Tax'}</option>
 					{foreach from=$tax_rules_groups item=tax_rules_group}
 						<option value="{$tax_rules_group.id_tax_rules_group}" {if $product->getIdTaxRulesGroup() == $tax_rules_group.id_tax_rules_group}selected="selected"{/if} >
@@ -200,10 +200,10 @@ $(document).ready(function () {
 			<input id="priceType" name="priceType" type="hidden" value="TE" />
 			<input id="priceTI" name="priceTI" type="text" value="" onchange="noComma('priceTI');" maxlength="27" onkeyup="$('#priceType').val('TI');if (isArrowKey(event)) return;  calcPriceTE();" />
 		</div>
-		{if isset($pack) && $pack->isPack($product->id)}<p class="col-lg-9 col-lg-offset-3 help-block">{l s='The sum of prices of the products in the pack is %s%s%s' sprintf=[$currency->prefix,{toolsConvertPrice price=$pack->noPackPrice($product->id)|string_format:$priceDisplayPrecisionFormat},$currency->suffix]}</p>{/if}
+		{if isset($pack) && $pack->isPack($product->id)}<p class="col-lg-9 col-lg-offset-3 help-block">{l s='The sum of prices of the room types in the pack is %s%s%s' sprintf=[$currency->prefix,{toolsConvertPrice price=$pack->noPackPrice($product->id)|string_format:$priceDisplayPrecisionFormat},$currency->suffix]}</p>{/if}
 	</div>
-
-	<div class="form-group">
+	{* As no use in QloApps currently so commented *}
+	{* <div class="form-group">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="unit_price" type="unit_price"}</span></div>
 		<label class="control-label col-lg-2" for="unit_price">
 			<span class="label-tooltip" data-toggle="tooltip" title="{l s='When selling a pack of items, you can indicate the unit price for each item of the pack. For instance, "per bottle" or "per pound".'}">{l s='Unit price (tax excl.)'}</span>
@@ -216,7 +216,7 @@ $(document).ready(function () {
 				<input id="unity" name="unity" type="text" value="{$product->unity|htmlentitiesUTF8}"  maxlength="255" onkeyup="if (isArrowKey(event)) return ;unitySecond();" onchange="unitySecond();"/>
 			</div>
 		</div>
-	</div>
+	</div> *}
 	{if isset($product->unity) && $product->unity}
 	<div class="form-group">
 		<div class="col-lg-9 col-lg-offset-3">
@@ -236,7 +236,7 @@ $(document).ready(function () {
 			<div class="checkbox">
 				<label class="control-label" for="on_sale" >
 					<input type="checkbox" name="on_sale" id="on_sale" {if $product->on_sale}checked="checked"{/if} value="1" />
-					{l s='Display the "on sale" icon on the product page, and in the text found within the product listing.'}
+					{l s='Display the "on sale" icon on the room type page, and in the text found within the room type listing.'}
 				</label>
 			</div>
 		</div>
@@ -270,8 +270,8 @@ $(document).ready(function () {
 			<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="price" type="price"}</span></div>
 			<label class="control-label col-sm-2">
 				<input type="hidden" name="id_adv_pmt" {if isset($adv_pay_dtl)}value="{$adv_pay_dtl['id']}"{/if}>
-				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If Disabled, Advanced payment will not appliy on this product.'}">
-					{l s='Allow Advanced Payment'}
+				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If Disabled, Advance payment will not apply on this room type.'}">
+					{l s='Allow Advance Payment'}
 				</span>
 			</label>
 			<div class="col-lg-9">
@@ -288,8 +288,8 @@ $(document).ready(function () {
 		<div class="form-group adv_payment_field">
 			<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="price" type="price"}</span></div>
 			<label class="control-label col-sm-2">
-				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If disabled, Advanced Payment for the product will be calculated By Global Advanced payment settings.'}">
-					{l s='Apply Product Advanced Payment Setting.'}
+				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If disabled, Advance Payment for the room type will be calculated By Global Advance payment settings.'}">
+					{l s='Apply Room Type Advance Payment Setting.'}
 				</span>
 			</label>
 			<div class="col-lg-9">
@@ -335,13 +335,20 @@ $(document).ready(function () {
 						</div>
 					</div>
 				</div>
-				
+
 				<div class="row" id="type_amount">
 					<label class="control-label col-sm-2">{l s='Amount'}</label>
-					<div class="col-sm-4 col-lg-3">
-						<div class="input-group">
-							<span class="input-group-addon">{$currency->prefix}{$currency->suffix}</span>
-							<input name="adv_pay_amount" type="text" value="{if isset($adv_pay_dtl) && ($adv_pay_dtl['payment_type'] == 2)}{{toolsConvertPrice price=$adv_pay_dtl['value']}|string_format:'%.6f'}{/if}"/>
+					<div class="col-sm-9">
+						<div class="row">
+							<div class="col-sm-4 col-lg-3">
+								<div class="input-group">
+									<span class="input-group-addon">{$currency->prefix}{$currency->suffix}</span>
+									<input name="adv_pay_amount" type="text" value="{if isset($adv_pay_dtl) && ($adv_pay_dtl['payment_type'] == 2)}{{toolsConvertPrice price=$adv_pay_dtl['value']}|string_format:'%.6f'}{/if}"/>
+								</div>
+							</div>
+						</div>
+						<div class="help-block">
+							{l s='If final price of the room type is less than advance payment amount for the customer then customer will pay the final(lesser) price of the room type.'}
 						</div>
 					</div>
 				</div>
@@ -352,8 +359,8 @@ $(document).ready(function () {
 		<div class="form-group adv_payment_field">
 			<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="price" type="price"}</span></div>
 			<label class="control-label col-sm-2">
-				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If Enable, customer will pay : (Advanced payment price + tax) and if Disabled, customer will onluy pay advanced payment price'}">
-					{l s='Tax Include'}
+				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If Enable, customer will pay : (Advanced payment price + tax) and if Disabled, customer will only pay advanced payment price'}">
+					{l s='Include tax'}
 				</span>
 			</label>
 			<div class="col-lg-9">
@@ -374,6 +381,89 @@ $(document).ready(function () {
 		<button type="submit" name="submitAddproductAndStay" class="btn btn-default pull-right" disabled="disabled"><i class="process-icon-loading"></i> {l s='Save and stay'}</button>
 	</div>
 </div>
+
+<div class="panel">
+	<h3>{l s='Feature Price Plans'}</h3>
+	<div class="alert alert-info">
+		{l s='You can set feature price plans by visiting '}
+		<a target="_blank" href="{$link->getAdminLink('AdminHotelFeaturePricesSettings')}">{l s='create feature price plans'}</a>
+	</div>
+	<div class="table-responsive">
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>#{l s='Id'}</th>
+					<th>{l s='Plan Name'}</th>
+					<th>{l s='Impact way'}</th>
+					<th>{l s='Impact Type'}</th>
+					<th>{l s='Impact Value'}</th>
+					<th>{l s='Date From'}</th>
+					<th>{l s='Date To'}</th>
+					<th class="text-center">{l s='Status'}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{if isset($productFeaturePrices) && $productFeaturePrices}
+					{foreach $productFeaturePrices as $featurePlan}
+						<tr>
+							<td>
+								{$featurePlan['id_feature_price']}
+							</td>
+							<td>
+								{$featurePlan['feature_price_name']}
+							</td>
+							<td>
+								{if $featurePlan['impact_type'] == 1}
+									{l s='Percentage'}
+								{else}
+									{l s='Fixed Amount'}
+								{/if}
+							</td>
+							<td>
+								{if $featurePlan['impact_way'] == 1}
+									{l s='Decrease'}
+								{else}
+									{l s='Increase'}
+								{/if}
+							</td>
+							<td>
+								{if $featurePlan['impact_type'] == 1}
+									{$featurePlan['impact_value']|round:2}%
+								{else}
+									{displayPrice price=$featurePlan['impact_value']}
+								{/if}
+							</td>
+							<td>
+								{dateFormat date=$featurePlan['date_from'] full=0}
+							</td>
+							<td>
+								{if $featurePlan['date_selection_type'] == 1}
+									{dateFormat date=$featurePlan['date_to'] full=0}
+								{else}
+									<span class="badge badge-success">{l s='Specific date'}</span>
+								{/if}
+							</td>
+							<td class="text-center">
+								{if $featurePlan['active'] == 1}
+									<i class="icon-check text-success"></i>
+								{else}
+									<i class="icon-times text-danger"></i>
+								{/if}
+							</td>
+						</tr>
+					{/foreach}
+				{else}
+					<tr>
+						<td class="text-center" colspan="6">
+							<i class="icon-warning-sign"></i> {l s='No feature price plans.'}
+						</td>
+					</tr>
+				{/if}
+			</tbody>
+		</table>
+	</div>
+</div>
+
 {if isset($specificPriceModificationForm)}
 <div class="panel">
 	<h3>{l s='Specific prices'}</h3>
@@ -393,8 +483,7 @@ $(document).ready(function () {
 	<script type="text/javascript">
 		var product_prices = new Array();
 		{foreach from=$combinations item='combination'}
-			product_prices['{$combination.id_product_attribute}'] = "{$combination.price|@addcslashes:'\''}";
-			/*product_prices['{$combination.id_product_attribute}'] = '{$combination.price|@addcslashes:'\''}';*/
+			product_prices['{$combination.id_product_attribute}'] = '{$combination.price|@addcslashes:'\''}';
 		{/foreach}
 	</script>
 	<div id="add_specific_price" class="well clearfix" style="display: none;">
@@ -501,7 +590,7 @@ $(document).ready(function () {
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label col-lg-2" for="sp_price">{l s='Product price'}
+				<label class="control-label col-lg-2" for="sp_price">{l s='Room type price'}
 					{if $country_display_tax_label}
 						{l s='(tax excl.)'}
 					{/if}
@@ -511,7 +600,7 @@ $(document).ready(function () {
 						<div class="col-lg-4">
 							<div class="input-group">
 								<span class="input-group-addon">{$currency->prefix}{$currency->suffix}</span>
-								<input type="text" disabled="disabled" name="sp_price" id="sp_price" value="{$product->price|string_format:$priceDisplayPrecisionFormat}" />
+								<input type="text" disabled="disabled" name="sp_price" id="sp_price" value="{$product->price|string_format:$priceDisplayPrecisionFormat}" onchange="noComma('sp_price');" />
 							</div>
 							<p class="checkbox">
 								<label for="leave_bprice">{l s='Leave base price:'}</label>
@@ -526,7 +615,7 @@ $(document).ready(function () {
 				<div class="col-lg-4">
 					<div class="row">
 						<div class="col-lg-3">
-							<input type="text" name="sp_reduction" id="sp_reduction" value="0.00"/>
+							<input type="text" name="sp_reduction" id="sp_reduction" value="0.00" onchange="noComma('sp_reduction');"/>
 						</div>
 						<div class="col-lg-6">
 							<select name="sp_reduction_type" id="sp_reduction_type">
@@ -546,9 +635,8 @@ $(document).ready(function () {
 		</div>
 	</div>
 	<script type="text/javascript">
-		var currencyName = "{$currency->name|escape:'html':'UTF-8'|@addcslashes:'\''}";
-		$(document).ready(function()
-		{
+		var currencyName = '{$currency->name|escape:'html':'UTF-8'|@addcslashes:'\''}';
+		$(document).ready(function(){
 			var adv_payment = $(".adv_payment_active:checked").val();
 			if (adv_payment == 1)
 				$(".adv_payment_field").show();
@@ -558,19 +646,19 @@ $(document).ready(function () {
 			$(".adv_payment_active").on('change',function()
 			{
 				var adv_payment = $(".adv_payment_active:checked").val();
-				if (adv_payment == 1) 
+				if (adv_payment == 1)
 					$(".adv_payment_field").show();
-				else if (adv_payment == 0) 
+				else if (adv_payment == 0)
 					$(".adv_payment_field").hide();
 			});
 
 			var payment_type = $(".payment_type:checked").val();
-			if (payment_type == 1) 
+			if (payment_type == 1)
 			{
 				$("#type_percent").show();
 				$("#type_amount").hide();
 			}
-			else if (payment_type == 2) 
+			else if (payment_type == 2)
 			{
 				$("#type_percent").hide();
 				$("#type_amount").show();
@@ -579,12 +667,12 @@ $(document).ready(function () {
 			$(".payment_type").on('change',function()
 			{
 				var payment_type = $(".payment_type:checked").val();
-				if (payment_type == 1) 
+				if (payment_type == 1)
 				{
 					$("#type_percent").show();
 					$("#type_amount").hide();
 				}
-				else if (payment_type == 2) 
+				else if (payment_type == 2)
 				{
 					$("#type_percent").hide();
 					$("#type_amount").show();
@@ -631,7 +719,7 @@ $(document).ready(function () {
 		<thead>
 			<tr>
 				<th>{l s='Rule'}</th>
-				<th>{l s='Combination'}</th>
+				{* <th>{l s='Combination'}</th> *}
 				{if $multi_shop}<th>{l s='Shop'}</th>{/if}
 				<th>{l s='Currency'}</th>
 				<th>{l s='Country'}</th>
@@ -654,7 +742,7 @@ $(document).ready(function () {
 					$(document).ready(function() {
 						delete_price_rule = '{l s="Do you really want to remove this price rule?"}';
 						calcPriceTI();
-						unitPriceWithTax('unit');
-						});
+						//unitPriceWithTax('unit');
+					});
 				</script>
 			{/if}

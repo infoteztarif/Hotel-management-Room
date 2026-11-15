@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -194,17 +194,18 @@ class InstallControllerHttpProcess extends InstallControllerHttp
         $this->initializeContext();
 
         $success = $this->model_install->configureShop(array(
-            'shop_name' =>                $this->session->shop_name,
-            'shop_activity' =>            $this->session->shop_activity,
-            'shop_country' =>            $this->session->shop_country,
-            'shop_timezone' =>            $this->session->shop_timezone,
-            'admin_firstname' =>        $this->session->admin_firstname,
-            'admin_lastname' =>            $this->session->admin_lastname,
-            'admin_password' =>            $this->session->admin_password,
-            'admin_email' =>            $this->session->admin_email,
-            'send_informations' =>        $this->session->send_informations,
-            'configuration_agrement' =>    $this->session->configuration_agrement,
-            'rewrite_engine' =>            $this->session->rewrite_engine,
+            'shop_name' => $this->session->shop_name,
+            'shop_activity' => $this->session->shop_activity,
+            'shop_country' => $this->session->shop_country,
+            'shop_timezone' => $this->session->shop_timezone,
+            'admin_firstname' => $this->session->admin_firstname,
+            'admin_lastname' => $this->session->admin_lastname,
+            'admin_password' => $this->session->admin_password,
+            'admin_email' => $this->session->admin_email,
+            'marketing_consent' => $this->session->marketing_consent,
+            'send_informations' => $this->session->send_informations,
+            'configuration_agrement' => $this->session->configuration_agrement,
+            'rewrite_engine' => $this->session->rewrite_engine,
         ));
 
         if (!$success || $this->model_install->getErrors()) {
@@ -223,14 +224,25 @@ class InstallControllerHttpProcess extends InstallControllerHttp
     {
         $this->initializeContext();
 
-        $result = $this->model_install->installModules(Tools::getValue('module'));
+        // code to populate database of modules
+        if ($this->session->install_type == 'full') {
+            $populateData = 1;
+        } else {
+            $populateData = 0;
+        }
+        // extra parameter sent to populate module data or not
+        $result = $this->model_install->installModules(
+            Tools::getValue('module'),
+            $populateData
+        );
+
         if (!$result || $this->model_install->getErrors()) {
             $this->ajaxJsonAnswer(false, $this->model_install->getErrors());
         }
         $this->session->process_validated = array_merge($this->session->process_validated, array('installModules' => true));
         $this->ajaxJsonAnswer(true);
     }
-    
+
     /**
      * PROCESS : installModulesAddons
      * Install modules from addons
@@ -295,7 +307,7 @@ class InstallControllerHttpProcess extends InstallControllerHttp
         // We fill the process step used for Ajax queries
         $this->process_steps[] = array('key' => 'generateSettingsFile', 'lang' => $this->l('Create settings.inc file'));
         $this->process_steps[] = array('key' => 'installDatabase', 'lang' => $this->l('Create database tables'));
-        $this->process_steps[] = array('key' => 'installDefaultData', 'lang' => $this->l('Create default shop and languages'));
+        $this->process_steps[] = array('key' => 'installDefaultData', 'lang' => $this->l('Create default website and languages'));
 
         // If low memory, create subtasks for populateDatabase step (entity per entity)
         $populate_step = array('key' => 'populateDatabase', 'lang' => $this->l('Populate database tables'));
@@ -308,7 +320,7 @@ class InstallControllerHttpProcess extends InstallControllerHttp
         }
 
         $this->process_steps[] = $populate_step;
-        $this->process_steps[] = array('key' => 'configureShop', 'lang' => $this->l('Configure shop information'));
+        $this->process_steps[] = array('key' => 'configureShop', 'lang' => $this->l('Configure website information'));
 
         if ($this->session->install_type == 'full') {
             // If low memory, create subtasks for installFixtures step (entity per entity)
@@ -331,7 +343,7 @@ class InstallControllerHttpProcess extends InstallControllerHttp
             }
         }
         $this->process_steps[] = $install_modules;
-        
+
         $install_modules = array('key' => 'installModulesAddons', 'lang' => $this->l('Install Addons modules'));
 
         $params = array(

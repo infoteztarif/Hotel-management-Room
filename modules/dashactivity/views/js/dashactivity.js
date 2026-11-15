@@ -1,5 +1,5 @@
 /**
- * 2007-2015 PrestaShop
+ * 2007-2016 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -18,7 +18,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2015 PrestaShop SA
+ * @copyright 2007-2016 PrestaShop SA
  * @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  */
@@ -30,9 +30,11 @@ function pie_chart_trends(widget_name, chart_details)
 			.x(function(d) { return d.key })
 			.y(function(d) { return d.y })
 			.color(d3.scale.category10().range())
+			.valueFormat(d3.format(".0f"))
 			.donut(true)
 			.showLabels(false)
-			.showLegend(false);
+			.showLegend(false)
+			.donutRatio(0.4);
 
 		d3.select("#dash_traffic_chart2 svg")
 			.datum(chart_details.data)

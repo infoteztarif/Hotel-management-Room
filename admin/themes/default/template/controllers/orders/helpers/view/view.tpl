@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -98,7 +98,7 @@
 						<!-- <span class="title">{l s='Total'}</span>
 						<span class="value">{sizeof($products)}</span> -->
 						<span class="title">{l s='Total Rooms'}</span>
-						<span class="value">{$cart_detail_data|@count}</span>
+						<span class="value">{$order_detail_data|@count}</span>
 					</div>
 				</a>
 			</div>
@@ -157,24 +157,16 @@
 					{/if} -->
 					<!-- End -->
 					&nbsp;
-					{if Configuration::get('PS_ORDER_RETURN')}
+					{if $refund_allowed && !$hasCompletelyRefunded}
 						<a id="desc-order-standard_refund" class="btn btn-default" href="#refundForm">
 							<i class="icon-exchange"></i>
-							{if $order->hasBeenShipped()}
-								{l s='Return products'}
-							{elseif $order->hasBeenPaid()}
-								{l s='Standard refund'}
+							{if $order->hasBeenPaid()}
+								{l s='Initiate refund'}
 							{else}
-								{l s='Cancel products'}
+								{l s='Cancel bookings'}
 							{/if}
 						</a>
 						&nbsp;
-					{/if}
-					{if $order->hasInvoice()}
-						<a id="desc-order-partial_refund" class="btn btn-default hidden" href="#refundForm">
-							<i class="icon-exchange"></i>
-							{l s='Partial refund'}
-						</a>
 					{/if}
 				</div>
 				<!-- Tab nav -->
@@ -206,7 +198,7 @@
 									{foreach from=$history item=row key=key}
 										{if ($key == 0)}
 											<tr>
-												<td style="background-color:{$row['color']}"><img src="../img/os/{$row['id_order_state']|intval}.gif" width="16" height="16" alt="{$row['ostate_name']|stripslashes}" /></td>
+												<td style="background-color:{$row['color']}"><img src="{$link->getMediaLink("`$img_dir`os/`$row['id_order_state']|intval`.gif")}" width="16" height="16" alt="{$row['ostate_name']|stripslashes}" /></td> {* by webkul to get media link *}
 												<td style="background-color:{$row['color']};color:{$row['text-color']}">{$row['ostate_name']|stripslashes}</td>
 												<td style="background-color:{$row['color']};color:{$row['text-color']}">{if $row['employee_lastname']}{$row['employee_firstname']|stripslashes} {$row['employee_lastname']|stripslashes}{/if}</td>
 												<td style="background-color:{$row['color']};color:{$row['text-color']}">{dateFormat date=$row['date_add'] full=true}</td>
@@ -221,7 +213,7 @@
 											</tr>
 										{else}
 											<tr>
-												<td><img src="../img/os/{$row['id_order_state']|intval}.gif" width="16" height="16" /></td>
+												<td><img src="{$link->getMediaLink("`$img_dir`os/`$row['id_order_state']|intval`.gif")}" width="16" height="16" /></td>
 												<td>{$row['ostate_name']|stripslashes}</td>
 												<td>{if $row['employee_lastname']}{$row['employee_firstname']|stripslashes} {$row['employee_lastname']|stripslashes}{else}&nbsp;{/if}</td>
 												<td>{dateFormat date=$row['date_add'] full=true}</td>
@@ -244,12 +236,9 @@
 							<div class="row">
 								<div class="col-lg-9">
 									<select id="id_order_state" class="chosen form-control" name="id_order_state">
-									{foreach from=$states item=state}
-									<!-- By webkul to hide unnecessary order statues from statuses dropdown -->
-										{if $state['id_order_state']!=4 && $state['id_order_state']!=5 && $state['id_order_state']!=14}
+										{foreach from=$states item=state}
 											<option value="{$state['id_order_state']|intval}"{if isset($currentState) && $state['id_order_state'] == $currentState->id} selected="selected" disabled="disabled"{/if}>{$state['name']|escape}</option>
-										{/if}
-									{/foreach}
+										{/foreach}
 									</select>
 									<input type="hidden" name="id_order" value="{$order->id}" />
 								</div>
@@ -268,56 +257,79 @@
 						{include file='controllers/orders/_documents.tpl'}
 					</div>
 				</div>
+				{if $returns}
+					<div class="alert alert-warning">
+						{l s='Booking cancellation requests has raised  from this order. To see booking cancelation requests'} <a target="_blank" href="{$link->getAdminLink('AdminOrderRefundRequests')}&amp;id_order={$order->id}&amp;vieworder_return">{l s='Click here'}</a>.
+					</div>
+				{/if}
 				<div class="row">
 					<div class="panel">
 						<div class="panel-heading order_status_heading">
 							<i class="icon-credit-card"></i>
-							{l s='Order Status'}
+							{l s='Rooms Status'}
 						</div>
 						<div class="panel-content">
 							<div class="row">
-								<div class="col-lg-12">
+								<div class="col-lg-12" id="room_status_info_wrapper">
 									<table class="table table-responsive">
 										<tr>
 											<th>{l s='Room No.'}</th>
+											<th>{l s='Hotel Name'}</th>
 											<th>{l s='Date From'}</th>
 											<th>{l s='Date To'}</th>
 											<th>{l s='Order Status'}</th>
 										</tr>
 										{if isset($htl_booking_order_data) && $htl_booking_order_data}
-										{foreach from=$htl_booking_order_data item=data}
-										<tr>
-											<td>
-												{$data['room_num']}
-											</td>
-											<td>
-												{$data['date_from']|date_format:"%d %b %Y"}
-											</td>
-											<td>
-												{$data['date_to']|date_format:"%d %b %Y"}
-											</td>
-											<td>
-												<form action="" method="post" class="form-horizontal">
-													<select style="display:inline;width:40%;" name="booking_order_status">
-													{foreach from=$hotel_order_status item=state}
-														<option value="{$state['id']|intval}" {if isset($data.id_status) && $state.id == $data.id_status} selected="selected" disabled="disabled"{/if}>{$state.status|escape}</option>
-													{/foreach} 
-													</select>
-													<input type="hidden" name="id_room" value="{$data['id_room']}" />
-													<input type="hidden" name="id_order" value="{$order->id}" />
-													<button style="margin-left:20px;" type="submit" name="submitbookingOrderStatus" class="btn btn-primary">
-														{l s='Update Order Status'}
-													</button>
-												</form>
-											</td>
-										</tr>
-										{/foreach}
+											{foreach from=$htl_booking_order_data item=data}
+												<tr>
+													<td>
+														{$data['room_num']}
+													</td>
+													<td>
+														<a href="{$link->getAdminLink('AdminAddHotel')}&amp;id={$data['id_hotel']}&amp;updatehtl_branch_info" target="_blank">
+															<span>{$data['hotel_name']}</span>
+														</a>
+													</td>
+													<td>
+														{$data['date_from']|date_format:"%d-%m-%Y"}
+													</td>
+													<td>
+														{$data['date_to']|date_format:"%d-%m-%Y"}
+													</td>
+													<td>
+														<form action="" method="post" class="form-horizontal row room_status_info_form">
+															<div class="col-sm-7">
+																<select name="booking_order_status" class="form-control booking_order_status margin-bottom-5">
+																	{foreach from=$hotel_order_status item=state}
+																		<option value="{$state['id_status']|intval}" {if isset($data.id_status) && $state.id_status == $data.id_status} selected="selected" disabled="disabled"{/if}>{$state.name|escape}</option>
+																	{/foreach}
+																</select>
+
+																{if $data['id_status'] == $hotel_order_status['STATUS_CHECKED_IN']['id_status']}<span class="badge badge-success margin-bottom-5">{l s='checked in on'} {$data['check_in']|date_format:"%d-%m-%Y"}</span>{elseif $data['id_status'] == $hotel_order_status['STATUS_CHECKED_OUT']['id_status']}<span class="badge badge-success margin-bottom-5">{l s='checked out on'} {$data['check_out']|date_format:"%d-%m-%Y"}</span>{/if}
+
+																{* field for the current date *}
+																<input class="room_status_date wk-input-date" type="text" name="status_date" value="{$data['date_from']|date_format:"%d-%m-%Y"}" readonly/>
+
+																<input type="hidden" name="date_from" value="{$data['date_from']|date_format:"%Y-%m-%d"}" />
+																<input type="hidden" name="date_to" value="{$data['date_to']|date_format:"%Y-%m-%d"}" />
+																<input type="hidden" name="id_room" value="{$data['id_room']}" />
+																<input type="hidden" name="id_order" value="{$order->id}" />
+															</div>
+															<div class="col-sm-5">
+																<button type="submit" name="submitbookingOrderStatus" class="btn btn-primary">
+																	{l s='Update Status'}
+																</button>
+															</div>
+														</form>
+													</td>
+												</tr>
+											{/foreach}
 										{else}
-										<tr>
-											<td>{l s='No data found.'}</td>
-										</tr>
+											<tr>
+												<td>{l s='No data found.'}</td>
+											</tr>
 										{/if}
-									</table>	
+									</table>
 								</div>
 							</div>
 						</div>
@@ -392,17 +404,17 @@
 								<table class="table">
 									<thead>
 										<tr>
-											<th><span class="title_box ">Date</span></th>
-											<th><span class="title_box ">Type</span></th>
-											<th><span class="title_box ">Carrier</span></th>
-											<th><span class="title_box ">Tracking number</span></th>
+											<th><span class="title_box ">{l s='Date'}</span></th>
+											<th><span class="title_box ">{l s='Type'}</span></th>
+											<th><span class="title_box ">{l s='Carrier'}</span></th>
+											<th><span class="title_box ">{l s='Tracking number'}</span></th>
 										</tr>
 									</thead>
 									<tbody>
 										{foreach from=$order->getReturn() item=line}
 										<tr>
 											<td>{$line.date_add}</td>
-											<td>{$line.type}</td>
+											<td>{l s=$line.type}</td>
 											<td>{$line.state_name}</td>
 											<td class="actions">
 												<span class="shipping_number_show">{if isset($line.url) && isset($line.tracking_number)}<a href="{$line.url|replace:'@':$line.tracking_number|escape:'html':'UTF-8'}">{$line.tracking_number}</a>{elseif isset($line.tracking_number)}{$line.tracking_number}{/if}</span>
@@ -652,7 +664,7 @@
 							{if ($customer->isGuest())}
 								{l s='This order has been placed by a guest.'}
 								{if (!Customer::customerExists($customer->email))}
-									<form method="post" action="index.php?tab=AdminCustomers&amp;id_customer={$customer->id}&amp;token={getAdminToken tab='AdminCustomers'}">
+									<form method="post" action="index.php?tab=AdminCustomers&amp;id_customer={$customer->id}&amp;id_order={$order->id|intval}&amp;token={getAdminToken tab='AdminCustomers'}">
 										<input type="hidden" name="id_lang" value="{$order->id_lang}" />
 										<input class="btn btn-default" type="submit" name="submitGuestToCustomer" value="{l s='Transform a guest into a customer'}" />
 										<p class="help-block">{l s='This feature will generate a random password and send an email to the customer.'}</p>
@@ -664,8 +676,6 @@
 								{/if}
 							{else}
 								<dl class="well list-detail">
-									<dt>{l s='Name'}</dt>
-										<dd>{$customer->firstname}&nbsp{$customer->lastname}</dd><br>
 									<dt>{l s='Email'}</dt>
 										<dd><a href="mailto:{$customer->email}"><i class="icon-envelope-o"></i> {$customer->email}</a></dd><br>
 									<dt>{l s='Account registered'}</dt>
@@ -872,11 +882,11 @@
 										{$message['message']|escape:'html':'UTF-8'|nl2br}
 									</p>
 								</div>
-								{*if ($message['is_new_for_me'])}
+								{*{if ($message['is_new_for_me'])}
 									<a class="new_message" title="{l s='Mark this message as \'viewed\''}" href="{$smarty.server.REQUEST_URI}&amp;token={$smarty.get.token}&amp;messageReaded={$message['id_message']}">
 										<i class="icon-ok"></i>
 									</a>
-								{/if*}
+								{/if}*}
 							{/foreach}
 						</div>
 					</div>
@@ -956,95 +966,54 @@
 				<div class="panel">
 					<div class="panel-heading">
 						<i class="icon-shopping-cart"></i>
-						{l s='Rooms In This Order'} <span class="badge">{$cart_detail_data|@count}</span><!-- by webkul products changes as rooms -->
+						{l s='Rooms In This Order'} <span class="badge">{$order_detail_data|@count}</span>
+						{* by webkul products changes as rooms *}
 					</div>
-					<!--by webkul this code is added for showing rooms information on the order detail page-->
+					{* by webkul this code is added for showing rooms information on the order detail page *}
 					<div class="row">
 						<div class="col-lg-12">
 							<table class="table" id="customer_cart_details">
 								<thead>
 									<tr>
-										<th><span class="title_box">{l s='Room No.'}</span></th>
-										<th><span class="title_box">{l s='Room Image'}</th>
-										<th><span class="title_box">{l s='Room Type'}</span></th>
-										<th><span class="title_box">{l s='Duration'}</span></th>
-										<th><span class="title_box">{l s='Total Price'}</span></th>
-										<th><span class="title_box">{l s='Refund Stage'}</span></th>
-										<th><span class="title_box">{l s='Refund Status'}</span></th>
-										<th><span class="title_box">{l s='Reallocate Room'}</span></th>
+										{if $refund_allowed}
+											<th class="standard_refund_fields" style="display:none"></th>
+										{/if}
+										<th class="text-center"><span class="title_box">{l s='Room No.'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Room Image'}</th>
+										<th class="text-center"><span class="title_box">{l s='Room Type'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Hotel Name'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Duration'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Unit Price (Tax incl.)'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Total Price (Tax incl.)'}</span></th>
+										{if isset($refundReqBookings) && $refundReqBookings}
+											<th class="text-center"><span class="title_box">{l s='Refund State'}</span></th>
+											<th class="text-center"><span class="title_box">{l s='Refunded amount'}</span></th>
+										{/if}
+										<th class="text-center"><span class="title_box">{l s='Reallocate Room'}</span></th>
+										{if ($can_edit && !$order->hasBeenDelivered())}
+										<th class="text-center"><span class="title_box">{l s='Edit Order'}</th>
+										{/if}
 									</tr>
 								</thead>
 								<tbody>
-								{if $cart_detail_data}
-									{foreach from=$cart_detail_data item=data}
-										<tr>
-											<td>
-												{$data.room_num}
-											</td>
-											<td>
-												<img src="{$data.image_link}" title="Room image" />
-											</td>
-											<td>
-												{$data.room_type}
-											</td>
-											<td>
-												{$data.date_from|date_format:"%d %b %Y"}&nbsp-&nbsp {$data.date_to|date_format:"%d %b %Y"}
-											</td>
-											<td>
-												{convertPriceWithCurrency price=$data.amt_with_qty currency=$currency->id}
-											</td>
-											
-											<td class="text-center stage_name">
-												<p>
-													{if isset($data['stage_name']) && $data['stage_name']}
-														{$data['stage_name']}
-													{else}
-														--
-													{/if}
-												</p>
-											</td>
-											<td class="text-center status_name">
-												<p>
-													{if $data['stage_name'] == 'Refunded' || $data['stage_name'] == 'Rejected'}
-														{l s="Done!"}
-													{else if $data['stage_name'] == 'Waitting' || $data['stage_name'] == 'Accepted'}
-														{l s="Pending..."}
-													{else}
-														--
-													{/if}
-												</p>
-											</td>
-
-											{if $data.booking_type == 1}
-											<td>
-												{if $data['stage_name'] == 'Refunded' || $data['stage_name'] == 'Rejected'}
-													<p class="text-center">----</p>
-												{else}
-													<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#mySwappigModal" data-id_order="{$order->id}" data-room_num={$data['room_num']} data-date_from={$data['date_from']} data-date_to={$data['date_to']} data-id_room={$data['id_room']} data-cust_name="{$data['alloted_cust_name']}" data-cust_email="{$data['alloted_cust_email']}" data-avail_rm_swap={$data['avail_rooms_to_swap']|@json_encode} data-avail_rm_realloc={$data['avail_rooms_to_realloc']|@json_encode}>
-														{l s='Reallocate Room' mod='hotelreservationsystem'}
-													</button>
-												{/if}
-											</td>
-											{/if}
-										</tr>
+								{if $order_detail_data}
+									{foreach from=$order_detail_data item=data}
+										{* Include product line partial *}
+										{include file='controllers/orders/_product_line.tpl'}
 									{/foreach}
 								{else}
 									<tr>
 										<td>{l s='No Data Found.'}</td>
 									</tr>
 								{/if}
+								{* Include product line partial *}
+								{include file='controllers/orders/_new_product.tpl'}
 								</tbody>
 							</table>
 						</div>
 					</div>
-					<div id="refundForm">
-					<!--
-						<a href="#" class="standard_refund"><img src="../img/admin/add.gif" alt="{l s='Process a standard refund'}" /> {l s='Process a standard refund'}</a>
-						<a href="#" class="partial_refund"><img src="../img/admin/add.gif" alt="{l s='Process a partial refund'}" /> {l s='Process a partial refund'}</a>
-					--><!-- by webkul to hide unnessary things in the page-->
-					</div>
 
-					<!-- {capture "TaxMethod"}
+					{capture "TaxMethod"}
 						{if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
 							{l s='tax excluded.'}
 						{else}
@@ -1056,179 +1025,87 @@
 					{else}
 						<input type="hidden" name="TaxMethod" value="1">
 					{/if}
-					<div class="table-responsive">
-						<table class="table" id="orderProducts">
-							<thead>
-								<tr>
-									<th></th>
-									<th><span class="title_box ">{l s='Product'}</span></th>
-									<th>
-										<span class="title_box ">{l s='Unit Price'}</span>
-										<small class="text-muted">{$smarty.capture.TaxMethod}</small>
-									</th>
-									<th class="text-center"><span class="title_box ">{l s='Qty'}</span></th>
-									{if $display_warehouse}<th><span class="title_box ">{l s='Warehouse'}</span></th>{/if}
-									{if ($order->hasBeenPaid())}<th class="text-center"><span class="title_box ">{l s='Refunded'}</span></th>{/if}
-									{if ($order->hasBeenDelivered() || $order->hasProductReturned())}
-										<th class="text-center"><span class="title_box ">{l s='Returned'}</span></th>
-									{/if}
-									{if $stock_management}<th class="text-center"><span class="title_box ">{l s='Available quantity'}</span></th>{/if}
-									<th>
-										<span class="title_box ">{l s='Total'}</span>
-										<small class="text-muted">{$smarty.capture.TaxMethod}</small>
-									</th>
-									<th style="display: none;" class="add_product_fields"></th>
-									<th style="display: none;" class="edit_product_fields"></th>
-									<th style="display: none;" class="standard_refund_fields">
-										<i class="icon-minus-sign"></i>
-										{if ($order->hasBeenDelivered() || $order->hasBeenShipped())}
-											{l s='Return'}
-										{elseif ($order->hasBeenPaid())}
-											{l s='Refund'}
-										{else}
-											{l s='Cancel'}
-										{/if}
-									</th>
-									<th style="display:none" class="partial_refund_fields">
-										<span class="title_box ">{l s='Partial refund'}</span>
-									</th>
-									{if !$order->hasBeenDelivered()}
-									<th></th>
-									{/if}
-								</tr>
-							</thead>
-							<tbody>
-							{foreach from=$products item=product key=k}
-								{* Include customized datas partial *}
-								{include file='controllers/orders/_customized_data.tpl'}
-								{* Include product line partial *}
-								{include file='controllers/orders/_product_line.tpl'}
-							{/foreach}
-							{if $can_edit}
-								{include file='controllers/orders/_new_product.tpl'}
-							{/if}
-							</tbody>
-						</table>
-					</div>
-
 					{if $can_edit}
-					<div class="row-margin-bottom row-margin-top order_action">
-					{if !$order->hasBeenDelivered()}
-						<button type="button" id="add_product" class="btn btn-default">
-							<i class="icon-plus-sign"></i>
-							{l s='Add a product'}
-						</button>
+						<div class="row-margin-bottom row-margin-top order_action standard_refund_fields"  style="display: none;">
+							<textarea class="cancellation_reason" name="cancellation_reason" placeholder="{l s='Enter reason to cancel bookings'}"></textarea>
+						</div>
+						<div class="row-margin-bottom row-margin-top order_action">
+							{if !$order->hasBeenDelivered()}
+								<button type="button" id="add_product" class="btn btn-default">
+									<i class="icon-plus-sign"></i>
+									{l s='Add Rooms In Order'}
+								</button>
+							{/if}
+							<button id="add_voucher" class="btn btn-default" type="button" >
+								<i class="icon-ticket"></i>
+								{l s='Add a new discount'}
+							</button>
+
+							{if $refund_allowed && !$hasCompletelyRefunded}
+								<button style="display: none;" type="submit" name="initiateRefund" class="btn btn-success standard_refund_fields pull-right" id="initiateRefund">
+									{if $order->hasBeenPaid()}<i class="icon-undo"></i> {l s='Initiate Refund'}{else}{l s='Cancel bookings'}{/if}
+								</button>
+							{/if}
+						</div>
 					{/if}
-						<button id="add_voucher" class="btn btn-default" type="button" >
-							<i class="icon-ticket"></i>
-							{l s='Add a new discount'}
-						</button>
-					</div>
-					{/if} --> <!-- by webkul to hide unnessary things in the page-->
 					<div class="clear">&nbsp;</div>
-					<hr>
 					<div class="row">
-						<!-- <div class="col-xs-6">
+						<div class="col-xs-6">
 							<div class="alert alert-warning">
 								{l s='For this customer group, prices are displayed as: [1]%s[/1]' sprintf=[$smarty.capture.TaxMethod] tags=['<strong>']}
-								{if !Configuration::get('PS_ORDER_RETURN')}
-									<br/><strong>{l s='Merchandise returns are disabled'}</strong>
+								{if !$refund_allowed}
+									<br/><strong>{l s='Refunds are disabled'}</strong>
 								{/if}
 							</div>
-						</div> --> <!-- by webkul to hide unnessary things in the page-->
-						
-						<!-- For Due amount submit panel (by webkul) -->
-						{if isset($order_adv_dtl)}
-							<div class="col-xs-6">
-								<div class="panel panel-advanced-payment">
-									<form class="clearfix" method="POST" action="{$link->getAdminLink('AdminOrders')|escape:'html':'UTF-8'}&amp;vieworder&amp;id_order={$order_adv_dtl['id_order']|intval}">
-										<div class="table-responsive">
-											<table class="table">
-												<tr>
-													<td>
-														<strong>{l s='Paid Amount'}</strong>
-													</td>
-													<td>
-														<strong>
-															{displayPrice price=$order_adv_dtl['total_paid_amount'] currency=$currency->id}
-														</strong>
-													</td>
-												</tr>
-												<tr>
-													<td>
-														<strong>{l s='Due Amount'}</strong>
-													</td>
-													<td>
-														<strong>{displayPrice price=($order_adv_dtl['total_order_amount'] - $order_adv_dtl['total_paid_amount']) currency=$currency->id}</strong>
-													</td>
-												</tr>
-												<tr>
-													<td>
-														<strong>{l s='submitted Amount'}</strong>
-													</td>
-													<td>
-														<div class="input-group">
-															<span class="input-group-addon" id="htl_order_currenct">{$currency->sign}</span>
-															<input type="text" class="form-control" placeholder="Amount" aria-describedby="htl_order_currenct" name="submitted_amount">
-														</div>
-													</td>
-												</tr>
-											</table>
-										</div>
-										<button type="submit" class="btn btn-primary" name="payDueAmount" style="margin-top:10px;">{l s="Submit Amount"}</button>
-									</form>
-								</div>
-							</div>
-						{/if}
-						
+						</div>
 						<div class="col-xs-6 pull-right">
 							<div class="panel panel-vouchers" style="{if !sizeof($discounts)}display:none;{/if}">
 								{if (sizeof($discounts) || $can_edit)}
-								<div class="table-responsive">
-									<table class="table">
-										<thead>
-											<tr>
-												<th>
-													<span class="title_box ">
-														{l s='Discount name'}
-													</span>
-												</th>
-												<th>
-													<span class="title_box ">
-														{l s='Value'}
-													</span>
-												</th>
-												{if $can_edit}
-												<th></th>
-												{/if}
-											</tr>
-										</thead>
-										<tbody>
-											{foreach from=$discounts item=discount}
-											<tr>
-												<td>{$discount['name']}</td>
-												<td>
-												{if $discount['value'] != 0.00}
-													-
-												{/if}
-												{displayPrice price=$discount['value'] currency=$currency->id}
-												</td>
-												{if $can_edit}
-												<td>
-													<a href="{$current_index}&amp;submitDeleteVoucher&amp;id_order_cart_rule={$discount['id_order_cart_rule']}&amp;id_order={$order->id}&amp;token={$smarty.get.token|escape:'html':'UTF-8'}">
-														<i class="icon-minus-sign"></i>
-														{l s='Delete voucher'}
-													</a>
-												</td>
-												{/if}
-											</tr>
-											{/foreach}
-										</tbody>
-									</table>
-								</div>
-								<div class="current-edit" id="voucher_form" style="display:none;">
-									{include file='controllers/orders/_discount_form.tpl'}
-								</div>
+									<div class="table-responsive">
+										<table class="table">
+											<thead>
+												<tr>
+													<th>
+														<span class="title_box ">
+															{l s='Discount name'}
+														</span>
+													</th>
+													<th>
+														<span class="title_box ">
+															{l s='Value'}
+														</span>
+													</th>
+													{if $can_edit}
+													<th></th>
+													{/if}
+												</tr>
+											</thead>
+											<tbody>
+												{foreach from=$discounts item=discount}
+												<tr>
+													<td>{$discount['name']}</td>
+													<td>
+													{if $discount['value'] != 0.00}
+														-
+													{/if}
+													{displayPrice price=$discount['value'] currency=$currency->id}
+													</td>
+													{if $can_edit}
+													<td>
+														<a href="{$current_index}&amp;submitDeleteVoucher&amp;id_order_cart_rule={$discount['id_order_cart_rule']}&amp;id_order={$order->id}&amp;token={$smarty.get.token|escape:'html':'UTF-8'}">
+															<i class="icon-minus-sign"></i>
+															{l s='Delete voucher'}
+														</a>
+													</td>
+													{/if}
+												</tr>
+												{/foreach}
+											</tbody>
+										</table>
+									</div>
+									<div class="current-edit" id="voucher_form" style="display:none;">
+										{include file='controllers/orders/_discount_form.tpl'}
+									</div>
 								{/if}
 							</div>
 							<div class="panel panel-total">
@@ -1247,19 +1124,37 @@
 											{assign var=order_shipping_price value=$order->total_shipping_tax_incl}
 										{/if}
 										<tr id="total_products">
-											<td class="text-right"><strong>{l s='Total Rooms Cost'}</strong></td>
+											<td class="text-right"><strong>{l s='Total Rooms Cost (tax excl.)'}</strong></td>
 											<td class="amount text-right nowrap">
-												<strong>{displayPrice price=$total_rooms_cost currency=$currency->id}</strong>
+												<strong>{displayPrice price=$totalRoomsCostTE currency=$currency->id}</strong>
 											</td>
 											<td class="partial_refund_fields current-edit" style="display:none;"></td>
 										</tr>
+										{if isset($totalDemandsPriceTE) && $totalDemandsPriceTE > 0}
+											<tr id="total_products">
+												<td class="text-right"><strong>{l s='Additional Facilities Cost (tax excl.)'}</strong></td>
+												<td class="amount text-right nowrap">
+													<strong>{displayPrice price=$totalDemandsPriceTE currency=$currency->id}</strong>
+												</td>
+												<td class="partial_refund_fields current-edit" style="display:none;"></td>
+											</tr>
+										{/if}
 										<tr id="total_tax_order">
-											<td class="text-right"><strong>{l s='Total Tax'}</strong></td>
+											<td class="text-right"><strong>{l s='Total Rooms Tax'}</strong></td>
 											<td class="text-right nowrap">
-												<strong>{displayPrice price=$total_tax_in_order currency=$currency->id}</strong>
+												<strong>{displayPrice price=$total_room_tax currency=$currency->id}</strong>
 											</td>
 											<td class="partial_refund_fields current-edit" style="display:none;"></td>
 										</tr>
+										{if isset($totalDemandsPriceTE) && $totalDemandsPriceTE > 0}
+											<tr id="total_tax_order">
+												<td class="text-right"><strong>{l s='Additional Facilities Tax'}</strong></td>
+												<td class="text-right nowrap">
+													<strong>{displayPrice price=($totalDemandsPriceTI - $totalDemandsPriceTE) currency=$currency->id}</strong>
+												</td>
+												<td class="partial_refund_fields current-edit" style="display:none;"></td>
+											</tr>
+										{/if}
 										<tr id="total_discounts" {if $order->total_discounts_tax_incl == 0}style="display: none;"{/if}>
 											<td class="text-right">{l s='Discounts'}</td>
 											<td class="amount text-right nowrap">
@@ -1274,173 +1169,45 @@
 											</td>
 											<td class="partial_refund_fields current-edit" style="display:none;"></td>
 										</tr>
-										<!-- <tr id="total_shipping">
-											<td class="text-right">{l s='Shipping'}</td>
-											<td class="amount text-right nowrap" >
-												{displayPrice price=$order_shipping_price currency=$currency->id}
-											</td>
-											<td class="partial_refund_fields current-edit" style="display:none;">
-												<div class="input-group">
-													<div class="input-group-addon">
-														{$currency->prefix}
-														{$currency->suffix}
-													</div>
-													<input type="text" name="partialRefundShippingCost" value="0" />
-												</div>
-												<p class="help-block"><i class="icon-warning-sign"></i> {l s='(%s)' sprintf=$smarty.capture.TaxMethod}</p>
-											</td>
-										</tr> -->    <!-- by webkul to hide unnessary things in the page-->
-										<!-- {if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
-			 							<tr id="total_taxes">
-			 								<td class="text-right">{l s='Taxes'}</td>
-			 								<td class="amount text-right nowrap" >{displayPrice price=($order->total_paid_tax_incl-$order->total_paid_tax_excl) currency=$currency->id}</td>
-			 								<td class="partial_refund_fields current-edit" style="display:none;"></td>
-			 							</tr>
-			 							{/if} -->
-
-			 							{if isset($order_adv_dtl)}
-				 							<tr>
-												<td class="text-right"><strong>{l s='Paid Amount'}</strong></td>
-												<td class="amount text-right nowrap">
-													<strong>
-														{displayPrice price=$order_adv_dtl['total_paid_amount'] currency=$currency->id}
-													</strong>
-												</td>
+										{if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
+											<tr id="total_taxes">
+												<td class="text-right"><strong>{l s='Total Taxes'}</strong></td>
+												<td class="amount text-right nowrap" ><strong>{displayPrice price=($order->total_paid_tax_incl - $order->total_paid_tax_excl) currency=$currency->id}</strong></td>
+												<td class="partial_refund_fields current-edit" style="display:none;"></td>
 											</tr>
+			 							{/if}
+										<tr id="total_order">
+											<td class="text-right"><strong>{l s='Final Booking Total'}</strong></td>
+											<td class="amount text-right nowrap">
+												<strong>{displayPrice price=$order->total_paid_tax_incl currency=$currency->id}</strong>
+											</td>
+											<td class="partial_refund_fields current-edit" style="display:none;"></td>
+										</tr>
+
+										{if isset($refundReqBookings) && $refundReqBookings}
+											<tr id="total_order">
+												<td class="text-right"><strong>* {l s='Refunded Amount'}</strong></td>
+												<td class="amount text-right nowrap">
+													<strong>{displayPrice price=$refundedAmount currency=$currency->id}</strong>
+												</td>
+												<td class="partial_refund_fields current-edit" style="display:none;"></td>
+											</tr>
+										{/if}
+
+										{if $order->total_paid_tax_incl > $order->total_paid_real}
 											<tr>
 												<td class="text-right"><strong>{l s='Due Amount'}</strong></td>
 												<td class="amount text-right nowrap">
 													<strong>
-														{displayPrice price=($order_adv_dtl['total_order_amount'] - $order_adv_dtl['total_paid_amount']) currency=$currency->id}
+														{displayPrice currency=$order->id_currency price=($order->total_paid_tax_incl - $order->total_paid_real)}
 													</strong>
 												</td>
 											</tr>
 										{/if}
-										
-										{assign var=order_total_price value=$order->total_paid_tax_incl}
-										
-										<tr id="total_order">
-											<td class="text-right"><strong>{l s='Total'}</strong></td>
-											<td class="amount text-right nowrap">
-												<strong>{displayPrice price=$order_total_price currency=$currency->id}</strong>
-											</td>
-											<td class="partial_refund_fields current-edit" style="display:none;"></td>
-										</tr>
 									</table>
 								</div>
 							</div>
 						</div>
-					</div>
-					<div style="display: none;" class="standard_refund_fields form-horizontal panel">
-						<div class="form-group">
-							{if ($order->hasBeenDelivered() && Configuration::get('PS_ORDER_RETURN'))}
-							<p class="checkbox">
-								<label for="reinjectQuantities">
-									<input type="checkbox" id="reinjectQuantities" name="reinjectQuantities" />
-									{l s='Re-stock products'}
-								</label>
-							</p>
-							{/if}
-							{if ((!$order->hasBeenDelivered() && $order->hasBeenPaid()) || ($order->hasBeenDelivered() && Configuration::get('PS_ORDER_RETURN')))}
-							<p class="checkbox">
-								<label for="generateCreditSlip">
-									<input type="checkbox" id="generateCreditSlip" name="generateCreditSlip" onclick="toggleShippingCost()" />
-									{l s='Generate a credit slip'}
-								</label>
-							</p>
-							<p class="checkbox">
-								<label for="generateDiscount">
-									<input type="checkbox" id="generateDiscount" name="generateDiscount" onclick="toggleShippingCost()" />
-									{l s='Generate a voucher'}
-								</label>
-							</p>
-							<p class="checkbox" id="spanShippingBack" style="display:none;">
-								<label for="shippingBack">
-									<input type="checkbox" id="shippingBack" name="shippingBack" />
-									{l s='Repay shipping costs'}
-								</label>
-							</p>
-							{if $order->total_discounts_tax_excl > 0 || $order->total_discounts_tax_incl > 0}
-							<br/><p>{l s='This order has been partially paid by voucher. Choose the amount you want to refund:'}</p>
-							<p class="radio">
-								<label id="lab_refund_total_1" for="refund_total_1">
-									<input type="radio" value="0" name="refund_total_voucher_off" id="refund_total_1" checked="checked" />
-									{l s='Include amount of initial voucher: '}
-								</label>
-							</p>
-							<p class="radio">
-								<label id="lab_refund_total_2" for="refund_total_2">
-									<input type="radio" value="1" name="refund_total_voucher_off" id="refund_total_2"/>
-									{l s='Exclude amount of initial voucher: '}
-								</label>
-							</p>
-							<div class="nowrap radio-inline">
-								<label id="lab_refund_total_3" class="pull-left" for="refund_total_3">
-									{l s='Amount of your choice: '}
-									<input type="radio" value="2" name="refund_total_voucher_off" id="refund_total_3"/>
-								</label>
-								<div class="input-group col-lg-1 pull-left">
-									<div class="input-group-addon">
-										{$currency->prefix}
-										{$currency->suffix}
-									</div>
-									<input type="text" class="input fixed-width-md" name="refund_total_voucher_choose" value="0"/>
-								</div>
-							</div>
-							{/if}
-						{/if}
-						</div>
-						{if (!$order->hasBeenDelivered() || ($order->hasBeenDelivered() && Configuration::get('PS_ORDER_RETURN')))}
-						<div class="row">
-							<input type="submit" name="cancelProduct" value="{if $order->hasBeenDelivered()}{l s='Return products'}{elseif $order->hasBeenPaid()}{l s='Refund products'}{else}{l s='Cancel products'}{/if}" class="btn btn-default" />
-						</div>
-						{/if}
-					</div>
-					<div style="display:none;" class="partial_refund_fields">
-						<p class="checkbox">
-							<label for="reinjectQuantitiesRefund">
-								<input type="checkbox" id="reinjectQuantitiesRefund" name="reinjectQuantities" />
-								{l s='Re-stock products'}
-							</label>
-						</p>
-						<p class="checkbox">
-							<label for="generateDiscountRefund">
-								<input type="checkbox" id="generateDiscountRefund" name="generateDiscountRefund" onclick="toggleShippingCost()" />
-								{l s='Generate a voucher'}
-							</label>
-						</p>
-						{if $order->total_discounts_tax_excl > 0 || $order->total_discounts_tax_incl > 0}
-						<p>{l s='This order has been partially paid by voucher. Choose the amount you want to refund:'}</p>
-						<p class="radio">
-							<label id="lab_refund_1" for="refund_1">
-								<input type="radio" value="0" name="refund_voucher_off" id="refund_1" checked="checked" />
-								{l s='Product(s) price: '}
-							</label>
-						</p>
-						<p class="radio">
-							<label id="lab_refund_2" for="refund_2">
-								<input type="radio" value="1" name="refund_voucher_off" id="refund_2"/>
-								{l s='Product(s) price, excluding amount of initial voucher: '}
-							</label>
-						</p>
-						<div class="nowrap radio-inline">
-								<label id="lab_refund_3" class="pull-left" for="refund_3">
-									{l s='Amount of your choice: '}
-									<input type="radio" value="2" name="refund_voucher_off" id="refund_3"/>
-								</label>
-								<div class="input-group col-lg-1 pull-left">
-									<div class="input-group-addon">
-										{$currency->prefix}
-										{$currency->suffix}
-									</div>
-									<input type="text" class="input fixed-width-md" name="refund_voucher_choose" value="0"/>
-								</div>
-							</div>
-						{/if}
-						<br/>
-						<button type="submit" name="partialRefund" class="btn btn-default">
-							<i class="icon-check"></i> {l s='Partial refund'}
-						</button>
 					</div>
 				</div>
 			</form>
@@ -1525,35 +1292,35 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
     	<ul class="nav nav-tabs" role="tablist">
-		    <li role="presentation" class="active"><a href="#reallocate_room_tab" aria-controls="reallocate" role="tab" data-toggle="tab">{l s='Room Reallocation' mod='hotelreservationsystem'}</a></li>
-		    <li role="presentation"><a href="#swap_room_tab" aria-controls="swap" role="tab" data-toggle="tab">{l s='Swap Room' mod='hotelreservationsystem'}</a></li>
+		    <li role="presentation" class="active"><a href="#reallocate_room_tab" aria-controls="reallocate" role="tab" data-toggle="tab">{l s='Room Reallocation'}</a></li>
+		    <li role="presentation"><a href="#swap_room_tab" aria-controls="swap" role="tab" data-toggle="tab">{l s='Swap Room'}</a></li>
 		 </ul>
 		<div class="tab-content panel active">
 			<div role="tabpanel" class="tab-pane active" id="reallocate_room_tab">
-				<form method="post" action="">
+				<form method="post" action="{$link->getAdminLink('AdminOrders')|escape:'html':'UTF-8'}&amp;vieworder&amp;id_order={$order->id|intval}">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						<h4 class="modal-title" id="realloc_myModalLabel">{l s='Reallocate Rooms'}</h4>
 					</div>
 					<div class="modal-body">
 						<div class="form-group">
-							<label for="curr_room_num" class="control-label">{l s='Current Room Number:' mod='hotelreservationsystem'}</label>
+							<label for="curr_room_num" class="control-label model-label">{l s='Current Room Number:'}</label>
 							<input type="text" class="form-control modal_curr_room_num" name="modal_curr_room_num" readonly="true">
 							<input type="hidden" class="form-control modal_date_from" name="modal_date_from">
 							<input type="hidden" class="form-control modal_date_to" name="modal_date_to">
 							<input type="hidden" class="form-control modal_id_room" name="modal_id_room">
 						</div>
 						<div class="form-group">
-							<label for="realloc_avail_rooms" class="control-label">{l s='Available Rooms To Reallocate:' mod='hotelreservationsystem'}</label>
-							<div style="width: 195px;">
+							<label for="realloc_avail_rooms" class="control-label model-label">{l s='Available Rooms To Reallocate:'}</label>
+							<div class="realloc_avail_rooms_container" style="width: 195px;">
 								<select class="form-control" name="realloc_avail_rooms" id="realloc_avail_rooms">
-									<option value="0" selected="selected">{l s='Select Rooms' mod='hotelreservationsystem'}</option>
+									<option value="0" selected="selected">{l s='Select Rooms'}</option>
 								</select>
-								<p class="error_text" id="realloc_sel_rm_err_p"></p>
 							</div>
+							<p class="error_text" id="realloc_sel_rm_err_p"></p>
 						</div>
 						<div class="form-group">
-							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:' mod='hotelreservationsystem'}</label>
+							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label model-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:'}</label>
 							<dl class="well list-detail">
 								<dt>{l s='Name'}</dt>
 								<dd class="cust_name"></dd><br>
@@ -1569,14 +1336,14 @@
 				</form>
 			</div>
 			<div role="tabpanel" class="tab-pane" id="swap_room_tab">
-				<form method="post" action="">
+				<form method="post" action="{$link->getAdminLink('AdminOrders')|escape:'html':'UTF-8'}&amp;vieworder&amp;id_order={$order->id|intval}">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						<h4 class="modal-title" id="swap_myModalLabel">{l s='Swap Rooms'}</h4>
 					</div>
 					<div class="modal-body">
 						<div class="form-group">
-							<label for="swap_curr_room_num" class="control-label">{l s='Current Room Number:' mod='hotelreservationsystem'}</label>
+							<label for="swap_curr_room_num" class="control-label model-label">{l s='Current Room Number:'}</label>
 							<input type="text" class="form-control modal_curr_room_num" name="modal_curr_room_num" readonly="true">
 							<input type="hidden" class="form-control modal_date_from" name="modal_date_from">
 							<input type="hidden" class="form-control modal_date_to" name="modal_date_to">
@@ -1584,16 +1351,12 @@
 							<input type="hidden" class="form-control modal_id_order" name="modal_id_order">
 						</div>
 						<div class="form-group">
-							<label for="swap_avail_rooms" class="control-label">{l s='Available Rooms To Swap:' mod='hotelreservationsystem'}</label>
-							<div style="width: 195px;">
-								<select class="form-control" name="swap_avail_rooms" id="swap_avail_rooms">
-									<option value="0" selected="selected">{l s='Select Rooms' mod='hotelreservationsystem'}</option>
-								</select>
-								<p class="error_text" id="swap_sel_rm_err_p"></p>
-							</div>
+							<label for="swap_avail_rooms" class="control-label model-label">{l s='Available Rooms To Swap:'}</label>
+							<div class="swap_avail_rooms_container"></div>
+							<p class="error_text" id="swap_sel_rm_err_p"></p>
 						</div>
 						<div class="form-group">
-							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:' mod='hotelreservationsystem'}</label>
+							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label model-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:'}</label>
 							<dl class="well list-detail">
 								<dt>{l s='Name'}</dt>
 								<dd class="cust_name"></dd><br>
@@ -1612,163 +1375,386 @@
     </div>
   </div>
 </div>
+
+{* MOdal for extra demands *}
+<div class="modal" tabindex="-1" role="dialog" id="rooms_type_extra_demands">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content" id="room_extra_demand_content">
+
+		</div>
+	</div>
+</div>
+
+{* Apply css for the page *}
+<style>
+	.error_text {
+		color:red;}
+	.model-label {
+		font-weight:bold!important;}
+	.room_type_old_price {
+		text-decoration: line-through;
+		color:#979797;
+		font-size:12px;}
+	.wk-input-date {
+		cursor: text!important;
+		background-color: #F5F8F9!important;}
+	#room_status_info_wrapper .margin-bottom-5 {
+		margin-bottom: 5px!important;}
+	#room_status_info_wrapper .room_status_date {
+		display: none;}
+</style>
+
+
 {strip}
-	{addJsDefL name=no_rm_avail_txt}{l s='No rooms available.' js=1 mod='hotelreservationsystem'}{/addJsDefL}
-	{addJsDefL name=slct_rm_err}{l s='Please select a room first.' js=1 mod='hotelreservationsystem'}{/addJsDefL}
+	{addJsDefL name=no_rm_avail_txt}{l s='No rooms available.' js=1}{/addJsDefL}
+	{addJsDefL name=slct_rm_err}{l s='Please select a room first.' js=1}{/addJsDefL}
+	{addJsDefL name=txtExtraDemandSucc}{l s='Updated Successfully' js=1}{/addJsDefL}
+	{addJsDefL name=atleastSelectTxt}{l s='Select at least one facility to update.' js=1}{/addJsDefL}
+
+	{addJsDefL name=txtSomeErr}{l s='Some error occurred. Please try again.' js=1}{/addJsDefL}
+	{addJsDefL name=txtDeleteSucc}{l s='Deleted successfully' js=1}{/addJsDefL}
+	{addJsDefL name=txtInvalidDemandVal}{l s='Invalid demand value found' js=1}{/addJsDefL}
 {/strip}
-	<script type="text/javascript">
-		var geocoder = new google.maps.Geocoder();
-		var delivery_map, invoice_map;
 
-		$(document).ready(function()
+{* Apply javascript for the page *}
+<script>
+	var geocoder = new google.maps.Geocoder();
+	var delivery_map, invoice_map;
+
+	$(document).ready(function() {
+		{* check id reason is inserted before submitting the refund *}
+		$('#initiateRefund').on('click', function(e) {
+			if ($.trim($('.cancellation_reason').val()) == '') {
+				$('.cancellation_reason').focus().css('border', '1px solid red');
+				return false;
+			}
+		});
+
+		{* toggle date input of check-in checkout dates as per status selected *}
+		$('.booking_order_status').on('change', function() {
+			var status = $(this).val();
+			if (status == '2' || status == '3') {
+				$(this).closest('.room_status_info_form').find('.room_status_date').show();
+			} else {
+				$(this).closest('.room_status_info_form').find('.room_status_date').hide();
+			}
+		});
+
+		{* open date picker for the date input of check-in checkout dates *}
+		$(document).on('focus', '.room_status_date', function() {
+			var dateFrom = $(this).closest('.room_status_info_form').find('[name="date_from"]').val();
+			dateFrom = dateFrom.split("-");
+            minDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date(dateFrom[0], dateFrom[1] - 1, dateFrom[2])));
+
+			var dateTo = $(this).closest('.room_status_info_form').find('[name="date_to"]').val();
+			dateTo = dateTo.split("-");
+            maxDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date(dateTo[0], dateTo[1] - 1, dateTo[2])));
+
+			$(this).datepicker({
+				dateFormat: 'dd-mm-yy',
+				minDate: minDate,
+				maxDate: maxDate,
+				dayNamesMin: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+			});
+		});
+
+		{* open fancybox for extra demands *}
+		$('.open_room_extra_demands').on('click', function(e) {
+			e.preventDefault();
+			var idProduct = $(this).attr('id_product');
+			var idOrder = $(this).attr('id_order');
+			var idRoom = $(this).attr('id_room');
+			var dateFrom = $(this).attr('date_from');
+			var dateTo = $(this).attr('date_to');
+			var idHtlBooking = $(this).attr('id_htl_booking');
+			var orderEdit = 0;
+			if(  $(this).closest('.product-line-row').find(".submitProductChange").is(":visible") == true ) {
+				orderEdit = 1;
+			}
+
+			$.ajax({
+				type: 'POST',
+				headers: {
+					"cache-control": "no-cache"
+				},
+				url: admin_order_tab_link,
+				dataType: 'html',
+				cache: false,
+				data: {
+					id_room: idRoom,
+					id_product: idProduct,
+					id_order: idOrder,
+					date_from: dateFrom,
+					date_to: dateTo,
+					orderEdit: orderEdit,
+					action: 'getRoomTypeBookingDemands',
+					ajax: true
+				},
+				success: function(result) {
+					$('#room_extra_demand_content').html('');
+					$('#room_extra_demand_content').append(result);
+
+					$('#room_extra_demand_content #id_htl_booking').val(idHtlBooking);
+
+					$('#rooms_type_extra_demands').modal('show');
+				},
+			});
+		});
+
+		{* when choose to add new facilities while additional facilities edit *}
+		$(document).on('click', '#room_extra_demand_content #btn_new_room_facility', function() {
+			$('#rooms_extra_demands .room_demands_container').show();
+			$('#room_extra_demand_content #save_room_facilities').show();
+			$('#room_extra_demand_content #back_to_facilities_btn').show();
+			$('#rooms_extra_demands .room_ordered_demands').hide();
+			$('#room_extra_demand_content #btn_new_room_facility').hide();
+		});
+		{* click on back button on created facilities while additional facilities edit *}
+		$(document).on('click', '#room_extra_demand_content #back_to_facilities_btn', function() {
+			$('#rooms_extra_demands .room_ordered_demands').show();
+			$('#room_extra_demand_content #btn_new_room_facility').show();
+			$('#rooms_extra_demands .room_demands_container').hide();
+			$('#room_extra_demand_content #save_room_facilities').hide();
+			$('#room_extra_demand_content #back_to_facilities_btn').hide();
+		});
+
+		{* // save room extra demand to the order *}
+		$(document).on('click', '#save_room_facilities', function(e) {
+			e.preventDefault();
+			var idHtlBooking = $(this).closest('#room_extra_demand_content').find('#id_htl_booking').val();
+			if (idHtlBooking) {
+				var roomDemands = [];
+				// get the selected extra demands by customer
+				$(this).closest('#room_extra_demand_content').find('input:checkbox.id_room_type_demand:checked').each(function () {
+					roomDemands.push({
+						'id_global_demand':$(this).val(),
+						'id_option': $(this).closest('.room_demand_block').find('.id_option').val()
+					});
+				});
+
+				if (roomDemands.length) {
+					$.ajax({
+						type: 'POST',
+						headers: {
+							"cache-control": "no-cache"
+						},
+						url: "{$link->getAdminLink('AdminOrders')|addslashes}",
+						dataType: 'JSON',
+						cache: false,
+						data: {
+							id_htl_booking: idHtlBooking,
+							room_demands: JSON.stringify(roomDemands),
+							action: 'EditRoomExtraDemands',
+							ajax: true
+						},
+						success: function(result) {
+							if (result == 1) {
+								showSuccessMessage(txtExtraDemandSucc);
+								$('#rooms_type_extra_demands').modal('hide');
+							} else {
+								showErrorMessage(txtSomeErr);
+							}
+						}
+					});
+				} else {
+					showErrorMessage(atleastSelectTxt);
+				}
+			}
+		});
+
+		{* Delete ordered room booking demand *}
+		$(document).on('click', '.del-order-room-demand', function(e) {
+			e.preventDefault();
+			if (confirm(txt_confirm)) {
+				var idBookingDemand = $(this).attr('id_booking_demand');
+				$currentItem = $(this);
+				if (idBookingDemand) {
+					$.ajax({
+						type: 'POST',
+						headers: {
+							"cache-control": "no-cache"
+						},
+						url: "{$link->getAdminLink('AdminOrders')|addslashes}",
+						dataType: 'JSON',
+						cache: false,
+						data: {
+							id_booking_demand: idBookingDemand,
+							action: 'DeleteRoomExtraDemand',
+							ajax: true
+						},
+						success: function(result) {
+							if (result == 1) {
+								$currentItem.closest('tr').remove();
+								showSuccessMessage(txtDeleteSucc);
+							} else {
+								showErrorMessage(txtSomeErr);
+							}
+						}
+					});
+				} else {
+					showErrorMessage(txtInvalidDemandVal);
+				}
+			}
+		});
+
+		// change advance option of extra demand
+		$(document).on('change', '.demand_adv_option_block .id_option', function(e) {
+			var option_selected = $(this).find('option:selected');
+			var extra_demand_price = option_selected.attr("optionPrice")
+			extra_demand_price = parseFloat(extra_demand_price);
+			extra_demand_price = formatCurrency(extra_demand_price, currency_format, currency_sign, currency_blank);
+			$(this).closest('.room_demand_block').find('.extra_demand_option_price').text(extra_demand_price);
+		});
+
+		$('#mySwappigModal').on('hidden.bs.modal', function (e)
 		{
-			/*By webkul for swapping Booked rooms modal js*/
-		    $("#swap_allocated_rooms").on('click', function(e){
-		        $(".error_text").text('');
-		        if ($('#swapped_avail_rooms').val() == 0)
-		        {
-		            $("#sel_rm_err_p").text(slct_rm_err);
-		            return false;
-		        }
-		    });
-
-		    $('#mySwappigModal').on('hidden.bs.modal', function (e)
-		    {
-		    	$(".modal_id_order").val('');
-		        $(".modal_date_from").val('');
-		        $(".modal_date_to").val('');
-		        $(".modal_id_room").val('');
-		        $(".modal_curr_room_num").val('');
-		        $(".cust_name").text('');
-		        $(".cust_email").text('');
-		        $(".swp_rm_opts").remove();
-		        $(".realloc_rm_opts").remove();
-		    });
-
-		    $('#mySwappigModal').on('shown.bs.modal', function (e)
-		    {
-		    	$(".modal_id_order").val(e.relatedTarget.dataset.id_order);
-		        $(".modal_date_from").val(e.relatedTarget.dataset.date_from);
-		        $(".modal_date_to").val(e.relatedTarget.dataset.date_to);
-		        $(".modal_id_room").val(e.relatedTarget.dataset.id_room);
-		        $(".modal_curr_room_num").val(e.relatedTarget.dataset.room_num);
-		        $(".cust_name").text(e.relatedTarget.dataset.cust_name);
-		        $(".cust_email").text(e.relatedTarget.dataset.cust_email);
-		        html = '';
-		        var json_arr_rm_swp = JSON.parse(e.relatedTarget.dataset.avail_rm_swap);
-		        $.each(json_arr_rm_swp, function(key,val)
-		        {
-		            html += '<option class="swp_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
-		        });
-		        if (html != '')
-		            $("#swap_avail_rooms").append(html);
-
-		        html = '';
-		        var json_arr_rm_realloc = JSON.parse(e.relatedTarget.dataset.avail_rm_realloc);
-		        $.each(json_arr_rm_realloc, function(key,val)
-		        {
-		            html += '<option class="realloc_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
-		        });
-		        if (html != '')
-		            $("#realloc_avail_rooms").append(html);
-		    });
-			
-			/*For swaping rooms in the modal*/
-		    $("#realloc_allocated_rooms").on('click', function(e){
-		        $(".error_text").text('');
-		        if ($('#realloc_avail_rooms').val() == 0)
-		        {
-		            $("#realloc_sel_rm_err_p").text(slct_rm_err);
-		            return false;
-		        }
-		    });
-		    $("#swap_allocated_rooms").on('click', function(e){
-		        $(".error_text").text('');
-		        if ($('#swap_avail_rooms').val() == 0)
-		        {
-		            $("#swap_sel_rm_err_p").text(slct_rm_err);
-		            return false;
-		        }
-		    });	
-		
-		    /*END*/
-
-			$(".textarea-autosize").autosize();
-
-			geocoder.geocode({
-				address: '{$addresses.delivery->address1|@addcslashes:'\''},{$addresses.delivery->postcode|@addcslashes:'\''},{$addresses.delivery->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.delivery->country|@addcslashes:'\''}'
-				}, function(results, status) {
-				if (status === google.maps.GeocoderStatus.OK)
-				{
-					delivery_map = new google.maps.Map(document.getElementById('map-delivery-canvas'), {
-						zoom: 10,
-						mapTypeId: google.maps.MapTypeId.ROADMAP,
-						center: results[0].geometry.location
-					});
-					var delivery_marker = new google.maps.Marker({
-						map: delivery_map,
-						position: results[0].geometry.location,
-						url: 'http://maps.google.com?q={$addresses.delivery->address1|urlencode},{$addresses.delivery->postcode|urlencode},{$addresses.delivery->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.delivery->country|urlencode}'
-					});
-					google.maps.event.addListener(delivery_marker, 'click', function() {
-						window.open(delivery_marker.url);
-					});
-				}
-			});
-
-			geocoder.geocode({
-				address: '{$addresses.invoice->address1|@addcslashes:'\''},{$addresses.invoice->postcode|@addcslashes:'\''},{$addresses.invoice->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.invoice->country|@addcslashes:'\''}'
-				}, function(results, status) {
-				if (status === google.maps.GeocoderStatus.OK)
-				{
-					invoice_map = new google.maps.Map(document.getElementById('map-invoice-canvas'), {
-						zoom: 10,
-						mapTypeId: google.maps.MapTypeId.ROADMAP,
-						center: results[0].geometry.location
-					});
-					invoice_marker = new google.maps.Marker({
-						map: invoice_map,
-						position: results[0].geometry.location,
-						url: 'http://maps.google.com?q={$addresses.invoice->address1|urlencode},{$addresses.invoice->postcode|urlencode},{$addresses.invoice->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.invoice->country|urlencode}'
-					});
-					google.maps.event.addListener(invoice_marker, 'click', function() {
-						window.open(invoice_marker.url);
-					});
-				}
-			});
-
-			var date = new Date();
-			var hours = date.getHours();
-			if (hours < 10)
-				hours = "0" + hours;
-			var mins = date.getMinutes();
-			if (mins < 10)
-				mins = "0" + mins;
-			var secs = date.getSeconds();
-			if (secs < 10)
-				secs = "0" + secs;
-
-			$('.datepicker').datetimepicker({
-				prevText: '',
-				nextText: '',
-				dateFormat: 'yy-mm-dd ' + hours + ':' + mins + ':' + secs
-			});
+			$(".modal_id_order").val('');
+			$(".modal_date_from").val('');
+			$(".modal_date_to").val('');
+			$(".modal_id_room").val('');
+			$(".modal_curr_room_num").val('');
+			$(".cust_name").text('');
+			$(".cust_email").text('');
+			$(".swp_rm_opts").remove();
+			$(".realloc_rm_opts").remove();
 		});
 
-		// Fix wrong maps center when map is hidden
-		$('#tabAddresses').click(function(){
-			x = delivery_map.getZoom();
-			c = delivery_map.getCenter();
-			google.maps.event.trigger(delivery_map, 'resize');
-			delivery_map.setZoom(x);
-			delivery_map.setCenter(c);
+		$('#mySwappigModal').on('shown.bs.modal', function (e)
+		{
+			$(".modal_id_order").val(e.relatedTarget.dataset.id_order);
+			$(".modal_date_from").val(e.relatedTarget.dataset.date_from);
+			$(".modal_date_to").val(e.relatedTarget.dataset.date_to);
+			$(".modal_id_room").val(e.relatedTarget.dataset.id_room);
+			$(".modal_curr_room_num").val(e.relatedTarget.dataset.room_num);
+			$(".cust_name").text(e.relatedTarget.dataset.cust_name);
+			$(".cust_email").text(e.relatedTarget.dataset.cust_email);
 
-			x = invoice_map.getZoom();
-			c = invoice_map.getCenter();
-			google.maps.event.trigger(invoice_map, 'resize');
-			invoice_map.setZoom(x);
-			invoice_map.setCenter(c);
+			// For Rooms Swapping
+			if (e.relatedTarget.dataset.avail_rm_swap != 'false') {
+				var json_arr_rm_swp = JSON.parse(e.relatedTarget.dataset.avail_rm_swap);
+
+				html = '<select class="form-control" name="swap_avail_rooms" id="swap_avail_rooms" style="width:195px;">';
+					$.each(json_arr_rm_swp, function(key,val) {
+						html += '<option class="swp_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
+					});
+				html += '</select>';
+				$(".swap_avail_rooms_container").empty().append(html);
+			} else {
+				$(".swap_avail_rooms_container").empty().text(no_rm_avail_txt);
+			}
+
+			// For Rooms Reallocation
+			if (e.relatedTarget.dataset.avail_rm_realloc != 'false') {
+				var json_arr_rm_realloc = JSON.parse(e.relatedTarget.dataset.avail_rm_realloc);
+
+				html = '<select class="form-control" name="realloc_avail_rooms" id="realloc_avail_rooms" style="width:195px;">';
+					$.each(json_arr_rm_realloc, function(key,val) {
+						html += '<option class="realloc_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
+					});
+				html += '</select>';
+				$(".realloc_avail_rooms_container").empty().append(html);
+			} else {
+				$(".realloc_avail_rooms_container").empty().text(no_rm_avail_txt);
+			}
 		});
-	</script>
+
+		/*For reallocating rooms in the modal*/
+		$("#realloc_allocated_rooms").on('click', function(e){
+			$(".error_text").text('');
+			var room_to_reallocate = $('#realloc_avail_rooms').val();
+			if (typeof room_to_reallocate == 'undefined' || room_to_reallocate == 0) {
+				$("#realloc_sel_rm_err_p").text(slct_rm_err);
+				return false;
+			}
+		});
+		/*For swaping rooms in the modal*/
+		$("#swap_allocated_rooms").on('click', function(e){
+			$(".error_text").text('');
+			var room_to_swap = $('#swap_avail_rooms').val();
+			if (typeof room_to_swap == 'undefined' || room_to_swap == 0) {
+				$("#swap_sel_rm_err_p").text(slct_rm_err);
+				return false;
+			}
+		});
+
+		/*END*/
+
+		$(".textarea-autosize").autosize();
+
+		geocoder.geocode({
+			address: '{$addresses.delivery->address1|@addcslashes:'\''},{$addresses.delivery->postcode|@addcslashes:'\''},{$addresses.delivery->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.delivery->country|@addcslashes:'\''}'
+			}, function(results, status) {
+			if (status === google.maps.GeocoderStatus.OK)
+			{
+				delivery_map = new google.maps.Map(document.getElementById('map-delivery-canvas'), {
+					zoom: 10,
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+					center: results[0].geometry.location
+				});
+				var delivery_marker = new google.maps.Marker({
+					map: delivery_map,
+					position: results[0].geometry.location,
+					url: 'http://maps.google.com?q={$addresses.delivery->address1|urlencode},{$addresses.delivery->postcode|urlencode},{$addresses.delivery->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.delivery->country|urlencode}'
+				});
+				google.maps.event.addListener(delivery_marker, 'click', function() {
+					window.open(delivery_marker.url);
+				});
+			}
+		});
+
+		geocoder.geocode({
+			address: '{$addresses.invoice->address1|@addcslashes:'\''},{$addresses.invoice->postcode|@addcslashes:'\''},{$addresses.invoice->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.invoice->country|@addcslashes:'\''}'
+			}, function(results, status) {
+			if (status === google.maps.GeocoderStatus.OK)
+			{
+				invoice_map = new google.maps.Map(document.getElementById('map-invoice-canvas'), {
+					zoom: 10,
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+					center: results[0].geometry.location
+				});
+				invoice_marker = new google.maps.Marker({
+					map: invoice_map,
+					position: results[0].geometry.location,
+					url: 'http://maps.google.com?q={$addresses.invoice->address1|urlencode},{$addresses.invoice->postcode|urlencode},{$addresses.invoice->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.invoice->country|urlencode}'
+				});
+				google.maps.event.addListener(invoice_marker, 'click', function() {
+					window.open(invoice_marker.url);
+				});
+			}
+		});
+
+		var date = new Date();
+		var hours = date.getHours();
+		if (hours < 10)
+			hours = "0" + hours;
+		var mins = date.getMinutes();
+		if (mins < 10)
+			mins = "0" + mins;
+		var secs = date.getSeconds();
+		if (secs < 10)
+			secs = "0" + secs;
+
+		$('.datepicker').datetimepicker({
+			prevText: '',
+			nextText: '',
+			dateFormat: 'yy-mm-dd ' + hours + ':' + mins + ':' + secs
+		});
+	});
+
+	// Fix wrong maps center when map is hidden
+	$('#tabAddresses').click(function(){
+		x = delivery_map.getZoom();
+		c = delivery_map.getCenter();
+		google.maps.event.trigger(delivery_map, 'resize');
+		delivery_map.setZoom(x);
+		delivery_map.setCenter(c);
+
+		x = invoice_map.getZoom();
+		c = invoice_map.getCenter();
+		google.maps.event.trigger(invoice_map, 'resize');
+		invoice_map.setZoom(x);
+		invoice_map.setCenter(c);
+	});
+</script>
 
 {/block}

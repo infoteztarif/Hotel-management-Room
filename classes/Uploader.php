@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -44,6 +44,9 @@ class UploaderCore
 
     public function setAcceptTypes($value)
     {
+        if (is_array($value) && count($value)) {
+            $value = array_map(array('Tools', 'strtolower'), $value);
+        }
         $this->_accept_types = $value;
         return $this;
     }
@@ -112,7 +115,7 @@ class UploaderCore
     public function getPostMaxSizeBytes()
     {
         $post_max_size = ini_get('post_max_size');
-        $bytes         = trim($post_max_size);
+        $bytes         = (int)trim($post_max_size);
         $last          = strtolower($post_max_size[strlen($post_max_size) - 1]);
 
         switch ($last) {
@@ -225,7 +228,7 @@ class UploaderCore
             case 8:
                 $error = Tools::displayError('A PHP extension stopped the file upload');
                 break;
-            default;
+            default:
                 break;
         }
         return $error;
@@ -234,6 +237,10 @@ class UploaderCore
     protected function validate(&$file)
     {
         $file['error'] = $this->checkUploadError($file['error']);
+
+        if ($file['error']) {
+            return false;
+        }
 
         $post_max_size = $this->getPostMaxSizeBytes();
 
@@ -250,7 +257,7 @@ class UploaderCore
         $types = $this->getAcceptTypes();
 
         //TODO check mime type.
-        if (isset($types) && !in_array(pathinfo($file['name'], PATHINFO_EXTENSION), $types)) {
+        if (isset($types) && !in_array(Tools::strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)), $types)) {
             $file['error'] = Tools::displayError('Filetype not allowed');
             return false;
         }

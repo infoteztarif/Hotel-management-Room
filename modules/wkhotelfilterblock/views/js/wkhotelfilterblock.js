@@ -1,8 +1,27 @@
+/**
+* 2010-2018 Webkul.
+*
+* NOTICE OF LICENSE
+*
+* All right is reserved,
+* Please go through this link for complete license : https://store.webkul.com/license.html
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade this module to newer
+* versions in the future. If you wish to customize this module for your
+* needs please refer to https://store.webkul.com/customisation-guidelines/ for more information.
+*
+*  @author    Webkul IN <support@webkul.com>
+*  @copyright 2010-2018 Webkul IN
+*  @license   https://store.webkul.com/license.html
+*/
+
 $(document).ready(function()
 {
 	$(".clear_filter").on("click", function()
 	{
-		var filter_wrapper = $(this).parent(".layered_filter_heading").siblings(".lf_sub_cont");
+		var filter_wrapper = $(this).parents(".layered_filter_heading").siblings(".lf_sub_cont");
 		var make_diff = filter_wrapper.children("div"); //use to make difference between checkbox and price slider
 		if (make_diff.hasClass("layered_filt")) // for checkbox
 		{
@@ -34,11 +53,11 @@ $(document).ready(function()
 
 	function triggerFilter(way, sort_by, sort_value, filter_price)
 	{
-		if (way === undefined) 
+		if (way === undefined)
 	        way = 0;
-	    if (filter_price === undefined) 
+	    if (filter_price === undefined)
 	        filter_price = 1;
-	    if (sort_by === undefined && sort_value === undefined) 
+	    if (sort_by === undefined && sort_value === undefined)
 	    {
 	    	var sort_filter = $(".sort_btn_span[data-sort-value!='0']");
 	    	if (sort_filter.length)
@@ -66,7 +85,7 @@ $(document).ready(function()
 		min: min_price,
 		max: max_price,
 		values: [min_price, max_price],
-		slide: function(event, ui) 
+		slide: function(event, ui)
 		{
 			$("#filter_price_from").html(ui.values[0]);
 			$("#filter_price_to").html(ui.values[1]);
@@ -81,7 +100,7 @@ $(document).ready(function()
 			}
 		}
 	});
-	
+
 	$(".sort_result").on("click", function(e)
 	{
 		e.preventDefault();
@@ -151,7 +170,7 @@ $(document).ready(function()
 		if (filter_ajax)
 			filter_ajax.abort();
 
-		data = { ajax_filter : 1, filter_data: data};
+		data = { filter_data: data, ajax: 1, action:'FilterResults'};
 
 		if (sort_by && sort_value)
 		{
@@ -163,101 +182,16 @@ $(document).ready(function()
 		{
             url: cat_link,
             type: 'POST',
-            dataType: 'json',
+            dataType: 'html',
             data: data,
             success: function (result)
             {
-            	if (result)
-            	{
-            		$('#category_data_cont').empty();
-
-            		$.each(result.rm_data, function(key, value)
-            		{
-            			if (value.data.available.length) 
-            			{
-	            			var html  = '<div class="col-sm-12 room_cont">';
-	            					html += '<div class="row">';
-	            						html += '<div class="col-sm-4">';
-	            							html += '<a href="'+value.product_link+'">';
-	            								html += '<img src="'+value.image+'" class="img-responsive">';
-	            							html += '</a>';
-	            						html += '</div>';
-	            						html += '<div class="col-sm-8">';
-	            							html += '<p class="rm_heading">'+value.name+'</p>';
-	            							html += '<div class="rm_desc">'+value.description;
-		            							html += '&nbsp;<a href="'+value.product_link+'">View More....';
-		            							html += '</a>';
-	            							html += '</div>';
-	            							html += '<p><span class="capa_txt">Max Capacity:</span><span class="capa_data"> '+value.adult+' Adults, '+value.children+' child</span></p>';
-	            							html += '<div class="rm_review_cont pull-left">';
-	            								for (var i = 1; i <= 5; i++) 
-	            								{
-	            									if (i <= value.ratting) 
-	            									{
-	            										html += '<div class="rm_ratting_yes" style="background-image:url('+ratting_img+');"></div>'
-	            									}
-	            									else
-	            									{
-	            										html += '<div class="rm_ratting_no" style="background-image:url('+ratting_img+');"></div>';
-	            									}
-	            								}
-	            								html += '<span class="rm_review">'+value.num_review+' Reviews</span>';
-	            							html += '</div>';
-	            							if (typeof value.room_left != 'undefined')
-	            							{
-	            								html += '<span class="rm_left pull-right" ';
-	            								if (value.room_left > warning_num)
-	            								{
-	            									html += ' style="display:none;"';
-	            								}
-
-	            								html += '>Hurry! ';
-
-
-	            								html +='<span class="cat_remain_rm_qty_'+value.id_product+'">'+value.room_left+'</span>';
-	            								html +=' rooms left</span>';
-	            							}
-	            							if (value.feature.length)
-	            							{
-	            								html += '<div class="rm_amenities_cont">';
-	            									$.each(value.feature, function(f_k, f_v)
-	            									{
-	            										html += '<img src="'+feat_img_dir+f_v.value+'" class="rm_amen">';
-	            									});
-	            								html += '</div>';
-	            							}
-				                            html += '<div class="row margin-lr-0 pull-left rm_price_cont">';
-				            					html += '<span class="pull-left rm_price_val">'+currency_prefix+value.price+currency_suffix+'</span><span class="pull-left rm_price_txt">/Per Night</span>';
-				                            html += '</div>';
-				                            html += ' <a cat_rm_check_in="'+date_from+'" cat_rm_check_out="'+date_to+'" href="" rm_product_id="'+value.id_product+'" cat_rm_book_nm_days="'+num_days+'" class="btn rm_book_btn pull-right">Book Now</a>';
-
-				                            
-
-				                            html += '<div class="rm_qty_cont pull-right clearfix" id="cat_rm_quantity_wanted_'+value.id_product+'">';
-				                            	html += '<span class="qty_txt">Qty.:</span>';
-				                            	html += '<div class="qty_sec_cont row">';
-				                            		html += '<div class="qty_input_cont row margin-lr-0">';
-				                            			html += '<input autocomplete="off" type="text" min="1" name="qty_'+value.id_product+'" id="cat_quantity_wanted_'+value.id_product+'" class="text-center form-control cat_quantity_wanted" value="1" id_room_product="'+value.id_product+'">';
-				                            		html += '</div>';
-				                            	
-					                            	html += '<div class="qty_direction">';
-					                            		html += '<a href="#" data-room_id_product="'+value.id_product+'" data-field-qty="qty_'+value.id_product+'" class="btn btn-default cat_rm_quantity_up">';
-							                            	html += '<span><i class="icon-plus"></i></span>';
-							                            html += '</a>';
-
-							                            html += '<a href="#" data-field-qty="qty_'+value.id_product+'" class="btn btn-default cat_rm_quantity_down">';
-							                            	html += '<span><i class="icon-minus"></i></span>';
-					                            		html += '</a>';
-						                            html += '</div>';
-						                        html += '</div>';
-						                    html += '</div>';
-				            			html += '</div>';
-				            		html += '</div>';
-				            	html += '</div>';
-				            	$('#category_data_cont').append(html);
-            			}
-            		});
-            	}
+            	if (result) {
+            		$('#category_data_cont').html(result);
+            	} else {
+					var html = '<div class="noRoomsAvailAlert">'+noRoomAvailTxt+'</div>';
+					$('#category_data_cont').html(html);
+				}
             }
         });
 		return 1;

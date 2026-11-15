@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -74,7 +74,7 @@ class AdminSearchConfControllerCore extends AdminController
                 'title' => $this->l('Indexing'),
                 'icon' => 'icon-cogs',
                 'info' => '<p>
-						'.$this->l('The "indexed" products have been analyzed by PrestaShop and will appear in the results of a front office search.').'<br />
+						'.$this->l('The "indexed" products have been analyzed by Qloapps and will appear in the results of a front office search.').'<br />
 						'.$this->l('Indexed products').' <strong>'.(int)$indexed.' / '.(int)$total.'</strong>.
 					</p>
 					<p>
@@ -303,7 +303,7 @@ class AdminSearchConfControllerCore extends AdminController
                     'name' => 'alias',
                     'required' => true,
                     'hint' => array(
-                        $this->l('Enter each alias separated by a comma (e.g. \'prestshop,preztashop,prestasohp\').'),
+                        $this->l('Enter each alias separated by a comma (e.g. \'qloapps,preztashop,prestasohp\').'),
                         $this->l('Forbidden characters: &lt;&gt;;=#{}')
                     )
                 ),

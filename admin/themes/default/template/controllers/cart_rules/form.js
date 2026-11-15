@@ -1,5 +1,5 @@
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -73,14 +73,60 @@ function toggleCartRuleFilter(id)
 
 function removeCartRuleOption(item)
 {
+	var error = 0;
 	var id = $(item).attr('id').replace('_remove', '');
-	$('#' + id + '_2 option:selected').remove().appendTo('#' + id + '_1');
+	var selectedOpt = $('#' + id + '_2 option:selected');
+	var notAlloedRooms = [];
+	// validate if rooms with no hotel access are selected
+	$.each( selectedOpt, function( key, val ) {
+		if ($(this).attr('data-htl_access') == 0) {
+			notAlloedRooms.push($(this).text());
+			error = 1;
+		}
+	});
+	if (error == 0) {
+		selectedOpt.remove().appendTo('#' + id + '_1');;
+	} else {
+		var errorHtml = '';
+		errorHtml += room_access_err;
+		if (notAlloedRooms.length) {
+			errorHtml += '<br />' + room_rmv_txt + '<ul>';
+			$.each( notAlloedRooms, function( key, val ) {
+				errorHtml += '<li>' + val + '</li>';
+			});
+			errorHtml += '</ul>';
+		}
+		showErrorMessage(errorHtml);
+	}
 }
 
 function addCartRuleOption(item)
 {
+	var error = 0;
 	var id = $(item).attr('id').replace('_add', '');
-	$('#' + id + '_1 option:selected').remove().appendTo('#' + id + '_2');
+	var selectedOpt = $('#' + id + '_1 option:selected');
+	var notAlloedRooms = [];
+	// validate if rooms with no hotel access are selected
+	$.each( selectedOpt, function( key, val ) {
+		if ($(this).attr('data-htl_access') == 0) {
+			notAlloedRooms.push($(this).text());
+			error = 1;
+		}
+	});
+	if (error == 0) {
+		selectedOpt.remove().appendTo('#' + id + '_2');
+	} else {
+		var errorHtml = '';
+		errorHtml += room_access_err;
+		if (notAlloedRooms.length) {
+			errorHtml += '<br />' + room_rmv_txt + '<ul>';
+			$.each( notAlloedRooms, function( key, val ) {
+				errorHtml += '<li>' + val + '</li>';
+			});
+			errorHtml += '</ul>';
+		}
+		showErrorMessage(errorHtml);
+	}
 }
 
 function updateProductRuleShortDescription(item)
@@ -259,7 +305,8 @@ $('#free_gift_on').click(function(){
 	toggleGiftProduct();}
 );
 $('#free_gift_off').click(function(){
-	toggleGiftProduct();}
+	toggleGiftProduct();
+	$('#gift_products_found').hide();}
 );
 toggleGiftProduct();
 
@@ -300,7 +347,7 @@ $('#reductionProductFilter')
 			parse: function(data) {
 				var mytab = new Array();
 				for (var i = 0; i < data.length; i++)
-					mytab[mytab.length] = { data: data[i], value: (data[i].reference + ' ' + data[i].name).trim() };
+					mytab[mytab.length] = { data: data[i], value: ('(#' + data[i].id_product + ') ' + data[i].name).trim() };
 				return mytab;
 			},
 			extraParams: {
@@ -330,7 +377,7 @@ $('#customerFilter')
 			parse: function(data) {
 				var mytab = new Array();
 				for (var i = 0; i < data.length; i++)
-					mytab[mytab.length] = { data: data[i], value: data[i].cname + ' (' + data[i].email + ')' };
+					mytab[mytab.length] = { data: data[i], value: data[i].cname + ' (' + data[i].email + ')' + (data[i].from_shop_name ? ' - ' + data[i].from_shop_name : '' ) };
 				return mytab;
 			},
 			extraParams: {

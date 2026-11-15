@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2015 PrestaShop
+ * 2007-2017 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -19,7 +19,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author 	PrestaShop SA <contact@prestashop.com>
- *  @copyright  2007-2015 PrestaShop SA
+ *  @copyright  2007-2017 PrestaShop SA
  *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  */
@@ -34,6 +34,7 @@ class AdminLoginControllerCore extends AdminController
         $this->display_header = false;
         $this->display_footer = false;
         $this->meta_title = $this->l('Administration panel');
+        $this->css_files = array();
         parent::__construct();
         $this->layout = _PS_ADMIN_DIR_.DIRECTORY_SEPARATOR.'themes'.DIRECTORY_SEPARATOR.$this->bo_theme
             .DIRECTORY_SEPARATOR.'template'.DIRECTORY_SEPARATOR.'controllers'.DIRECTORY_SEPARATOR.'login'
@@ -50,6 +51,7 @@ class AdminLoginControllerCore extends AdminController
         $this->addjqueryPlugin('validate');
         $this->addJS(_PS_JS_DIR_.'jquery/plugins/validate/localization/messages_'.$this->context->language->iso_code.'.js');
         $this->addCSS(__PS_BASE_URI__.$this->admin_webpath.'/themes/'.$this->bo_theme.'/css/admin-theme.css', 'all', 0);
+        $this->addCSS(__PS_BASE_URI__.$this->admin_webpath.'/themes/'.$this->bo_theme.'/css/overrides.css', 'all', PHP_INT_MAX);
         $this->addJS(_PS_JS_DIR_.'vendor/spin.js');
         $this->addJS(_PS_JS_DIR_.'vendor/ladda.js');
         Media::addJsDef(array('img_dir' => _PS_IMG_));
@@ -57,9 +59,6 @@ class AdminLoginControllerCore extends AdminController
         Media::addJsDefL('more_errors', $this->l('There are several errors.', null, true, false));
 
         Hook::exec('actionAdminLoginControllerSetMedia');
-
-        // Specific Admin Theme
-        $this->addCSS(__PS_BASE_URI__.$this->admin_webpath.'/themes/'.$this->bo_theme.'/css/overrides.css', 'all', PHP_INT_MAX);
     }
 
     public function initContent()
@@ -151,7 +150,7 @@ class AdminLoginControllerCore extends AdminController
      *
      * @return bool
      */
-    public function viewAccess()
+    public function viewAccess($disable = false)
     {
         return true;
     }
@@ -220,14 +219,14 @@ class AdminLoginControllerCore extends AdminController
                 }
 
                 if (Tools::isSubmit('ajax')) {
-                    die(Tools::jsonEncode(array('hasErrors' => false, 'redirect' => $url)));
+                    die(json_encode(array('hasErrors' => false, 'redirect' => $url)));
                 } else {
                     $this->redirect_after = $url;
                 }
             }
         }
         if (Tools::isSubmit('ajax')) {
-            die(Tools::jsonEncode(array('hasErrors' => true, 'errors' => $this->errors)));
+            die(json_encode(array('hasErrors' => true, 'errors' => $this->errors)));
         }
     }
 
@@ -271,19 +270,19 @@ class AdminLoginControllerCore extends AdminController
                 if (!$result) {
                     $this->errors[] = Tools::displayError('An error occurred while attempting to change your password.');
                 } else {
-                    die(Tools::jsonEncode(array(
+                    die(json_encode(array(
                         'hasErrors' => false,
                         'confirm' => $this->l('Your password has been emailed to you.', 'AdminTab', false, false)
                     )));
                 }
             } else {
-                die(Tools::jsonEncode(array(
+                die(json_encode(array(
                     'hasErrors' => true,
                     'errors' => array(Tools::displayError('An error occurred while attempting to change your password.'))
                 )));
             }
         } elseif (Tools::isSubmit('ajax')) {
-            die(Tools::jsonEncode(array('hasErrors' => true, 'errors' => $this->errors)));
+            die(json_encode(array('hasErrors' => true, 'errors' => $this->errors)));
         }
     }
 }

@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -26,7 +26,7 @@
 
 {block name="label"}
 	{if $input.type == "select_template"}
-		<div id="tpl" style="display:{if isset($fields_value.send_email) && $fields_value.send_email}block{else}none{/if}">
+		<div id="tpl_{$input.template_attr}" style="display:{if $input.is_customer_template}{if isset($fields_value.show_customer_template) && $fields_value.show_customer_template}block{else}none{/if}{else}{if isset($fields_value.show_admin_template) && $fields_value.show_admin_template}block{else}none{/if}{/if}">
 	{/if}
 	{$smarty.block.parent}
 {/block}
@@ -40,23 +40,25 @@
 			<div class="translatable-field lang-{$language.id_lang}" {if $language.id_lang != $defaultFormLanguage}style="display:none"{/if}>
 				<div class="col-lg-8">
 					<select name="{$input.name}_{$language.id_lang}"
-							id="{$input.name}_select_{$language.id_lang}"
-							{if isset($input.multiple)}multiple="multiple" {/if}
-							{if isset($input.size)}size="{$input.size}"{/if}
-							{if isset($input.onchange)}onchange="{$input.onchange}"{/if}>
-						{foreach $input.options.query[$language.iso_code] AS $option}
-							<option value="{$option[$input.options.id]}"
-								{if isset($input.multiple)}
-									{foreach $fields_value[$input.name] as $field_value}
-										{if $field_value == $option[$input.options.id]}selected="selected"{/if}
-									{/foreach}
-								{else}
-									{if isset($fields_value[$input.name][$language.id_lang]) && ($fields_value[$input.name][$language.id_lang] == $option[$input.options.id])}selected="selected"{/if}
-								{/if}
-								data-preview="{$option[$input.options.folder]}"
-							>{$option[$input.options.name]|escape:'html':'UTF-8'}</option>
-						{/foreach}
-					</select>					
+					id="{$input.name}_select_{$language.id_lang}"
+					{if isset($input.multiple)}multiple="multiple" {/if}
+					{if isset($input.size)}size="{$input.size}"{/if}
+					{if isset($input.onchange)}onchange="{$input.onchange}"{/if}>
+						{if isset($input.options.query[$language.iso_code]) && $input.options.query[$language.iso_code]}
+							{foreach $input.options.query[$language.iso_code] AS $option}
+								<option value="{$option[$input.options.id]}"
+									{if isset($input.multiple)}
+										{foreach $fields_value[$input.name] as $field_value}
+											{if $field_value == $option[$input.options.id]}selected="selected"{/if}
+										{/foreach}
+									{else}
+										{if isset($fields_value[$input.name][$language.id_lang]) && ($fields_value[$input.name][$language.id_lang] == $option[$input.options.id])}selected="selected"{/if}
+									{/if}
+									data-preview="{$option[$input.options.folder]}"
+								>{$option[$input.options.name]|escape:'html':'UTF-8'}</option>
+							{/foreach}
+						{/if}
+					</select>
 				</div>
 				<div class="col-lg-4">
 					<button type="button" class="btn btn-default dropdown-toggle" tabindex="-1" data-toggle="dropdown">
@@ -70,7 +72,7 @@
 						</li>
 						{/foreach}
 					</ul>
-					<button type="button" class="btn btn-default" onclick="viewTemplates('#template_select_{$language.id_lang}', '{$language.iso_code}/', '.html');">
+					<button type="button" class="btn btn-default" onclick="viewTemplates('#{$input.name}_select_{$language.id_lang}', '{$language.iso_code}/', '.html');">
 						<i class="icon-eye-open"></i>
 						{l s='Preview'}
 					</button>
@@ -80,7 +82,7 @@
 			{if isset($input.hint)}
 			<div class="clearfix">&nbsp;</div>
 			<div class="col-lg-9">
-				<div class="alert alert-info">			
+				<div class="alert alert-info">
 				{if is_array($input.hint)}
 					{foreach from=$input.hint item=hint}
 						{$hint}<br/>
@@ -108,8 +110,19 @@
 
 {block name="script"}
 	$(document).ready(function() {
-		$('#send_email_on').click(function() {
-			$('#tpl').slideToggle();
+		$('#send_email_on, #send_email_to_customer_on').click(function() {
+			$('#tpl_'+$(this).attr('class')).slideToggle();
+		});
+
+		$('#send_email_to_superadmin_on, #send_email_to_employee_on, #send_email_to_hotelier_on').click(function() {
+			if ($('#send_email_to_superadmin_on').is(":checked")
+				|| $('#send_email_to_employee_on').is(":checked")
+				|| $('#send_email_to_hotelier_on').is(":checked")
+			) {
+				$('#tpl_' + $(this).attr('class')).show(500);
+			} else {
+				$('#tpl_' + $(this).attr('class')).hide(500);
+			}
 		});
 	});
 {/block}

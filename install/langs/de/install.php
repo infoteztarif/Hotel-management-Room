@@ -1,15 +1,17 @@
 <?php
 
 return array(
-  'informations' =>
-  array(
-    'documentation' => 'http://doc.prestashop.com/display/PS16/Installing+PrestaShop',
-    'documentation_upgrade' => 'http://docs.prestashop.com/display/PS16/Updating+PrestaShop',
-    'forum' => 'http://www.prestashop.com/forums/',
-    'blog' => 'http://www.prestashop.com/blog/',
-    'support' => 'https://www.prestashop.com/de/support',
-    'tutorial' => 'https://www.youtube.com/watch?v=psz4aIPZZuk',
-    'tailored_help' => 'http://addons.prestashop.com/en/388-support',
+  'informations' => array(
+      'documentation' => 'https://qloapps.com/qlo-reservation-system/',
+      'documentation_upgrade' => 'https://webkul.uvdesk.com/',
+      'forum' => 'https://forums.qloapps.com/',
+      'blog' => 'https://qloapps.com/blog/',
+      'support' => 'https://webkul.uvdesk.com/',
+      'tutorial' => 'https://www.youtube.com/watch?v=BWoifR8INCE',
+      'tailored_help' => 'https://webkul.uvdesk.com/',
+      'contact' => 'https://qloapps.com/contact/',
+      'services' => 'https://qloapps.com/services/?support',
+      'install_help' => 'https://qloapps.com/install-qloapps/',
   ),
   'translations' =>
   array(
@@ -164,7 +166,7 @@ return array(
     'To install PrestaShop, you need to have JavaScript enabled in your browser.' => 'JavaScript muss in Ihrem Browser aktiviert sein, um PrestaShop zu installieren.',
     'http://enable-javascript.com/' => 'http://enable-javascript.com/de/',
     'License Agreements' => 'Lizenzvereinbarung',
-    'To enjoy the many features that are offered for free by PrestaShop, please read the license terms below. PrestaShop core is licensed under OSL 3.0, while the modules and themes are licensed under AFL 3.0.' => 'Um all die Vorteile zu nutzen, die Ihnen Prestashop bietet, lesen sie bitte die folgenden Bedingungen. Der PrestaShop ist unter OSL 3.0 lizensiert, die Module und Themen unter AFL 3.0.',
+    'To enjoy the many features that are offered for free by QloApps, please read the license terms below. PrestaShop core is licensed under OSL 3.0, while the modules and themes are licensed under AFL 3.0.' => 'Um all die Vorteile zu nutzen, die Ihnen Prestashop bietet, lesen sie bitte die folgenden Bedingungen. Der PrestaShop ist unter OSL 3.0 lizensiert, die Module und Themen unter AFL 3.0.',
     'I agree to the above terms and conditions.' => 'Ich akzeptiere die obenstehenden AGB',
     'I agree to participate in improving the solution by sending anonymous information about my configuration.' => 'Ich möchte zur Verbesserung von PrestaShop beitragen und bin einverstanden, dass anonyme Informationen zu meiner Konfiguration übermittelt werden.',
     'Done!' => 'Fertig!',

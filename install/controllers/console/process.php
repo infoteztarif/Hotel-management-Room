@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -221,7 +221,7 @@ class InstallControllerConsoleProcess extends InstallControllerConsole
         $this->model_install->xml_loader_ids = $this->datas->xml_loader_ids;
         $result = $this->model_install->populateDatabase();
         $this->datas->xml_loader_ids = $this->model_install->xml_loader_ids;
-        Configuration::updateValue('PS_INSTALL_XML_LOADERS_ID', Tools::jsonEncode($this->datas->xml_loader_ids));
+        Configuration::updateValue('PS_INSTALL_XML_LOADERS_ID', json_encode($this->datas->xml_loader_ids));
 
         return $result;
     }
@@ -244,6 +244,7 @@ class InstallControllerConsoleProcess extends InstallControllerConsole
             'admin_lastname' =>            $this->datas->admin_lastname,
             'admin_password' =>            $this->datas->admin_password,
             'admin_email' =>            $this->datas->admin_email,
+            'marketing_consent' =>      $this->datas->marketing_consent,
             'configuration_agrement' =>    true,
             'send_informations' => true,
         ));
@@ -268,7 +269,7 @@ class InstallControllerConsoleProcess extends InstallControllerConsole
     {
         $this->initializeContext();
 
-        if ((!$this->datas->xml_loader_ids || !is_array($this->datas->xml_loader_ids)) && ($xml_ids = Tools::jsonDecode(Configuration::get('PS_INSTALL_XML_LOADERS_ID'), true))) {
+        if ((!$this->datas->xml_loader_ids || !is_array($this->datas->xml_loader_ids)) && ($xml_ids = json_decode(Configuration::get('PS_INSTALL_XML_LOADERS_ID'), true))) {
             $this->datas->xml_loader_ids = $xml_ids;
         }
 

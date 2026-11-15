@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,6 +39,8 @@ class AdminCartRulesControllerCore extends AdminController
         $this->addRowAction('delete');
         $this->_orderWay = 'DESC';
 
+        $this->context = Context::getContext();
+
         $this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'),'icon' => 'icon-trash', 'confirm' => $this->l('Delete selected items?')));
 
         $this->fields_list = array(
@@ -51,6 +53,25 @@ class AdminCartRulesControllerCore extends AdminController
             'active' => array('title' => $this->l('Status'), 'active' => 'status', 'type' => 'bool', 'align' => 'center', 'class' => 'fixed-width-xs', 'orderby' => false),
         );
 
+        // START send access query information to the admin controller
+        $this->access_select = ' SELECT a.`id_cart_rule` FROM '._DB_PREFIX_.'cart_rule a';
+        if ($acsHtls = HotelBranchInformation::getProfileAccessedHotels($this->context->employee->id_profile, 1, 1)) {
+            // check roomtypes access if at least one hotel is acessed
+            $permittedIdsQuery = ' SELECT DISTINCT crprg.`id_cart_rule`
+            FROM '._DB_PREFIX_.'cart_rule_product_rule_group crprg';
+            $permittedIdsQuery .= ' INNER JOIN '._DB_PREFIX_.'cart_rule_product_rule crpr
+            ON (crprg.id_product_rule_group = crpr.id_product_rule_group)';
+            $permittedIdsQuery .= ' INNER JOIN '._DB_PREFIX_.'cart_rule_product_rule_value crpv
+            ON (crpv.id_product_rule = crpr.id_product_rule)';
+            $permittedIdsQuery .= ' INNER JOIN '._DB_PREFIX_.'htl_room_type hrt ON (crpv.id_item = hrt.id_product)';
+            $permittedIdsQuery .= ' WHERE hrt.id_hotel IN ('.implode(',', $acsHtls).')';
+        }
+        $notInCond = ' SELECT DISTINCT cprg.`id_cart_rule` FROM '._DB_PREFIX_.'cart_rule_product_rule_group cprg';
+        //check access if at least one hotel is acessed other wise remove all cart rules created for room types
+        if ($acsHtls) {
+            $notInCond .= ' WHERE cprg.`id_cart_rule` NOT IN ('.$permittedIdsQuery.')';
+        }
+        $this->access_where = ' WHERE a.`id_cart_rule` NOT IN ('.$notInCond.')';
         parent::__construct();
     }
 
@@ -119,12 +140,18 @@ class AdminCartRulesControllerCore extends AdminController
                 }
             }
         }
-        echo Tools::jsonEncode(array('html' => $html, 'next_link' => $next_link));
+        echo json_encode(array('html' => $html, 'next_link' => $next_link));
     }
 
     public function setMedia()
     {
         parent::setMedia();
+        Media::addJsDef(
+            array(
+                'room_access_err' => $this->l('You can only select room types which hotel(s) access is provided to this employee.'),
+                'room_rmv_txt' => $this->l('Unselect below room types'),
+            )
+        );
         $this->addJqueryPlugin(array('typewatch', 'fancybox', 'autocomplete'));
     }
 
@@ -231,6 +258,18 @@ class AdminCartRulesControllerCore extends AdminController
         return parent::postProcess();
     }
 
+    public function processDelete()
+    {
+        $res = parent::processDelete();
+        if (Tools::isSubmit('delete'.$this->table)) {
+            $back = urldecode(Tools::getValue('back', ''));
+            if (!empty($back)) {
+                $this->redirect_after = $back;
+            }
+        }
+        return $res;
+    }
+
     protected function afterUpdate($current_object)
     {
         // All the associations are deleted for an update, then recreated when we call the "afterAdd" method
@@ -238,8 +277,6 @@ class AdminCartRulesControllerCore extends AdminController
         foreach (array('country', 'carrier', 'group', 'product_rule_group', 'shop') as $type) {
             Db::getInstance()->delete('cart_rule_'.$type, '`id_cart_rule` = '.(int)$id_cart_rule);
         }
-
-
         Db::getInstance()->delete('cart_rule_product_rule', 'NOT EXISTS (SELECT 1 FROM `'._DB_PREFIX_.'cart_rule_product_rule_group`
 			WHERE `'._DB_PREFIX_.'cart_rule_product_rule`.`id_product_rule_group` = `'._DB_PREFIX_.'cart_rule_product_rule_group`.`id_product_rule_group`)');
         Db::getInstance()->delete('cart_rule_product_rule_value', 'NOT EXISTS (SELECT 1 FROM `'._DB_PREFIX_.'cart_rule_product_rule`
@@ -439,20 +476,42 @@ class AdminCartRulesControllerCore extends AdminController
             case 'products':
                 $products = array('selected' => array(), 'unselected' => array());
                 $results = Db::getInstance()->executeS('
-				SELECT DISTINCT name, p.id_product as id
+				SELECT DISTINCT name, hbl.`hotel_name`, p.id_product as id
 				FROM '._DB_PREFIX_.'product p
 				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl
 					ON (p.`id_product` = pl.`id_product`
 					AND pl.`id_lang` = '.(int)Context::getContext()->language->id.Shop::addSqlRestrictionOnLang('pl').')
-				'.Shop::addSqlAssociation('product', 'p').'
-				WHERE id_lang = '.(int)Context::getContext()->language->id.'
+                '.Shop::addSqlAssociation('product', 'p').'
+                LEFT JOIN `'._DB_PREFIX_.'htl_room_type` hrt
+                ON (p.`id_product` = hrt.`id_product`)
+                LEFT JOIN `'._DB_PREFIX_.'htl_branch_info_lang` hbl
+                ON (hrt.`id_hotel` = hbl.`id` AND hbl.`id_lang` = '.(int)Context::getContext()->language->id.Shop::addSqlRestrictionOnLang('pl').')
 				ORDER BY name');
                 foreach ($results as $row) {
+                    if($row['hotel_name']) {
+                        $row['name'] .= ' / '.$row['hotel_name'];
+                    }
                     $products[in_array($row['id'], $selected) ? 'selected' : 'unselected'][] = $row;
                 }
+                // filter hotels as per accessed hotels
+                $products['selected'] = HotelBranchInformation::filterDataByHotelAccess(
+                    $products['selected'],
+                    $this->context->employee->id_profile,
+                    0,
+                    1,
+                    1
+                );
+                $products['unselected'] = HotelBranchInformation::filterDataByHotelAccess(
+                    $products['unselected'],
+                    $this->context->employee->id_profile,
+                    0,
+                    1,
+                    1
+                );
                 Context::getContext()->smarty->assign('product_rule_itemlist', $products);
                 $choose_content = $this->createTemplate('product_rule_itemlist.tpl')->fetch();
                 Context::getContext()->smarty->assign('product_rule_choose_content', $choose_content);
+
                 break;
             case 'manufacturers':
                 $products = array('selected' => array(), 'unselected' => array());
@@ -516,25 +575,31 @@ class AdminCartRulesControllerCore extends AdminController
         }
 
         if (Tools::isSubmit('customerFilter')) {
+            $query_multishop = Shop::isFeatureActive() ? 's.`name` AS `from_shop_name`,' : '';
             $search_query = trim(Tools::getValue('q'));
-            $customers = Db::getInstance()->executeS('
-			SELECT `id_customer`, `email`, CONCAT(`firstname`, \' \', `lastname`) as cname
-			FROM `'._DB_PREFIX_.'customer`
-			WHERE `deleted` = 0 AND is_guest = 0 AND active = 1
-			AND (
-				`id_customer` = '.(int)$search_query.'
-				OR `email` LIKE "%'.pSQL($search_query).'%"
-				OR `firstname` LIKE "%'.pSQL($search_query).'%"
-				OR `lastname` LIKE "%'.pSQL($search_query).'%"
-			)
-			ORDER BY `firstname`, `lastname` ASC
-			LIMIT 50');
-            die(Tools::jsonEncode($customers));
+            $customers = Db::getInstance()->executeS('SELECT c.`id_customer`, c.`email`, '.$query_multishop.' CONCAT(c.`firstname`, \' \', c.`lastname`) as cname
+                FROM `'._DB_PREFIX_.'customer` c
+                LEFT JOIN `'._DB_PREFIX_.'shop` s ON (c.`id_shop` = s.`id_shop`)
+                WHERE c.`deleted` = 0 AND c.`is_guest` = 0 AND c.`active` = 1
+                AND (
+                    c.`id_customer` = '.(int)$search_query.'
+                    OR c.`email` LIKE "%'.pSQL($search_query).'%"
+                    OR c.`firstname` LIKE "%'.pSQL($search_query).'%"
+                    OR c.`lastname` LIKE "%'.pSQL($search_query).'%"
+                )
+                ORDER BY c.`firstname`, c.`lastname` ASC
+                LIMIT 50');
+            die(json_encode($customers));
         }
         // Both product filter (free product and product discount) search for products
         if (Tools::isSubmit('giftProductFilter') || Tools::isSubmit('reductionProductFilter')) {
             $products = Product::searchByName(Context::getContext()->language->id, trim(Tools::getValue('q')));
-            die(Tools::jsonEncode($products));
+            // filter hotels as per accessed hotels
+            $products = HotelBranchInformation::filterDataByHotelAccess(
+                $products,
+                $this->context->employee->id_profile
+            );
+            die(json_encode($products));
         }
     }
 
@@ -570,24 +635,19 @@ class AdminCartRulesControllerCore extends AdminController
                 'found' => true
             );
         } else {
-            return array('found' => false, 'notfound' => Tools::displayError('No product has been found.'));
+            return array('found' => false, 'notfound' => Tools::displayError('No room type has been found.'));
         }
     }
 
     public function ajaxProcessSearchProducts()
     {
         $array = $this->searchProducts(Tools::getValue('product_search'));
-        $this->content = trim(Tools::jsonEncode($array));
+        $this->content = trim(json_encode($array));
     }
 
     public function renderForm()
     {
         $limit = 40;
-        $back = Tools::safeOutput(Tools::getValue('back', ''));
-        if (empty($back)) {
-            $back = self::$currentIndex.'&token='.$this->token;
-        }
-
         $this->toolbar_btn['save-and-stay'] = array(
             'href' => '#',
             'desc' => $this->l('Save and Stay')
@@ -711,6 +771,6 @@ class AdminCartRulesControllerCore extends AdminController
         if ($vouchers = CartRule::getCartsRuleByCode(Tools::getValue('q'), (int)$this->context->language->id, true)) {
             $found = true;
         }
-        echo Tools::jsonEncode(array('found' => $found, 'vouchers' => $vouchers));
+        echo json_encode(array('found' => $found, 'vouchers' => $vouchers));
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -135,8 +135,8 @@ class ProductDownloadCore extends ObjectModel
             return false;
         }
 
-        return unlink(_PS_DOWNLOAD_DIR_.$this->filename)
-            && Db::getInstance()->delete('product_download', 'id_product_download = '.(int)$id_product_download);
+        return Tools::deleteFile(_PS_DOWNLOAD_DIR_.$this->filename)
+            && Db::getInstance()->delete('product_download', 'id_product_download =  '.(int)$id_product_download);
     }
 
     /**
@@ -149,7 +149,7 @@ class ProductDownloadCore extends ObjectModel
         if (!$this->filename) {
             return false;
         }
-        return file_exists(_PS_DOWNLOAD_DIR_.$this->filename);
+        return (bool)Tools::file_get_contents(__PS_BASE_URI__.'download/'.$this->filename);
     }
 
     /**
@@ -168,7 +168,7 @@ class ProductDownloadCore extends ObjectModel
      * @param int $id_product Product the id
      * @return int Product the id for this virtual product
      */
-    public static function getIdFromIdProduct($id_product)
+    public static function getIdFromIdProduct($id_product, $active = true)
     {
         if (!ProductDownload::isFeatureActive()) {
             return false;
@@ -180,7 +180,7 @@ class ProductDownloadCore extends ObjectModel
 		SELECT `id_product_download`
 		FROM `'._DB_PREFIX_.'product_download`
 		WHERE `id_product` = '.(int)$id_product.'
-		AND `active` = 1
+		'.($active ? ' AND `active` = 1' : '').'
 		ORDER BY `id_product_download` DESC');
 
         return self::$_productIds[$id_product];

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -110,6 +110,7 @@ class ParentOrderControllerCore extends FrontController
                                 $this->errors[] = $error;
                             } else {
                                 $this->context->cart->addCartRule($cartRule->id);
+                                CartRule::autoAddToCart($this->context);
                                 if (Configuration::get('PS_ORDER_PROCESS_TYPE') == 1) {
                                     Tools::redirect('index.php?controller=order-opc&addingCartRule=1');
                                 }
@@ -166,10 +167,27 @@ class ParentOrderControllerCore extends FrontController
      */
     protected function _checkFreeOrder()
     {
-        if ($this->context->cart->getOrderTotal() <= 0) {
+        // let see if any due amount for order status
+        $dueAmount = 0;
+        // check if customer has chosen advance payment option for this cart
+        if ($this->context->cart->is_advance_payment) {
+            $orderTotal = $this->context->cart->getOrderTotal(true, CART::ADVANCE_PAYMENT);
+            $dueAmount = ($this->context->cart->getOrderTotal() - $orderTotal);
+        } else {
+            $orderTotal = $this->context->cart->getOrderTotal();
+        }
+        if ($orderTotal <= 0) {
             $order = new FreeOrder();
             $order->free_order_class = true;
-            $order->validateOrder($this->context->cart->id, Configuration::get('PS_OS_PAYMENT'), 0, Tools::displayError('Free order', false), null, array(), null, false, $this->context->cart->secure_key);
+
+            // order status payment accepted if no amount is pending for the booking
+            if ($dueAmount > 0) {
+                $orderStatus = Configuration::get('PS_OS_AWAITING_REMOTE_PAYMENT');
+            } else {
+                $orderStatus = Configuration::get('PS_OS_PAYMENT');
+            }
+
+            $order->validateOrder($this->context->cart->id, $orderStatus, 0, Tools::displayError('Free order', false), null, array(), null, false, $this->context->cart->secure_key);
             return (int)Order::getOrderByCartId($this->context->cart->id);
         }
         return false;
@@ -478,8 +496,6 @@ class ParentOrderControllerCore extends FrontController
 
     protected function _assignCarrier()
     {
-        $address = new Address($this->context->cart->id_address_delivery);
-        $id_zone = Address::getZoneById($address->id);
         $carriers = $this->context->cart->simulateCarriersOutput(null, true);
         $checked = $this->context->cart->simulateCarrierSelectedOutput(false);
         $delivery_option_list = $this->context->cart->getDeliveryOptionList();

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -354,7 +354,7 @@ class AdminStoresControllerCore extends AdminController
         if (isset($_POST['submitAdd'.$this->table])) {
             /* Cleaning fields */
             foreach ($_POST as $kp => $vp) {
-                if (!in_array($kp, array('checkBoxShopGroupAsso_store', 'checkBoxShopAsso_store'))) {
+                if (!in_array($kp, array('checkBoxShopGroupAsso_store', 'checkBoxShopAsso_store')) && !is_array($_POST[$kp])) {
                     $_POST[$kp] = trim($vp);
                 }
             }
@@ -414,7 +414,7 @@ class AdminStoresControllerCore extends AdminController
         $ret = parent::postImage($id);
         $generate_hight_dpi_images = (bool)Configuration::get('PS_HIGHT_DPI');
 
-        if (($id_store = (int)Tools::getValue('id_store')) && isset($_FILES) && count($_FILES) && file_exists(_PS_STORE_IMG_DIR_.$id_store.'.jpg')) {
+        if (($id_store = (int)Tools::getValue('id_store')) && isset($_FILES) && count($_FILES) && Tools::file_get_contents($this->context->link->getMediaLink(_THEME_STORE_DIR_.$id_store.'.jpg'))) {
             $images_types = ImageType::getImagesTypes('stores');
             foreach ($images_types as $k => $image_type) {
                 ImageManager::resize(_PS_STORE_IMG_DIR_.$id_store.'.jpg',

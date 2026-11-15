@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -64,12 +64,12 @@ class SearchControllerCore extends FrontController
                 }
                 Hook::exec('actionSearch', array('expr' => $query, 'total' => count($searchResults)));
             }
-            $this->ajaxDie(Tools::jsonEncode($searchResults));
+            $this->ajaxDie(json_encode($searchResults));
         }
 
         //Only controller content initialization when the user use the normal search
         parent::initContent();
-        
+
         $product_per_page = isset($this->context->cookie->nb_item_per_page) ? (int)$this->context->cookie->nb_item_per_page : Configuration::get('PS_PRODUCTS_PER_PAGE');
 
         if ($this->instant_search && !is_array($query)) {

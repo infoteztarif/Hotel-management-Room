@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -117,7 +117,7 @@ class AdminPreferencesControllerCore extends AdminController
             $fields = array_merge($fields, array(
                 'PS_TOKEN_ENABLE' => array(
                     'title' => $this->l('Increase front office security'),
-                    'desc' => $this->l('Enable or disable token in the Front Office to improve PrestaShop\'s security.'),
+                    'desc' => $this->l('Enable or disable token in the Front Office to improve Qloapps\'s security.'),
                     'validation' => 'isBool',
                     'cast' => 'intval',
                     'type' => 'bool',
@@ -140,6 +140,13 @@ class AdminPreferencesControllerCore extends AdminController
                     'type' => 'bool',
                     'default' => '0'
                 ),
+                // 'PS_API_KEY' => array(
+                //     'title' => $this->l('API key'),
+                //     'desc' => $this->l('Add your API key to display Google Map'),
+                //     'cast' => 'strval',
+                //     'type' => 'text',
+                //     'class' => 'fixed-width-xxl'
+                // ),
                 'PS_PRICE_ROUND_MODE' => array(
                     'title' => $this->l('Round mode'),
                     'desc' => $this->l('You can choose among 6 different ways of rounding prices. "Round up away from zero ..." is the recommended behavior.'),
@@ -178,36 +185,36 @@ class AdminPreferencesControllerCore extends AdminController
                     'type' => 'text',
                     'class' => 'fixed-width-xxl'
                 ),
-                'PS_DISPLAY_SUPPLIERS' => array(
-                    'title' => $this->l('Display suppliers and manufacturers'),
-                    'desc' => $this->l('Enable suppliers and manufacturers pages on your front office even when their respective modules are disabled.'),
-                    'validation' => 'isBool',
-                    'cast' => 'intval',
-                    'type' => 'bool'
-                ),
-                'PS_DISPLAY_BEST_SELLERS' => array(
-                    'title' => $this->l('Display best sellers'),
-                    'desc' => $this->l('Enable best sellers page on your front office even when its respective module is disabled.'),
-                    'validation' => 'isBool',
-                    'cast' => 'intval',
-                    'type' => 'bool'
-                ),
-                'PS_MULTISHOP_FEATURE_ACTIVE' => array(
-                    'title' => $this->l('Enable Multistore'),
-                    'desc' => $this->l('The multistore feature allows you to manage several e-shops with one Back Office. If this feature is enabled, a "Multistore" page will be available in the "Advanced Parameters" menu.'),
-                    'validation' => 'isBool',
-                    'cast' => 'intval',
-                    'type' => 'bool',
-                    'visibility' => Shop::CONTEXT_ALL
-                ),
-                'PS_SHOP_ACTIVITY' => array(
-                    'title' => $this->l('Main Shop Activity'),
-                    'validation' => 'isInt',
-                    'cast' => 'intval',
-                    'type' => 'select',
-                    'list' => $activities2,
-                    'identifier' => 'value'
-                ),
+                // 'PS_DISPLAY_SUPPLIERS' => array(
+                //     'title' => $this->l('Display suppliers and manufacturers'),
+                //     'desc' => $this->l('Enable suppliers and manufacturers pages on your front office even when their respective modules are disabled.'),
+                //     'validation' => 'isBool',
+                //     'cast' => 'intval',
+                //     'type' => 'bool'
+                // ),
+                // 'PS_DISPLAY_BEST_SELLERS' => array(
+                //     'title' => $this->l('Display best sellers'),
+                //     'desc' => $this->l('Enable best sellers page on your front office even when its respective module is disabled.'),
+                //     'validation' => 'isBool',
+                //     'cast' => 'intval',
+                //     'type' => 'bool'
+                // ),
+                 // 'PS_MULTISHOP_FEATURE_ACTIVE' => array(
+                //     'title' => $this->l('Enable Multistore'),
+                //     'desc' => $this->l('The multistore feature allows you to manage several e-shops with one Back Office. If this feature is enabled, a "Multistore" page will be available in the "Advanced Parameters" menu.'),
+                //     'validation' => 'isBool',
+                //     'cast' => 'intval',
+                //     'type' => 'bool',
+                //     'visibility' => Shop::CONTEXT_ALL
+                // ),
+                // 'PS_SHOP_ACTIVITY' => array(
+                //     'title' => $this->l('Main Shop Activity'),
+                //     'validation' => 'isInt',
+                //     'cast' => 'intval',
+                //     'type' => 'select',
+                //     'list' => $activities2,
+                //     'identifier' => 'value'
+                // ),
             ));
 
             // No HTTPS activation if you haven't already.

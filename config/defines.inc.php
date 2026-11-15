@@ -1,6 +1,6 @@
 <?php
 /**
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -107,7 +107,6 @@ if (!defined('_PS_GEOIP_DIR_')) {
 if (!defined('_PS_GEOIP_CITY_FILE_')) {
     define('_PS_GEOIP_CITY_FILE_',       'GeoLiteCity.dat');
 }
-define('_PS_PEAR_XML_PARSER_PATH_',  _PS_TOOL_DIR_.'pear_xml_parser/');
 define('_PS_SWIFT_DIR_',             _PS_TOOL_DIR_.'swift/');
 define('_PS_TAASC_PATH_',            _PS_TOOL_DIR_.'taasc/');
 define('_PS_TCPDF_PATH_',            _PS_TOOL_DIR_.'tcpdf/');
@@ -140,7 +139,7 @@ define('_PS_TMP_IMG_DIR_',           _PS_IMG_DIR_.'tmp/');
 define('_PS_TRANS_PATTERN_',            '(.*[^\\\\])');
 define('_PS_MIN_TIME_GENERATE_PASSWD_', '360');
 if (!defined('_PS_MAGIC_QUOTES_GPC_')) {
-    define('_PS_MAGIC_QUOTES_GPC_',         get_magic_quotes_gpc());
+    define('_PS_MAGIC_QUOTES_GPC_', function_exists('get_magic_quotes_gpc')? @get_magic_quotes_gpc() : false);
 }
 
 define('_CAN_LOAD_FILES_', 1);
@@ -216,3 +215,5 @@ define('_PS_SMARTY_CONSOLE_OPEN_', 2);
 if (!defined('_PS_JQUERY_VERSION_')) {
     define('_PS_JQUERY_VERSION_', '1.11.0');
 }
+
+define('_PS_CACHE_CA_CERT_FILE_', _PS_CACHE_DIR_.'cacert.pem');

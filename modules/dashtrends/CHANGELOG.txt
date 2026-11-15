@@ -1,3 +1,20 @@
+------------------------------
+# V1.0.0 to V1.0.1
+------------------------------
+
+## Improved/Changed Features:
+
+* [BO] : [#310] Updated revenue section design
+
+------------------------------
+# V0.7.5 to V1.0.0
+------------------------------
+
+## Improved/Changed Features:
+
+* [CO] : Updated with latest PS version - 1.6.1.23.
+
+
 2014-04-22 16:25:49 +0200	// dashtrends: Better translatability.
 2014-04-14 14:51:09 +0200	[-] MO : Dashtrends - FixBug #PSCSX-1742
 2014-04-03 10:17:09 +0200	// fix date

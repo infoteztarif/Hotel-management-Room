@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -108,7 +108,7 @@ class StoresControllerCore extends FrontController
 
             $addresses_formated[$store['id_store']] = AddressFormat::getFormattedLayoutData($address);
 
-            $store['has_picture'] = file_exists(_PS_STORE_IMG_DIR_.(int)$store['id_store'].'.jpg');
+            $store['has_picture'] = Tools::file_get_contents($this->context->link->getMediaLink(_THEME_STORE_DIR_.(int)$store['id_store'].'.jpg')); // by webkul to get media link.
             if ($working_hours = $this->renderStoreWorkingHours($store)) {
                 $store['working_hours'] = $working_hours;
             }
@@ -208,7 +208,7 @@ class StoresControllerCore extends FrontController
      */
     protected function assignStores()
     {
-        $this->context->smarty->assign('hasStoreIcon', file_exists(_PS_IMG_DIR_.Configuration::get('PS_STORES_ICON')));
+        $this->context->smarty->assign('hasStoreIcon', Tools::file_get_contents($this->context->link->getMediaLink(_PS_IMG_DIR_.Configuration::get('PS_STORES_ICON')))); // by webkul to get media link.
 
         $distance_unit = Configuration::get('PS_DISTANCE_UNIT');
         if (!in_array($distance_unit, array('km', 'mi'))) {
@@ -285,8 +285,9 @@ class StoresControllerCore extends FrontController
         $this->addCSS(_THEME_CSS_DIR_.'stores.css');
 
         if (!Configuration::get('PS_STORES_SIMPLIFIED')) {
+            $api_key = (Configuration::get('PS_API_KEY')) ? 'key=' . Configuration::get('PS_API_KEY') . '&' : '';
             $default_country = new Country((int)Tools::getCountry());
-            $this->addJS('http'.((Configuration::get('PS_SSL_ENABLED') && Configuration::get('PS_SSL_ENABLED_EVERYWHERE')) ? 's' : '').'://maps.google.com/maps/api/js?sensor=true&region='.substr($default_country->iso_code, 0, 2));
+            $this->addJS('http'.((Configuration::get('PS_SSL_ENABLED') && Configuration::get('PS_SSL_ENABLED_EVERYWHERE')) ? 's' : '').'://maps.google.com/maps/api/js?'.$api_key.'region='.substr($default_country->iso_code, 0, 2));
             $this->addJS(_THEME_JS_DIR_.'stores.js');
         }
     }

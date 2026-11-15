@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -33,8 +33,8 @@
 	<h3 class="tab"> <i class="icon-info"></i> {l s='Information'}</h3>
 	<script type="text/javascript">
 
-		var msg_select_one = "{l s='Please select at least one product.' js=1}";
-		var msg_set_quantity = "{l s='Please set a quantity to add a product.' js=1}";
+		var msg_select_one = "{l s='Please select at least one room type.' js=1}";
+		var msg_set_quantity = "{l s='Please set a quantity to add a room type.' js=1}";
 
 		{if isset($ps_force_friendly_product) && $ps_force_friendly_product}
 			var ps_force_friendly_product = 1;
@@ -95,7 +95,7 @@
 	</script>
 
 	{if isset($display_common_field) && $display_common_field}
-	<div class="alert alert-warning" style="display: block">{l s='Warning, if you change the value of fields with an orange bullet %s, the value will be changed for all other shops for this product' sprintf=$bullet_common_field}</div>
+	<div class="alert alert-warning" style="display: block">{l s='Warning, if you change the value of fields with an orange bullet %s, the value will be changed for all other shops for this room type' sprintf=$bullet_common_field}</div>
 	{/if}
 
 	{include file="controllers/products/multishop/check_fields.tpl" product_tab="Informations"}
@@ -128,8 +128,7 @@
 
 	<div id="product-pack-container" {if $product_type != Product::PTYPE_PACK}style="display:none"{/if}></div>
 
-	<!-- <hr />
- -->
+	{*<hr />*}
 	<div class="form-group">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="name" type="default" multilang="true"}</span></div>
 		<label class="control-label col-lg-2 required" for="name_{$id_lang}">
@@ -148,10 +147,39 @@
 		</div>
 	</div>
 
+	{if isset($htl_room_type)}
+		<input type="hidden" value="{$htl_room_type['id']}" name="wk_id_room_type">
+	{/if}
+
+	<div class="form-group">
+		{if isset($htl_room_type)}
+			<label class="control-label col-sm-3 required" for="hotel_place">
+				{l s='Hotel'}
+			</label>
+			<div class="col-sm-5">
+				<input type="text" class="form-control" value="{$htl_full_info['hotel_name']}" readonly>
+				<input type="hidden" name="id_hotel" value="{$htl_room_type['id_hotel']}">
+				<p class="help-block">{l s='Hotel once assigned cannot be reassigned'}</p>
+			</div>
+		{else}
+			<label class="control-label col-sm-3 required" for="hotel_place">
+				{l s='Select Hotel'}
+			</label>
+			<div class="col-sm-5">
+				<select name="id_hotel" id="hotel_place" class="form-control">
+					{foreach from=$htl_info item=htl_dtl}
+						<option value="{$htl_dtl['id']}" >{$htl_dtl['hotel_name']}</option>
+					{/foreach}
+				</select>
+				<p class="help-block">{l s='Hotel once assigned cannot be reassigned'}</p>
+			</div>
+		{/if}
+	</div>
+
 	<div class="form-group hidden">
 		<label class="control-label col-lg-3" for="reference">
 			<span class="label-tooltip" data-toggle="tooltip"
-			title="{l s='Your internal reference code for this product.'} {l s='Allowed special characters:'} .-_#\">
+			title="{l s='Your internal reference code for this room type.'} {l s='Allowed special characters:'} .-_#\">
 				{$bullet_common_field} {l s='Reference code'}
 			</span>
 		</label>
@@ -163,7 +191,7 @@
 	<div class="form-group hidden">
 		<label class="control-label col-lg-3" for="ean13">
 			<span class="label-tooltip" data-toggle="tooltip"
-				title="{l s='This type of product code is specific to Europe and Japan, but is widely used internationally. It is a superset of the UPC code: all products marked with an EAN will be accepted in North America.'}">
+				title="{l s='This type of room type code is specific to Europe and Japan, but is widely used internationally. It is a superset of the UPC code: all products marked with an EAN will be accepted in North America.'}">
 				{$bullet_common_field} {l s='EAN-13 or JAN barcode'}
 			</span>
 		</label>
@@ -175,7 +203,7 @@
 	<div class="form-group hidden">
 		<label class="control-label col-lg-3" for="upc">
 			<span class="label-tooltip" data-toggle="tooltip"
-				title="{l s='This type of product code is widely used in the United States, Canada, the United Kingdom, Australia, New Zealand and in other countries.'}">
+				title="{l s='This type of room type code is widely used in the United States, Canada, the United Kingdom, Australia, New Zealand and in other countries.'}">
 				{$bullet_common_field} {l s='UPC barcode'}
 			</span>
 		</label>
@@ -224,8 +252,8 @@
 		<div class="col-lg-9 col-lg-offset-3">
 			<div class="alert alert-info">
 				{l s='404 Not Found = Do not redirect and display a 404 page.'}<br/>
-				{l s='301 Moved Permanently = Permanently display another product instead.'}<br/>
-				{l s='302 Moved Temporarily = Temporarily display another product instead.'}
+				{l s='301 Moved Permanently = Permanently display another room type instead.'}<br/>
+				{l s='302 Moved Temporarily = Temporarily display another room type instead.'}
 			</div>
 		</div>
 	</div>
@@ -259,8 +287,7 @@
 			var product_name_redirected = '{$product_name_redirected|escape:'html':'UTF-8'}';
 		</script>
 	</div>
-
-	<div class="form-group">
+	<div class="form-group hidden">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="visibility" type="default"}</span></div>
 		<label class="control-label col-lg-2" for="visibility">
 			{l s='Visibility'}
@@ -275,7 +302,7 @@
 		</div>
 	</div>
 
-	<div id="product_options" class="form-group">
+	<div id="product_options" class="form-group hidden">
 		<div class="col-lg-12">
 			<div class="form-group">
 				<div class="col-lg-1">
@@ -324,10 +351,11 @@
 		</div>
 	</div>
 	<hr/>
+
 	<div class="form-group">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="description_short" type="tinymce" multilang="true"}</span></div>
 		<label class="control-label col-lg-2" for="description_short_{$id_lang}">
-			<span class="label-tooltip" data-toggle="tooltip" title="{l s='Appears in the product list(s), and at the top of the product page.'}">
+			<span class="label-tooltip" data-toggle="tooltip" title="{l s='Appears in the room type list(s), and at the top of the room type page.'}">
 				{l s='Short description'}
 			</span>
 		</label>
@@ -345,7 +373,7 @@
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="description" type="tinymce" multilang="true"}</span></div>
 		<label class="control-label col-lg-2" for="description_{$id_lang}">
 			<span class="label-tooltip" data-toggle="tooltip"
-				title="{l s='Appears in the body of the product page.'}">
+				title="{l s='Appears in the body of the room type.'}">
 				{l s='Description'}
 			</span>
 		</label>
@@ -426,7 +454,7 @@
 	<div class="form-group">
 		<label class="control-label col-lg-3" for="tags_{$id_lang}">
 			<span class="label-tooltip" data-toggle="tooltip"
-				title="{l s='Will be displayed in the tags block when enabled. Tags help customers easily find your products.'}">
+				title="{l s='Will be displayed in the tags block when enabled. Tags help customers easily find your room types.'}">
 				{l s='Tags:'}
 			</span>
 		</label>
@@ -486,5 +514,5 @@
 </div>
 <script type="text/javascript">
 	hideOtherLanguage({$default_form_language});
-	var missing_product_name = '{l s='Please fill product name input field' js=1}';
+	var missing_product_name = '{l s='Please fill room type name input field' js=1}';
 </script>

@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -28,6 +28,7 @@
 <h1 class="page-heading">{l s='Order summary' mod='cheque'}</h1>
 
 {assign var='current_step' value='payment'}
+{include file="$tpl_dir./errors.tpl"}
 {include file="$tpl_dir./order-steps.tpl"}
 
 {if isset($nbProducts) && $nbProducts <= 0}
@@ -54,13 +55,15 @@
 				{if isset($currencies) && $currencies|@count > 1}
 					{l s='We accept several currencies to receive payments by check.' mod='cheque'}
 					<br />
-					<div class="form-group">
-						<label>{l s='Choose one of the following:' mod='cheque'}</label>
-						<select id="currency_payment" class="form-control" name="currency_payment">
-						{foreach from=$currencies item=currency}
-							<option value="{$currency.id_currency}"{if isset($currencies) && $currency.id_currency == $cust_currency} selected="selected"{/if}>{$currency.name}</option>
-						{/foreach}
-						</select>
+					<div class="form-group row">
+						<label class="col-xs-12">{l s='Choose one of the following:' mod='cheque'}</label>
+						<div class="col-xs-4">
+							<select id="currency_payment" class="form-control" name="currency_payment">
+							{foreach from=$currencies item=currency}
+								<option value="{$currency.id_currency}"{if isset($currencies) && $currency.id_currency == $cust_currency} selected="selected"{/if}>{$currency.name}</option>
+							{/foreach}
+							</select>
+						</div>
 					</div>
 				{else}
 					{l s='We allow the following currencies to be sent by check:' mod='cheque'}&nbsp;<b>{$currencies.0.name}</b>
@@ -77,9 +80,12 @@
 			<a href="{$link->getPageLink('order', true, NULL, "step=3")|escape:'html':'UTF-8'}" class="button-exclusive btn btn-default">
 				<i class="icon-chevron-left"></i>{l s='Other payment methods' mod='cheque'}
 			</a>
-			<button type="submit" class="button btn btn-default button-medium">
-				<span>{l s='I confirm my order' mod='cheque'}<i class="icon-chevron-right right"></i></span>
-			</button>
+			{*By webkul To Check Order restrict condition before Payment by the customer*}
+			{if !$restrict_order}
+                <button class="btn pull-right button button-medium" type="submit">
+                    <span>{l s='I confirm my order' mod='cheque'}&nbsp;<i class="icon-chevron-right right"></i></span>
+                </button>
+            {/if}
 		</p>
 	</form>
 {/if}

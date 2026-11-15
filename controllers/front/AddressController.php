@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -204,7 +204,7 @@ class AddressControllerCore extends FrontController
                     'hasError' => (bool)$this->errors,
                     'errors' => $this->errors
                 );
-                $this->ajaxDie(Tools::jsonEncode($return));
+                $this->ajaxDie(json_encode($return));
             }
         }
 
@@ -231,7 +231,7 @@ class AddressControllerCore extends FrontController
                     'id_address_delivery' => (int)$this->context->cart->id_address_delivery,
                     'id_address_invoice' => (int)$this->context->cart->id_address_invoice
                 );
-                $this->ajaxDie(Tools::jsonEncode($return));
+                $this->ajaxDie(json_encode($return));
             }
 
             // Redirect to old page or current page
@@ -364,7 +364,7 @@ class AddressControllerCore extends FrontController
                 'hasError' => !empty($this->errors),
                 'errors' => $this->errors
             );
-            $this->ajaxDie(Tools::jsonEncode($return));
+            $this->ajaxDie(json_encode($return));
         }
     }
 }

@@ -27,7 +27,7 @@
 if (!defined('_PS_VERSION_'))
 	exit;
 
-class DashGoals extends Module
+class Dashgoals extends Module
 {
 	protected static $month_labels = array();
 	protected static $types = array('traffic', 'conversion', 'avg_cart_value');
@@ -40,14 +40,14 @@ class DashGoals extends Module
 	{
 		$this->name = 'dashgoals';
 		$this->tab = 'dashboard';
-		$this->version = '0.6.6';
+		$this->version = '1.0.1';
 		$this->author = 'PrestaShop';
 
 		parent::__construct();
 
 		$this->displayName = $this->l('Dashboard Goals');
 		$this->description = $this->l('Adds a block with your store\'s forecast.');
-		$this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
+		$this->ps_versions_compliancy = array('min' => '1.6', 'max' => '1.7.0.99');
 
 		Dashgoals::$month_labels = array(
 			'01' => $this->l('January'),
@@ -114,8 +114,10 @@ class DashGoals extends Module
 
 	public function hookActionAdminControllerSetMedia()
 	{
-		if (get_class($this->context->controller) == 'AdminDashboardController')
-			$this->context->controller->addJs($this->_path.'views/js/'.$this->name.'.js');
+		if (get_class($this->context->controller) == 'AdminDashboardController') {
+			$this->context->controller->addJS($this->_path.'views/js/'.$this->name.'.js');
+			$this->context->controller->addCSS($this->_path.'views/css/'.$this->name.'.css');
+		}
 	}
 
 	public function setMonths($year)

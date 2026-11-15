@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,491 +19,482 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderDetailControllerCore extends FrontController
 {
-	public $php_self = 'order-detail';
+    public $php_self = 'order-detail';
 
-	public $auth = true;
-	public $authRedirection = 'history';
-	public $ssl = true;
+    public $auth = true;
+    public $authRedirection = 'history';
+    public $ssl = true;
 
-	/**
-	 * Initialize order detail controller
-	 * @see FrontController::init()
-	 */
-	public function init()
-	{
-		parent::init();
-		header('Cache-Control: no-cache, must-revalidate');
-		header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
-	}
+    /**
+     * Initialize order detail controller
+     * @see FrontController::init()
+     */
+    public function init()
+    {
+        parent::init();
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+    }
 
-	/**
-	 * Start forms process
-	 * @see FrontController::postProcess()
-	 */
-	public function postProcess()
-	{
-		if (Tools::isSubmit('submitMessage'))
-		{
-			$idOrder = (int)Tools::getValue('id_order');
-			$msgText = Tools::getValue('msgText');
+    /**
+     * Start forms process
+     * @see FrontController::postProcess()
+     */
+    public function postProcess()
+    {
+        if (Tools::isSubmit('submitMessage')) {
+            $idOrder = (int)Tools::getValue('id_order');
+            $msgText = Tools::getValue('msgText');
 
-			if (!$idOrder || !Validate::isUnsignedId($idOrder))
-				$this->errors[] = Tools::displayError('The order is no longer valid.');
-			elseif (empty($msgText))
-				$this->errors[] = Tools::displayError('The message cannot be blank.');
-			elseif (!Validate::isMessage($msgText))
-				$this->errors[] = Tools::displayError('This message is invalid (HTML is not allowed).');
-			if (!count($this->errors))
-			{
-				$order = new Order($idOrder);
-				if (Validate::isLoadedObject($order) && $order->id_customer == $this->context->customer->id)
-				{
-					//check if a thread already exist
-					$id_customer_thread = CustomerThread::getIdCustomerThreadByEmailAndIdOrder($this->context->customer->email, $order->id);
-					$id_product = (int)Tools::getValue('id_product');
-					$cm = new CustomerMessage();
-					if (!$id_customer_thread)
-					{
-						$ct = new CustomerThread();
-						$ct->id_contact = 0;
-						$ct->id_customer = (int)$order->id_customer;
-						$ct->id_shop = (int)$this->context->shop->id;
-						if ($id_product && $order->orderContainProduct($id_product))
-							$ct->id_product = $id_product;
-						$ct->id_order = (int)$order->id;
-						$ct->id_lang = (int)$this->context->language->id;
-						$ct->email = $this->context->customer->email;
-						$ct->status = 'open';
-						$ct->token = Tools::passwdGen(12);
-						$ct->add();
-					}
-					else
-					{
-						$ct = new CustomerThread((int)$id_customer_thread);
-						$ct->status = 'open';
-						$ct->update();
-					}
-					
-					$cm->id_customer_thread = $ct->id;
-					$cm->message = $msgText;
-					$cm->ip_address = (int)ip2long($_SERVER['REMOTE_ADDR']);
-					$cm->add();
+            if (!$idOrder || !Validate::isUnsignedId($idOrder)) {
+                $this->errors[] = Tools::displayError('The order is no longer valid.');
+            } elseif (empty($msgText)) {
+                $this->errors[] = Tools::displayError('The message cannot be blank.');
+            } elseif (!Validate::isMessage($msgText)) {
+                $this->errors[] = Tools::displayError('This message is invalid (HTML is not allowed).');
+            }
+            if (!count($this->errors)) {
+                $order = new Order($idOrder);
+                if (Validate::isLoadedObject($order) && $order->id_customer == $this->context->customer->id) {
+                    //check if a thread already exist
+                    $id_customer_thread = CustomerThread::getIdCustomerThreadByEmailAndIdOrder($this->context->customer->email, $order->id);
+                    $id_product = (int)Tools::getValue('id_product');
+                    $cm = new CustomerMessage();
+                    if (!$id_customer_thread) {
+                        $ct = new CustomerThread();
+                        $ct->id_contact = 0;
+                        $ct->id_customer = (int)$order->id_customer;
+                        $ct->id_shop = (int)$this->context->shop->id;
+                        if ($id_product && $order->orderContainProduct($id_product)) {
+                            $ct->id_product = $id_product;
+                        }
+                        $ct->id_order = (int)$order->id;
+                        $ct->id_lang = (int)$this->context->language->id;
+                        $ct->email = $this->context->customer->email;
+                        $ct->status = 'open';
+                        $ct->token = Tools::passwdGen(12);
+                        $ct->add();
+                    } else {
+                        $ct = new CustomerThread((int)$id_customer_thread);
+                        $ct->status = 'open';
+                        $ct->update();
+                    }
 
-					if (!Configuration::get('PS_MAIL_EMAIL_MESSAGE'))
-						$to = strval(Configuration::get('PS_SHOP_EMAIL'));
-					else
-					{
-						$to = new Contact((int)Configuration::get('PS_MAIL_EMAIL_MESSAGE'));
-						$to = strval($to->email);
-					}
-					$toName = strval(Configuration::get('PS_SHOP_NAME'));
-					$customer = $this->context->customer;
+                    $cm->id_customer_thread = $ct->id;
+                    $cm->message = $msgText;
+                    $cm->ip_address = (int)ip2long($_SERVER['REMOTE_ADDR']);
+                    $cm->add();
 
-					$product = new Product($id_product);
-					$product_name = '';
-					if (Validate::isLoadedObject($product) && isset($product->name[(int)$this->context->language->id]))
-						$product_name = $product->name[(int)$this->context->language->id];
+                    if (!Configuration::get('PS_MAIL_EMAIL_MESSAGE')) {
+                        $to = strval(Configuration::get('PS_SHOP_EMAIL'));
+                    } else {
+                        $to = new Contact((int)Configuration::get('PS_MAIL_EMAIL_MESSAGE'));
+                        $to = strval($to->email);
+                    }
+                    $toName = strval(Configuration::get('PS_SHOP_NAME'));
+                    $customer = $this->context->customer;
 
-					if (Validate::isLoadedObject($customer))
-						Mail::Send($this->context->language->id, 'order_customer_comment', Mail::l('Message from a customer'),
-						array(
-							'{lastname}' => $customer->lastname,
-							'{firstname}' => $customer->firstname,
-							'{email}' => $customer->email,
-							'{id_order}' => (int)$order->id,
-							'{order_name}' => $order->getUniqReference(),
-							'{message}' => Tools::nl2br($msgText),
-							'{product_name}' => $product_name
-						),
-						$to, $toName, $customer->email, $customer->firstname.' '.$customer->lastname);
+                    $product = new Product($id_product);
+                    $product_name = '';
+                    if (Validate::isLoadedObject($product) && isset($product->name[(int)$this->context->language->id])) {
+                        $product_name = $product->name[(int)$this->context->language->id];
+                    }
 
-					if (Tools::getValue('ajax') != 'true')
-						Tools::redirect('index.php?controller=order-detail&id_order='.(int)$idOrder);
+                    if (Validate::isLoadedObject($customer)) {
+                        Mail::Send(
+                            $this->context->language->id,
+                            'order_customer_comment',
+                            Mail::l('Message from a customer'),
+                            array(
+                                '{lastname}' => $customer->lastname,
+                                '{firstname}' => $customer->firstname,
+                                '{email}' => $customer->email,
+                                '{id_order}' => (int)$order->id,
+                                '{order_name}' => $order->getUniqReference(),
+                                '{message}' => Tools::nl2br($msgText),
+                                '{product_name}' => $product_name
+                            ),
+                            $to,
+                            $toName,
+                            strval(Configuration::get('PS_SHOP_EMAIL')),
+                            $customer->firstname.' '.$customer->lastname,
+                            null,
+                            null,
+                            _PS_MAIL_DIR_,
+                            false,
+                            null,
+                            null,
+                            $customer->email
+                        );
+                    }
 
-					$this->context->smarty->assign('message_confirmation', true);
-				}
-				else
-					$this->errors[] = Tools::displayError('Order not found');
-			}
-		}
-	}
+                    if (Tools::getValue('ajax') != 'true') {
+                        Tools::redirect('index.php?controller=order-detail&id_order='.(int)$idOrder);
+                    }
 
-	public function displayAjax()
-	{
-		$this->display();
-	}
+                    $this->context->smarty->assign('message_confirmation', true);
+                } else {
+                    $this->errors[] = Tools::displayError('Order not found');
+                }
+            }
+        }
+    }
 
-	/**
-	 * Assign template vars related to page content
-	 * @see FrontController::initContent()
-	 */
-	public function initContent()
-	{
-		parent::initContent();
+    public function displayAjax()
+    {
+        $this->display();
+    }
 
-		//By webkul to save order refund Info in our table
-		$saveRefundInfo = Tools::getValue('saveRefundInfo');
-		$saveTotalOrderRefundInfo = Tools::getValue('saveTotalOrderRefundInfo');
+    /**
+     * Assign template vars related to page content
+     * @see FrontController::initContent()
+     */
+    public function initContent()
+    {
+        parent::initContent();
+        if (!($id_order = (int) Tools::getValue('id_order')) || !Validate::isUnsignedId($id_order)) {
+            $this->errors[] = Tools::displayError('Order ID required');
+        } else {
+            $order = new Order($id_order);
+            // Here handle request from the ajax on order details page i.e refund, additional qty etc
+            $method = Tools::getValue('method');
+            // extra demands popup ajax
+            if ($method == 'getRoomTypeBookingDemands') {
+                $extraDemandsTpl = '';
+                if (($idProduct = Tools::getValue('id_product'))
+                    && ($idOrder = Tools::getValue('id_order'))
+                    && ($dateFrom = Tools::getValue('date_from'))
+                    && ($dateTo = Tools::getValue('date_to'))
+                ) {
+                    $objBookingDemand = new HotelBookingDemands();
+                    $useTax = 0;
+                    $customer = Context::getContext()->customer;
+                    if (Group::getPriceDisplayMethod($customer->id_default_group) == PS_TAX_INC) {
+                        $useTax = 1;
+                    }
+                    if ($extraDemands = $objBookingDemand->getRoomTypeBookingExtraDemands(
+                        $idOrder,
+                        $idProduct,
+                        0,
+                        $dateFrom,
+                        $dateTo,
+                        1,
+                        0,
+                        $useTax
+                    )) {
+                        $this->context->smarty->assign(
+                            array(
+                                'useTax' => $useTax,
+                                'extraDemands' => $extraDemands,
+                            )
+                        );
+                        $extraDemandsTpl .= $this->context->smarty->fetch(_PS_THEME_DIR_.'_partials/order_booking_demands.tpl');
+                    }
+                }
 
-		/*If requesst for only one room cancellation*/
-		if(isset($saveRefundInfo) && $saveRefundInfo)
-		{
-			$id_order = Tools::getValue('id_order');
-			$id_customer = Tools::getValue('id_customer');
-			$id_currency = Tools::getValue('id_currency');
-			$id_product = Tools::getValue('id_product');
-			$num_rooms = Tools::getValue('num_rooms');
-			$date_from = Tools::getValue('date_from');
-			$date_to = Tools::getValue('date_to');
-			$amount = Tools::getValue('amount');
-			$cancellation_reason = Tools::getValue('cancellation_reason');
+                die($extraDemandsTpl);
+            } elseif ($method == 'submitRefundRequest') { // room cancellation ajax
+                $hasError = 0;
+                if (!$refundReason = Tools::getValue('cancellation_reason')) {
+                    $hasError = 1;
+                } elseif (!Validate::isCleanHtml($refundReason)) {
+                    $hasError = 1;
+                }
+                if ($bookingRefunds = Tools::getValue('bookings_to_refund')) {
+                    if (!count($bookingRefunds = json_decode($bookingRefunds, true))) {
+                        $hasError = 1;
+                    } else {
+                        foreach ($bookingRefunds as $idHtlBooking) {
+                            if (OrderReturn::getOrdersReturnDetail($order->id, 0, $idHtlBooking)) {
+                                $hasError = 1;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    $hasError = 1;
+                }
+                if (!$hasError) {
+                    $objOrderReturn = new OrderReturn();
+                    $objOrderReturn->id_customer = $order->id_customer;
+                    $objOrderReturn->id_order = $order->id;
+                    $objOrderReturn->state = 0;
+                    $objOrderReturn->by_admin = 0;
+                    $objOrderReturn->question = $refundReason;
+                    $objOrderReturn->save();
+                    if ($objOrderReturn->id) {
+                        foreach ($bookingRefunds as $idHtlBooking) {
+                            $objHtlBooking = new HotelBookingDetail($idHtlBooking);
+                            $numDays = $objHtlBooking->getNumberOfDays(
+                                $objHtlBooking->date_from,
+                                $objHtlBooking->date_to
+                            );
 
-			$obj_htl_ord_ref = new HotelOrderRefundInfo();
-			$obj_htl_ord_ref->id_order = $id_order;
-			$obj_htl_ord_ref->id_product = $id_product;
-			$obj_htl_ord_ref->id_customer = $id_customer;
-			$obj_htl_ord_ref->id_currency = $id_currency;
-			$obj_htl_ord_ref->refund_stage_id = 1;
-			$obj_htl_ord_ref->order_amount = $amount;
-			$obj_htl_ord_ref->cancellation_reason = $cancellation_reason;
-			$obj_htl_ord_ref->num_rooms = $num_rooms;
-			$obj_htl_ord_ref->date_from = $date_from;
-			$obj_htl_ord_ref->date_to = $date_to;
-			$obj_htl_ord_ref->save();
+                            $objOrderReturnDetail = new OrderReturnDetail();
+                            $objOrderReturnDetail->id_order_return = $objOrderReturn->id;
+                            $objOrderReturnDetail->id_order_detail = $objHtlBooking->id_order_detail;
+                            $objOrderReturnDetail->product_quantity = $numDays;
+                            $objOrderReturnDetail->id_htl_booking = $idHtlBooking;
+                            $objOrderReturnDetail->save();
+                        }
+                    }
+                    // Emails to customer, admin on refund request state change
+                    $objOrderReturn->changeIdOrderReturnState(OrderReturnState::ORDER_RETRUN_FIRST_STATUS, $objOrderReturn->id);
 
-			$id_shop = Context::getContext()->shop->id;
+                    die(json_encode(array('status' => 1)));
+                }
+                die(json_encode(array('status' => 0)));
+            }
+            // END ajax request handle
 
-			//customer info
-			$obj_customer = new Customer($id_customer);
+            if (Validate::isLoadedObject($order) && $order->id_customer == $this->context->customer->id) {
+                $id_order_state = (int)$order->getCurrentState();
+                $carrier = new Carrier((int)$order->id_carrier, (int)$order->id_lang);
+                $addressInvoice = new Address((int)$order->id_address_invoice);
+                $addressDelivery = new Address((int)$order->id_address_delivery);
 
-			//product info
-			$prod_obj = new Product($id_product, false, $this->context->language->id);
-			$product_name = $prod_obj->name;
+                $inv_adr_fields = AddressFormat::getOrderedAddressFields($addressInvoice->id_country);
+                $dlv_adr_fields = AddressFormat::getOrderedAddressFields($addressDelivery->id_country);
 
-			//currency data
-			$obj_currency = new Currency($id_currency);
-			$currency_sign = $obj_currency->sign;
+                $invoiceAddressFormatedValues = AddressFormat::getFormattedAddressFieldsValues($addressInvoice, $inv_adr_fields);
+                $deliveryAddressFormatedValues = AddressFormat::getFormattedAddressFieldsValues($addressDelivery, $dlv_adr_fields);
 
-        	$admin_data = new EmployeeCore(1);
-		    $templateVars = array(
-		    	'{shop_name}' => Tools::safeOutput(Configuration::get('PS_SHOP_NAME', null, null, $id_shop)),
-		    	'{history_url}' => Context::getContext()->link->getPageLink('history', true, Context::getContext()->language->id, null, false, $id_shop),
-		    	'{my_account_url}' => Context::getContext()->link->getPageLink('my-account', true, Context::getContext()->language->id, null, false, $id_shop),
-				'{currency_sign}' => $currency_sign,
-				'{amount}' => $amount,
-				'{date_from}' => $date_from,
-				'{date_to}' => $date_to,
-				'{cust_name}' => $obj_customer->firstname.' '.$obj_customer->lastname,
-				'{cust_email}' => $obj_customer->email,
-				'{product_name}' => $product_name,
-				'{admin_email}' => $admin_data->email,
-			);
-        	$to = $obj_customer->email;
-        	$id_lang = Configuration::get('PS_LANG_DEFAULT');
-			$temp_path = _PS_MODULE_DIR_.'hotelreservationsystem/mails/';
-        	$template_name = 'request_processed';
+                if ($order->total_discounts > 0) {
+                    $this->context->smarty->assign('total_old', (float)$order->total_paid - $order->total_discounts);
+                }
+                $products = $order->getProducts();
 
-			if ($obj_htl_ord_ref->id)
-			{
-				if (Mail::Send($id_lang, $template_name, Mail::l('Order Cancellation Status', $id_lang), $templateVars, $to, null, null, null,  null, null, $temp_path, false, null, null))
-	        		$mail_err = 0;
-	        	else
-	        		$mail_err = 1;
+                $order_status = new OrderState((int)$id_order_state, (int)$order->id_lang);
 
-				die(Tools::jsonEncode(array('status'=>'success', 'mail_err'=>$mail_err)));
-			}
-			else
-				die(Tools::jsonEncode(array('status'=>'failed', 'mail_err'=>$mail_err)));
-		}
+                $customer = new Customer($order->id_customer);
 
-		/*If requesst for only all rooms cancellation in the order*/
-		if (isset($saveTotalOrderRefundInfo) && $saveTotalOrderRefundInfo)
-		{
-			$total_order_json_string_data = Tools::getValue('total_order_data');
-			$total_order_data = Tools::jsonDecode($total_order_json_string_data, true);
-			$id_customer = Tools::getValue('id_customer');
-			$id_currency = Tools::getValue('id_currency');
-			$cancellation_reason = Tools::getValue('cancellation_reason');
-			$id_order = Tools::getValue('id_order');
+                //by webkul to show order details properly on order history page
 
-			if (isset($total_order_data) && $total_order_data)
-			{
-				foreach ($total_order_data as $data_k => $data_v)
-				{
-					foreach ($data_v['date_diff'] as $rm_k => $rm_v)
-					{
-						$obj_htl_ord_ref = new HotelOrderRefundInfo();
-						$exist_info_refund = $obj_htl_ord_ref->getOderRefundInfoByIdOrderIdProductByDate($id_order, $data_v['id_product'], $rm_v['data_form'], $rm_v['data_to']);
+                if (Module::isInstalled('hotelreservationsystem')) {
+                    include_once _PS_MODULE_DIR_.'hotelreservationsystem/define.php';
+                    $objHtlBranchInfo = new HotelBranchInformation();
+                    $objBookingDetail = new HotelBookingDetail();
+                    $objRoomType = new HotelRoomType();
+                    $objBookingDemand = new HotelBookingDemands();
+                    $nonRequestedRooms = 1;
+                    $anyBackOrder = 0;
+                    $processedProducts = array();
+                    $cartHotelData = array();
+                    $total_demands_price_te = 0;
+                    $total_demands_price_ti = 0;
 
-						// any room existin htl_order_refund_info
-						if (!$exist_info_refund)
-						{
-							$obj_htl_ord_ref->id_order = $id_order;
-							$obj_htl_ord_ref->id_product = $data_v['id_product'];
-							$obj_htl_ord_ref->id_customer = $id_customer;
-							$obj_htl_ord_ref->id_currency = $id_currency;
-							$obj_htl_ord_ref->refund_stage_id = 1;
-							$obj_htl_ord_ref->order_amount = $rm_v['amount_tax_incl'];
-							$obj_htl_ord_ref->cancellation_reason = $cancellation_reason;
-							$obj_htl_ord_ref->num_rooms = $rm_v['num_rm'];
-							$obj_htl_ord_ref->date_from = $rm_v['data_form'];
-							$obj_htl_ord_ref->date_to = $rm_v['data_to'];
-							$obj_htl_ord_ref->save();
-						}
-					}
-				}
-			}
-			$id_shop = Context::getContext()->shop->id;
-			$obj_order = new Order($id_order);
+                    if (!empty($products)) {
+                        foreach ($products as $type_key => $type_value) {
+                            if (in_array($type_value['product_id'], $processedProducts)) {
+                                continue;
+                            }
+                            $processedProducts[] = $type_value['product_id'];
 
-			//customer info
-			$obj_customer = new Customer($id_customer);
+                            $product = new Product($type_value['product_id'], false, $this->context->language->id);
+                            $cover_image_arr = $product->getCover($type_value['product_id']);
 
-        	$admin_data = new EmployeeCore(1);
-		    $templateVars = array(
-		    	'{shop_name}' => Tools::safeOutput(Configuration::get('PS_SHOP_NAME', null, null, $id_shop)),
-		    	'{history_url}' => Context::getContext()->link->getPageLink('history', true, Context::getContext()->language->id, null, false, $id_shop),
-		    	'{my_account_url}' => Context::getContext()->link->getPageLink('my-account', true, Context::getContext()->language->id, null, false, $id_shop),
-				'{cust_name}' => $obj_customer->firstname.' '.$obj_customer->lastname,
-				'{order_reference}' => $obj_order->reference,
-			);
-        	$to = $obj_customer->email;
-        	$id_lang = Configuration::get('PS_LANG_DEFAULT');
-			$temp_path = _PS_MODULE_DIR_.'hotelreservationsystem/mails/';
-        	$template_name = 'total_order_processed';
+                            if (!empty($cover_image_arr)) {
+                                $cover_img = $this->context->link->getImageLink($product->link_rewrite, $product->id.'-'.$cover_image_arr['id_image'], 'small_default');
+                            } else {
+                                $cover_img = $this->context->link->getImageLink($product->link_rewrite, $this->context->language->iso_code.'-default', 'small_default');
+                            }
 
-			if ($obj_htl_ord_ref->id)
-			{
-				if (Mail::Send($id_lang, $template_name, Mail::l('Order Cancellation Status', $id_lang), $templateVars, $to, null, null, null,  null, null, $temp_path, false, null, null))
-        			$mail_err = 0;
-        		else
-        			$mail_err = 1;
+                            if (isset($customer->id)) {
+                                $obj_cart = new Cart($order->id_cart);
+                                $order_bk_data = $objBookingDetail->getOnlyOrderBookingData($order->id, $obj_cart->id_guest, $type_value['product_id'], $customer->id);
+                            } else {
+                                $order_bk_data = $objBookingDetail->getOnlyOrderBookingData($order->id, $customer->id_guest, $type_value['product_id']);
+                            }
+                            $rm_dtl = $objRoomType->getRoomTypeInfoByIdProduct($type_value['product_id']);
+                            $cartHotelData[$type_key]['id_product'] = $type_value['product_id'];
+                            $cartHotelData[$type_key]['cover_img'] = $cover_img;
+                            $cartHotelData[$type_key]['adult'] = $rm_dtl['adult'];
+                            $cartHotelData[$type_key]['children'] = $rm_dtl['children'];
 
-				die(Tools::jsonEncode(array('status'=>'success', 'mail_err'=>$mail_err)));
-			}
-			else
-				die(Tools::jsonEncode(array('status'=>'failed', 'mail_err'=>$mail_err)));
-		}
-		//end
+                            $objBookingDemand = new HotelBookingDemands();
+                            foreach ($order_bk_data as $data_k => $data_v) {
+                                $date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']);
 
-		if (!($id_order = (int)Tools::getValue('id_order')) || !Validate::isUnsignedId($id_order))
-			$this->errors[] = Tools::displayError('Order ID required');
-		else
-		{
-			$order = new Order($id_order);
-			if (Validate::isLoadedObject($order) && $order->id_customer == $this->context->customer->id)
-			{
-				$id_order_state = (int)$order->getCurrentState();
-				$carrier = new Carrier((int)$order->id_carrier, (int)$order->id_lang);
-				$addressInvoice = new Address((int)$order->id_address_invoice);
-				$addressDelivery = new Address((int)$order->id_address_delivery);
+                                /*Product price when order was created*/
+                                $order_details_obj = new OrderDetail($data_v['id_order_detail']);
+                                $cartHotelData[$type_key]['name'] = $order_details_obj->product_name;
+                                $cartHotelData[$type_key]['paid_unit_price_tax_excl'] = ($order_details_obj->total_price_tax_excl)/$order_details_obj->product_quantity;
+                                $cartHotelData[$type_key]['paid_unit_price_tax_incl'] = ($order_details_obj->total_price_tax_incl)/$order_details_obj->product_quantity;
 
-				$inv_adr_fields = AddressFormat::getOrderedAddressFields($addressInvoice->id_country);
-				$dlv_adr_fields = AddressFormat::getOrderedAddressFields($addressDelivery->id_country);
+                                if (isset($cartHotelData[$type_key]['date_diff'][$date_join])) {
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['num_rm'] += 1;
 
-				$invoiceAddressFormatedValues = AddressFormat::getFormattedAddressFieldsValues($addressInvoice, $inv_adr_fields);
-				$deliveryAddressFormatedValues = AddressFormat::getFormattedAddressFieldsValues($addressDelivery, $dlv_adr_fields);
+                                    $num_days = $cartHotelData[$type_key]['date_diff'][$date_join]['num_days'];
+                                    $var_quant = (int) $cartHotelData[$type_key]['date_diff'][$date_join]['num_rm'];
 
-				if ($order->total_discounts > 0)
-					$this->context->smarty->assign('total_old', (float)$order->total_paid - $order->total_discounts);
-				$products = $order->getProducts();
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['paid_unit_price_tax_excl'] = $data_v['total_price_tax_excl']/$num_days;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['paid_unit_price_tax_incl'] = $data_v['total_price_tax_incl']/$num_days;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $data_v['total_price_tax_incl']*$var_quant;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $data_v['total_price_tax_excl']*$var_quant;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['is_backorder'] = $data_v['is_back_order'];
+                                    if ($data_v['is_back_order']) {
+                                        $anyBackOrder = 1;
+                                    }
+                                } else {
+                                    $num_days = $objBookingDetail->getNumberOfDays($data_v['date_from'], $data_v['date_to']);
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['num_rm'] = 1;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['data_form'] = $data_v['date_from'];
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['data_to'] = $data_v['date_to'];
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['num_days'] = $num_days;
 
-				/* DEPRECATED: customizedDatas @since 1.5 */
-				$customizedDatas = Product::getAllCustomizedDatas((int)$order->id_cart);
-				Product::addCustomizationPrice($products, $customizedDatas);
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['paid_unit_price_tax_excl'] = $data_v['total_price_tax_excl']/$num_days;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['paid_unit_price_tax_incl'] = $data_v['total_price_tax_incl']/$num_days;
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $data_v['total_price_tax_incl'];
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $data_v['total_price_tax_excl'];
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['is_backorder'] = $data_v['is_back_order'];
+                                    if ($data_v['is_back_order']) {
+                                        $anyBackOrder = 1;
+                                    }
+                                }
 
-				OrderReturn::addReturnedQuantity($products, $order->id);
-				$order_status = new OrderState((int)$id_order_state, (int)$order->id_lang);
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['ids_htl_booking_detail'][] = $data_v['id'];
 
-				$customer = new Customer($order->id_customer);
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands'] = $objBookingDemand->getRoomTypeBookingExtraDemands(
+                                    $id_order,
+                                    $type_value['product_id'],
+                                    0,
+                                    $data_v['date_from'],
+                                    $data_v['date_to']
+                                );
+                                if (empty($cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands_price_ti'])) {
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands_price_ti'] = 0;
+                                }
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands_price_ti'] += $extraDemandPriceTI = $objBookingDemand->getRoomTypeBookingExtraDemands(
+                                    $id_order,
+                                    $type_value['product_id'],
+                                    $data_v['id_room'],
+                                    $data_v['date_from'],
+                                    $data_v['date_to'],
+                                    0,
+                                    1,
+                                    1
+                                );
+                                if (empty($cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands_price_te'])) {
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands_price_te'] = 0;
+                                }
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands_price_te'] += $extraDemandPriceTE = $objBookingDemand->getRoomTypeBookingExtraDemands(
+                                    $id_order,
+                                    $type_value['product_id'],
+                                    $data_v['id_room'],
+                                    $data_v['date_from'],
+                                    $data_v['date_to'],
+                                    0,
+                                    1,
+                                    0
+                                );
+                                $total_demands_price_ti += $extraDemandPriceTI;
+                                $total_demands_price_te += $extraDemandPriceTE;
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['product_price_tax_excl'] = $order_details_obj->unit_price_tax_excl;
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['product_price_tax_incl'] = $order_details_obj->unit_price_tax_incl;
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['product_price_without_reduction_tax_excl'] = $order_details_obj->unit_price_tax_excl + $order_details_obj->reduction_amount_tax_excl;
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['product_price_without_reduction_tax_incl'] = $order_details_obj->unit_price_tax_incl + $order_details_obj->reduction_amount_tax_incl;
 
-				//by webkul to show order details properly on order history page
-				if (Module::isInstalled('hotelreservationsystem')) 
-				{
-					require_once (_PS_MODULE_DIR_.'hotelreservationsystem/define.php');
+                                $feature_price_diff = (float)($cartHotelData[$type_key]['date_diff'][$date_join]['product_price_without_reduction_tax_incl'] - $cartHotelData[$type_key]['date_diff'][$date_join]['paid_unit_price_tax_incl']);
+                                $cartHotelData[$type_key]['date_diff'][$date_join]['feature_price_diff'] = $feature_price_diff;
 
-					$obj_cart_bk_data = new HotelCartBookingData();
-					$obj_htl_bk_dtl = new HotelBookingDetail();
-					$obj_rm_type = new HotelRoomType();
-					$non_requested_rooms = 0;
-					$any_back_order = 0;
-					if (!empty($products)) 
-					{
-						foreach ($products as $type_key => $type_value) 
-						{
-							$product = new Product($type_value['product_id'], false, $this->context->language->id);
-							$cover_image_arr = $product->getCover($type_value['product_id']);
-							
-							if(!empty($cover_image_arr))
-								$cover_img = $this->context->link->getImageLink($product->link_rewrite, $product->id.'-'.$cover_image_arr['id_image'], 'small_default');
-							else 
-								$cover_img = $this->context->link->getImageLink($product->link_rewrite, $this->context->language->iso_code."-default", 'small_default');
+                                $cartHotelData[$type_key]['hotel_name'] = $data_v['hotel_name'];
+                            }
+                        }
 
-							if (isset($customer->id)) 
-							{
-								$cart_bk_data = $obj_cart_bk_data->getOnlyCartBookingData($order->id_cart, (new Cart($order->id_cart))->id_guest, $type_value['product_id'], $customer->id);
-							}
-							else
-							{
-								$cart_bk_data = $obj_cart_bk_data->getOnlyCartBookingData($order->id_cart, $customer->id_guest, $type_value['product_id']);
-							}
-							$rm_dtl = $obj_rm_type->getRoomTypeInfoByIdProduct($type_value['product_id']);
+                        $redirectTermsLink = $this->context->link->getCMSLink(new CMS(3, $this->context->language->id), null, $this->context->language->id);
+                    }
 
-							/*Product price when order was created*/
-							$prod_ord_dtl = $obj_htl_bk_dtl->getPsOrderDetailsByProduct($type_value['product_id'], $order->id);
-							$unit_price_tax_excl = $prod_ord_dtl['unit_price_tax_excl'];
-							$unit_price_tax_incl = $prod_ord_dtl['unit_price_tax_incl'];
+                    $this->context->smarty->assign(
+                        array(
+                            'id_cms_refund_policy' => Configuration::get('WK_GLOBAL_REFUND_POLICY_CMS'),
+                            'THEME_DIR' => _THEME_DIR_,
+                            'total_demands_price_ti' => $total_demands_price_ti,
+                            'total_demands_price_te' => $total_demands_price_te,
+                            'any_back_order' => $anyBackOrder,
+                            'shw_bo_msg' => Configuration::get('WK_SHOW_MSG_ON_BO'),
+                            'back_ord_msg' => Configuration::get('WK_BO_MESSAGE'),
+                            'order_has_invoice' => $order->hasInvoice(),
+                            'cart_htl_data' => $cartHotelData,
+                            'non_requested_rooms' => $nonRequestedRooms,
+                        )
+                    );
+                }
 
-							$cart_htl_data[$type_key]['id_product'] = $type_value['product_id'];
-							$cart_htl_data[$type_key]['cover_img'] 	= $cover_img;
-							$cart_htl_data[$type_key]['name'] 		= $prod_ord_dtl['product_name'];
-							$cart_htl_data[$type_key]['unit_price_tax_excl'] = $unit_price_tax_excl;
-							$cart_htl_data[$type_key]['unit_price_tax_incl'] = $unit_price_tax_incl;
-							$cart_htl_data[$type_key]['adult'] 		= $rm_dtl['adult'];
-							$cart_htl_data[$type_key]['children']	= $rm_dtl['children'];
+                $objOrderReturn = new OrderReturn();
+                $refundedAmount = 0;
+                if ($refundReqBookings = $objOrderReturn->getOrderRefundRequestedBookings($order->id, 0, 1)) {
+                    $refundedAmount = $objOrderReturn->getRefundedAmount($order->id);
+                }
+                $this->context->smarty->assign(
+                    array(
+                        'hasOrderPaid' => $order->hasBeenPaid(),
+                        // refund info
+                        'refund_allowed' => (int) $order->isReturnable(),
+                        'returns' => OrderReturn::getOrdersReturn($order->id_customer, $order->id),
+                        'refundReqBookings' => $refundReqBookings,
+                        'hasCompletelyRefunded' => $order->hasCompletelyRefunded(),
+                        'refundedAmount' => $refundedAmount,
 
-							foreach ($cart_bk_data as $data_k => $data_v) 
-							{
-								$date_join = strtotime($data_v['date_from']).strtotime($data_v['date_to']);
+                        'shop_name' => strval(Configuration::get('PS_SHOP_NAME')),
+                        'order' => $order,
+                        'guestInformations' => (array)new Customer($order->id_customer),
+                        'currency' => new Currency($order->id_currency),
+                        'order_state' => (int) $id_order_state,
+                        'invoiceAllowed' => (int) Configuration::get('PS_INVOICE'),
+                        'invoice' => (OrderState::invoiceAvailable($id_order_state) && count($order->getInvoicesCollection())),
+                        'logable' => (bool) $order_status->logable,
+                        'order_history' => $order->getHistory($this->context->language->id, false, true),
+                        'products' => $products,
+                        'discounts' => $order->getCartRules(),
+                        'carrier' => $carrier,
+                        'address_invoice' => $addressInvoice,
+                        'invoiceState' => (Validate::isLoadedObject($addressInvoice) && $addressInvoice->id_state) ? new State($addressInvoice->id_state) : false,
+                        'address_delivery' => $addressDelivery,
+                        'inv_adr_fields' => $inv_adr_fields,
+                        'dlv_adr_fields' => $dlv_adr_fields,
+                        'invoiceAddressFormatedValues' => $invoiceAddressFormatedValues,
+                        'deliveryAddressFormatedValues' => $deliveryAddressFormatedValues,
+                        'deliveryState' => (Validate::isLoadedObject($addressDelivery) && $addressDelivery->id_state) ? new State($addressDelivery->id_state) : false,
+                        'is_guest' => false,
+                        'messages' => CustomerMessage::getMessagesByOrderId((int) $order->id, false),
+                        'CUSTOMIZE_FILE' => Product::CUSTOMIZE_FILE,
+                        'CUSTOMIZE_TEXTFIELD' => Product::CUSTOMIZE_TEXTFIELD,
+                        'isRecyclable' => Configuration::get('PS_RECYCLABLE_PACK'),
+                        'use_tax' => Configuration::get('PS_TAX'),
+                        'group_use_tax' => (Group::getPriceDisplayMethod($customer->id_default_group) == PS_TAX_INC),
+                        'reorderingAllowed' => !(bool) Configuration::get('PS_DISALLOW_HISTORY_REORDERING'),
+                    )
+                );
 
-								//work on entring refund data
-								$obj_ord_ref_info = new HotelOrderRefundInfo();
-								$ord_refnd_info = $obj_ord_ref_info->getOderRefundInfoByIdOrderIdProductByDate($id_order, $type_value['product_id'], $data_v['date_from'], $data_v['date_to']);
-								if ($ord_refnd_info)
-								{
-									$obj_refund_stages = new HotelOrderRefundStages();
-									$stage_name = $obj_refund_stages->getNameById($ord_refnd_info['refund_stage_id']);
-								}
-								else
-								{
-									$stage_name = '';
-									$non_requested_rooms = 1;
-								}
-								if (isset($cart_htl_data[$type_key]['date_diff'][$date_join]))
-								{
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] += 1;
+                if ($carrier->url && $order->shipping_number) {
+                    $this->context->smarty->assign('followup', str_replace('@', $order->shipping_number, $carrier->url));
+                }
+                $this->context->smarty->assign('HOOK_ORDERDETAILDISPLAYED', Hook::exec('displayOrderDetail', array('order' => $order)));
+                Hook::exec('actionOrderDetail', array('carrier' => $carrier, 'order' => $order));
 
-									$num_days = $cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'];
-									$vart_quant = (int)$cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] * $num_days;
-									
-									$amount_tax_excl = $unit_price_tax_excl * $vart_quant;
-									$amount_tax_incl = $unit_price_tax_incl * $vart_quant;
+                unset($carrier, $addressInvoice, $addressDelivery);
+            } else {
+                $this->errors[] = Tools::displayError('This order cannot be found.');
+            }
+            unset($order);
+        }
 
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $amount_tax_incl;
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $amount_tax_excl;
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['is_backorder'] = $data_v['is_back_order'];
-		                            if ($data_v['is_back_order'])
-		                                $any_back_order = 1;
-									//refund_stage
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['stage_name'] = $stage_name;
-								}
-								else
-								{
-									$num_days = $obj_htl_bk_dtl->getNumberOfDays($data_v['date_from'], $data_v['date_to']);
+        $this->setTemplate(_PS_THEME_DIR_.'order-detail.tpl');
+    }
 
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['num_rm'] = 1;
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['data_form'] = $data_v['date_from'];
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['data_to'] = $data_v['date_to'];
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['num_days'] = $num_days;
-									
-									$amount_tax_excl = $unit_price_tax_excl * $num_days;
-									$amount_tax_incl = $unit_price_tax_incl * $num_days;
-
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_incl'] = $amount_tax_incl;
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['amount_tax_excl'] = $amount_tax_excl;
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['is_backorder'] = $data_v['is_back_order'];
-		                            if ($data_v['is_back_order'])
-		                                $any_back_order = 1;
-									//refund_stage
-									$cart_htl_data[$type_key]['date_diff'][$date_join]['stage_name'] = $stage_name;
-								}
-							}
-						}
-						$redirect_link_terms = $this->context->link->getCMSLink(new CMS(3, $this->context->language->id), null, $this->context->language->id);
-						$this->context->smarty->assign('redirect_link_terms', $redirect_link_terms);
-						$this->context->smarty->assign('cart_htl_data', $cart_htl_data);
-						$this->context->smarty->assign('non_requested_rooms', $non_requested_rooms);
-
-						//For Advanced Payment
-						$obj_customer_adv = new HotelCustomerAdvancedPayment();
-						$order_adv_dtl = $obj_customer_adv->getCstAdvPaymentDtlByIdOrder($order->id);
-						if ($order_adv_dtl)
-							$this->context->smarty->assign('order_adv_dtl', $order_adv_dtl);
-
-						$shw_bo_msg = Configuration::get('WK_SHOW_MSG_ON_BO');
-        				$bo_msg = Configuration::get('WK_BO_MESSAGE');
-        				$this->context->smarty->assign(array(
-				            'any_back_order' => $any_back_order,
-				            'shw_bo_msg' => $shw_bo_msg,
-				            'back_ord_msg' => $bo_msg,
-				            ));
-					}
-				}
-				//end
-
-				$this->context->smarty->assign(array(
-					'shop_name' => strval(Configuration::get('PS_SHOP_NAME')),
-					'order' => $order,
-					'return_allowed' => (int)$order->isReturnable(),
-					'currency' => new Currency($order->id_currency),
-					'order_state' => (int)$id_order_state,
-					'invoiceAllowed' => (int)Configuration::get('PS_INVOICE'),
-					'invoice' => (OrderState::invoiceAvailable($id_order_state) && count($order->getInvoicesCollection())),
-					'logable' => (bool)$order_status->logable,
-					'order_history' => $order->getHistory($this->context->language->id, false, true),
-					'products' => $products,
-					'discounts' => $order->getCartRules(),
-					'carrier' => $carrier,
-					'address_invoice' => $addressInvoice,
-					'invoiceState' => (Validate::isLoadedObject($addressInvoice) && $addressInvoice->id_state) ? new State($addressInvoice->id_state) : false,
-					'address_delivery' => $addressDelivery,
-					'inv_adr_fields' => $inv_adr_fields,
-					'dlv_adr_fields' => $dlv_adr_fields,
-					'invoiceAddressFormatedValues' => $invoiceAddressFormatedValues,
-					'deliveryAddressFormatedValues' => $deliveryAddressFormatedValues,
-					'deliveryState' => (Validate::isLoadedObject($addressDelivery) && $addressDelivery->id_state) ? new State($addressDelivery->id_state) : false,
-					'is_guest' => false,
-					'messages' => CustomerMessage::getMessagesByOrderId((int)$order->id, false),
-					'CUSTOMIZE_FILE' => Product::CUSTOMIZE_FILE,
-					'CUSTOMIZE_TEXTFIELD' => Product::CUSTOMIZE_TEXTFIELD,
-					'isRecyclable' => Configuration::get('PS_RECYCLABLE_PACK'),
-					'use_tax' => Configuration::get('PS_TAX'),
-					'group_use_tax' => (Group::getPriceDisplayMethod($customer->id_default_group) == PS_TAX_INC),
-					/* DEPRECATED: customizedDatas @since 1.5 */
-					'customizedDatas' => $customizedDatas,
-					/* DEPRECATED: customizedDatas @since 1.5 */
-					'reorderingAllowed' => !(bool)Configuration::get('PS_DISALLOW_HISTORY_REORDERING')
-				));
-
-				if ($carrier->url && $order->shipping_number)
-					$this->context->smarty->assign('followup', str_replace('@', $order->shipping_number, $carrier->url));
-				$this->context->smarty->assign('HOOK_ORDERDETAILDISPLAYED', Hook::exec('displayOrderDetail', array('order' => $order)));
-				Hook::exec('actionOrderDetail', array('carrier' => $carrier, 'order' => $order));
-
-				unset($carrier, $addressInvoice, $addressDelivery);
-			}
-			else
-				$this->errors[] = Tools::displayError('This order cannot be found.');
-			unset($order);
-		}
-
-		$this->setTemplate(_PS_THEME_DIR_.'order-detail.tpl');
-	}
-
-	public function setMedia()
-	{
-		if (Tools::getValue('ajax') != 'true')
-		{
-			parent::setMedia();
-			$this->addCSS(_THEME_CSS_DIR_.'history.css');
-			$this->addCSS(_THEME_CSS_DIR_.'addresses.css');
-		}
-	}
+    public function setMedia()
+    {
+        if (Tools::getValue('ajax') != 'true') {
+            parent::setMedia();
+            $this->addCSS(_THEME_CSS_DIR_.'history.css');
+            $this->addCSS(_THEME_CSS_DIR_.'addresses.css');
+        }
+    }
 }

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -460,55 +460,6 @@ class AdminPerformanceControllerCore extends AdminController
         $this->fields_value['_MEDIA_SERVER_3_'] = Configuration::get('PS_MEDIA_SERVER_3');
     }
 
-    public function initFieldsetCiphering()
-    {
-        $phpdoc_langs = array('en', 'zh', 'fr', 'de', 'ja', 'pl', 'ro', 'ru', 'fa', 'es', 'tr');
-        $php_lang = in_array($this->context->language->iso_code, $phpdoc_langs) ? $this->context->language->iso_code : 'en';
-
-        $warning_mcrypt = ' '.$this->l('(you must install the [a]Mcrypt extension[/a])');
-        $warning_mcrypt = str_replace('[a]', '<a href="http://www.php.net/manual/'.substr($php_lang, 0, 2).'/book.mcrypt.php" target="_blank">', $warning_mcrypt);
-        $warning_mcrypt = str_replace('[/a]', '</a>', $warning_mcrypt);
-
-        if (defined('_RIJNDAEL_KEY_') && defined('_RIJNDAEL_IV_')) {
-            $this->fields_form[5]['form'] = array(
-
-                'legend' => array(
-                    'title' => $this->l('Ciphering'),
-                    'icon' => 'icon-desktop'
-                ),
-                'input' => array(
-                    array(
-                        'type' => 'hidden',
-                        'name' => 'ciphering_up'
-                    ),
-                    array(
-                        'type' => 'radio',
-                        'label' => $this->l('Algorithm'),
-                        'name' => 'PS_CIPHER_ALGORITHM',
-                        'hint' => $this->l('Mcrypt is faster than our custom BlowFish class, but requires the "mcrypt" PHP extension. If you change this configuration, all cookies will be reset.'),
-                        'values' => array(
-                            array(
-                                'id' => 'PS_CIPHER_ALGORITHM_1',
-                                'value' => 1,
-                                'label' => $this->l('Use Rijndael with mcrypt lib.').(!function_exists('mcrypt_encrypt') ? '' : $warning_mcrypt)
-                            ),
-                            array(
-                                'id' => 'PS_CIPHER_ALGORITHM_0',
-                                'value' => 0,
-                                'label' => $this->l('Use the custom BlowFish class.')
-                            )
-                        )
-                    )
-                ),
-                'submit' => array(
-                    'title' => $this->l('Save')
-                )
-            );
-        }
-
-        $this->fields_value['PS_CIPHER_ALGORITHM'] = Configuration::get('PS_CIPHER_ALGORITHM');
-    }
-
     public function initFieldsetCaching()
     {
         $phpdoc_langs = array('en', 'zh', 'fr', 'de', 'ja', 'pl', 'ro', 'ru', 'fa', 'es', 'tr');
@@ -584,7 +535,7 @@ class AdminPerformanceControllerCore extends AdminController
                         array(
                             'id' => 'CacheApc',
                             'value' => 'CacheApc',
-                            'label' => $this->l('APC').(extension_loaded('apc') ? '' : $warning_apc)
+                            'label' => $this->l('APC').((extension_loaded('apc') || extension_loaded('apcu')) ? '' : $warning_apc)
                         ),
                         array(
                             'id' => 'CacheXcache',
@@ -624,7 +575,6 @@ class AdminPerformanceControllerCore extends AdminController
 
         if (!defined('_PS_HOST_MODE_')) {
             $this->initFieldsetMediaServer();
-            $this->initFieldsetCiphering();
             $this->initFieldsetCaching();
         }
 
@@ -846,51 +796,6 @@ class AdminPerformanceControllerCore extends AdminController
                 $this->errors[] = Tools::displayError('You do not have permission to edit this.');
             }
         }
-        if ((bool)Tools::getValue('ciphering_up') && Configuration::get('PS_CIPHER_ALGORITHM') != (int)Tools::getValue('PS_CIPHER_ALGORITHM')) {
-            if ($this->tabAccess['edit'] === '1') {
-                $algo = (int)Tools::getValue('PS_CIPHER_ALGORITHM');
-                $prev_settings = file_get_contents(_PS_ROOT_DIR_.'/config/settings.inc.php');
-                $new_settings = $prev_settings;
-                if ($algo) {
-                    if (!function_exists('mcrypt_encrypt')) {
-                        $this->errors[] = Tools::displayError('The "Mcrypt" PHP extension is not activated on this server.');
-                    } else {
-                        if (!strstr($new_settings, '_RIJNDAEL_KEY_')) {
-                            $key_size = mcrypt_get_key_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB);
-                            $key = Tools::passwdGen($key_size);
-                            $new_settings = preg_replace(
-                                '/define\(\'_COOKIE_KEY_\', \'([a-z0-9=\/+-_]+)\'\);/i',
-                                'define(\'_COOKIE_KEY_\', \'\1\');'."\n".'define(\'_RIJNDAEL_KEY_\', \''.$key.'\');',
-                                $new_settings
-                            );
-                        }
-                        if (!strstr($new_settings, '_RIJNDAEL_IV_')) {
-                            $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB);
-                            $iv = base64_encode(mcrypt_create_iv($iv_size, MCRYPT_RAND));
-                            $new_settings = preg_replace(
-                                '/define\(\'_COOKIE_IV_\', \'([a-z0-9=\/+-_]+)\'\);/i',
-                                'define(\'_COOKIE_IV_\', \'\1\');'."\n".'define(\'_RIJNDAEL_IV_\', \''.$iv.'\');',
-                                $new_settings
-                            );
-                        }
-                    }
-                }
-                if (!count($this->errors)) {
-                    // If there is not settings file modification or if the backup and replacement of the settings file worked
-                    if ($new_settings == $prev_settings || (
-                        copy(_PS_ROOT_DIR_.'/config/settings.inc.php', _PS_ROOT_DIR_.'/config/settings.old.php')
-                        && (bool)file_put_contents(_PS_ROOT_DIR_.'/config/settings.inc.php', $new_settings)
-                    )) {
-                        Configuration::updateValue('PS_CIPHER_ALGORITHM', $algo);
-                        $redirectAdmin = true;
-                    } else {
-                        $this->errors[] = Tools::displayError('The settings file cannot be overwritten.');
-                    }
-                }
-            } else {
-                $this->errors[] = Tools::displayError('You do not have permission to edit this.');
-            }
-        }
 
         if ((bool)Tools::getValue('cache_up')) {
             if ($this->tabAccess['edit'] === '1') {
@@ -914,7 +819,7 @@ class AdminPerformanceControllerCore extends AdminController
                     } elseif ($caching_system == 'CacheMemcached' && !extension_loaded('memcached')) {
                         $this->errors[] = Tools::displayError('To use Memcached, you must install the Memcached PECL extension on your server.').'
 							<a href="http://www.php.net/manual/en/memcached.installation.php">http://www.php.net/manual/en/memcached.installation.php</a>';
-                    } elseif ($caching_system == 'CacheApc' && !extension_loaded('apc')) {
+                    } elseif ($caching_system == 'CacheApc' && !extension_loaded('apc') && !extension_loaded('apcu')) {
                         $this->errors[] = Tools::displayError('To use APC cache, you must install the APC PECL extension on your server.').'
 							<a href="http://fr.php.net/manual/fr/apc.installation.php">http://fr.php.net/manual/fr/apc.installation.php</a>';
                     } elseif ($caching_system == 'CacheXcache' && !extension_loaded('xcache')) {
@@ -1020,7 +925,7 @@ class AdminPerformanceControllerCore extends AdminController
                         $res      = @memcache_get_server_status($memcache, $host, $port);
                     }
                 }
-                die(Tools::jsonEncode(array($res)));
+                die(json_encode(array($res)));
             }
         }
         die;

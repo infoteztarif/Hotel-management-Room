@@ -1,16 +1,35 @@
 <?php
-if (!defined('_PS_VERSION_'))
+/**
+* 2010-2020 Webkul.
+*
+* NOTICE OF LICENSE
+*
+* All right is reserved,
+* Please go through this link for complete license : https://store.webkul.com/license.html
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade this module to newer
+* versions in the future. If you wish to customize this module for your
+* needs please refer to https://store.webkul.com/customisation-guidelines/ for more information.
+*
+*  @author    Webkul IN <support@webkul.com>
+*  @copyright 2010-2020 Webkul IN
+*  @license   https://store.webkul.com/license.html
+*/
+
+if (!defined('_PS_VERSION_')) {
     exit;
+}
+include_once 'define.php';
 
-require_once ('define.php');
-
-class HotelReservationSystem extends Module
+class hotelreservationsystem extends Module
 {
     const INSTALL_SQL_FILE = 'install.sql';
     public function __construct()
     {
         $this->name = 'hotelreservationsystem';
-        $this->version = '0.0.2';
+        $this->version = '1.4.3';
         $this->author = 'Webkul';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -20,87 +39,307 @@ class HotelReservationSystem extends Module
         $this->confirmUninstall = $this->l('Are you sure? All module data will be lost after uninstalling the module');
     }
 
-    public function hookFooter($params)
+    public function hookAddWebserviceResources()
     {
-        /*id_guest is set to the context->cookie object because data mining for prestashop module is disabled in which id_guest was set before this*/
-        if (!isset($this->context->cookie->id_guest)) 
-            Guest::setNewGuest($this->context->cookie);
+        $resources = array(
+            'hotels' => array('description' => 'Hotel Branch Information','class' => 'HotelBranchInformation'),
+            'hotel_room_types' => array('description' => 'Hotel room types','class' => 'HotelRoomType'),
+            'hotel_images' => array('description' => 'Hotel images', 'specific_management' => true),
+            'hotel_features' => array('description' => 'The hotel features','class' => 'HotelFeatures'),
+            'hotel_refund_rules' => array('description' => 'The hotel refund rules','class' => 'HotelOrderRefundRules'),
+            'hotel_rooms' => array('description' => 'The hotel rooms','class' => 'HotelRoomInformation'),
+            'feature_prices' => array('description' => 'Feature prices', 'class' => 'HotelRoomTypeFeaturePricing'),
+            'advance_payments' => array('description' => 'Room type advance payment', 'class' => 'HotelAdvancedPayment'),
+            'cart_bookings' => array('description' => 'Cart bookings', 'class' => 'HotelCartBookingData'),
+            'bookings' => array('description' => 'Order bookings', 'class' => 'HotelBookingDetail'),
+            'booking_extra_demands' => array('description' => 'Booking extra demands', 'class' => 'HotelBookingDemands'),
+            'extra_demands' => array('description' => 'Extra demands', 'class' => 'HotelRoomTypeGlobalDemand'),
+            'demand_advance_options' => array('description' => 'Extra demand advance options', 'class' => 'HotelRoomTypeGlobalDemandAdvanceOption'),
 
-        // ddd($this->_path);
-        // $this->context->controller->addCSS(($this->_path).'footertop.css', 'all');
-        $this->context->smarty->assign(array(
-            'HOOK_FOOTER_TOP'        => Hook::exec('displayFooterTop'),          // Hook created By Webkul
-        ));
+            'qlo' => array('description' => 'qlo API', 'specific_management' => true),
+        );
 
-        $global_email = Configuration::get('WK_HOTEL_GLOBAL_CONTACT_EMAIL');
-        if (!$global_email)
-            $global_email = Configuration::get('PS_SHOP_EMAIL');
-
-        $global_contact_num = Configuration::get('WK_HOTEL_GLOBAL_CONTACT_NUMBER');
-        if (!$global_contact_num)
-            $global_contact_num = 9999999999;
-
-        $this->context->smarty->assign(array(
-            'hotel_global_email'        => $global_email,
-            'hotel_global_contact_num'  => $global_contact_num,
-        ));
-        
-        return $this->display(__FILE__, 'footertop.tpl');
+        return $resources;
     }
 
-    public function hookActionProductDelete($params)
+    public function hookDisplayHeader()
     {
-        if ($params['id_product'])
-        {
-            $obj_htl_rm_type = new HotelRoomType();
-            $obj_htl_rm_info = new HotelRoomInformation();
-            $obj_htl_cart_data = new HotelCartBookingData();
+        // check max global order_restriction date is set
+        if (!Configuration::get('MAX_GLOBAL_BOOKING_DATE')
+            || (strtotime(date('Y-m-d')) > strtotime(Configuration::get('MAX_GLOBAL_BOOKING_DATE')))
+        ) {
+            Configuration::updateValue(
+                'MAX_GLOBAL_BOOKING_DATE',
+                date('d-m-Y', strtotime(date('Y-m-d', time()).' + 1 year'))
+            );
+        }
+        /*To remove room from cart before todays date*/
+        if (isset($this->context->cart->id) && $this->context->cart->id) {
+            $htlCart = new HotelCartBookingData();
+            if ($cartBookingData = $htlCart->getCartBookingDetailsByIdCartIdGuest(
+                $this->context->cart->id,
+                $this->context->cart->id_guest,
+                $this->context->language->id
+            )) {
+                foreach ($cartBookingData as $cartRoom) {
+                    if (strtotime($cartRoom['date_from']) < strtotime(date('Y-m-d'))) {
+                        $htlCart->deleteRoomDataFromOrderLine(
+                            $cartRoom['id_cart'],
+                            $cartRoom['id_guest'],
+                            $cartRoom['id_product'],
+                            $cartRoom['date_from'],
+                            $cartRoom['date_to']
+                        );
+                    }
+                }
+            }
+        }
+        //End
+        $this->context->controller->addCSS($this->_path.'/views/css/HotelReservationFront.css');
+        $this->context->controller->addJS($this->_path.'/views/js/HotelReservationFront.js');
+    }
 
-            $delete_cart_data = $obj_htl_cart_data->deleteBookingCartDataNotOrderedByProductId($params['id_product']);
-            $delete_room_info = $obj_htl_rm_info->deleteByProductId($params['id_product']);
+    public function hookDisplayAfterHookTop()
+    {
+        if (Tools::getValue('controller') == 'index') {
+            $this->context->smarty->assign(
+                array(
+                    'WK_HTL_CHAIN_NAME' => Configuration::get('WK_HTL_CHAIN_NAME', $this->context->language->id),
+                    'WK_HTL_TAG_LINE' => Configuration::get('WK_HTL_TAG_LINE', $this->context->language->id),
+                )
+            );
+            return $this->display(__FILE__, 'headerHotelDescBlock.tpl');
+        }
+    }
 
-            $delete_room_type = $obj_htl_rm_type->deleteByProductId($params['id_product']);
+    public function hookFooter($params)
+    {
+        /*NOTE : NEVER REMOVE THIS CODE BEFORE DISCUSSION*/
+        /*id_guest is set to the context->cookie object because data mining for prestashop module is disabled
+        in which id_guest was set before this*/
+        if (!isset($this->context->cookie->id_guest)) {
+            Guest::setNewGuest($this->context->cookie);
+        }
+        // return $this->display(__FILE__, 'hotelGlobalVariables.tpl');
+    }
+    public function hookDisplayAfterDefautlFooterHook($params)
+    {
+        $this->context->smarty->assign(
+            array(
+                'WK_HTL_ESTABLISHMENT_YEAR' => Configuration::get('WK_HTL_ESTABLISHMENT_YEAR'),
+                'WK_HTL_CHAIN_NAME' => Configuration::get('WK_HTL_CHAIN_NAME', $this->context->language->id),
+            )
+        );
+        return $this->display(__FILE__, 'copyRight.tpl');
+    }
+
+    public function hookActionObjectProductDeleteBefore($params)
+    {
+        if (isset($params['object']->id)) {
+            $idProduct = $params['object']->id;
+
+            // delete the hotel room information of this product
+            $objRoomInfo = new HotelRoomInformation();
+            $objRoomInfo->deleteByProductId($idProduct);
+
+            // delete the hotel room type info of this product
+            $objRoomType = new HotelRoomType();
+            $objRoomType->deleteByProductId($idProduct);
+
+            // delete the advance payment configuration for this room type
+            $objHotelAdvancedPayment = new HotelAdvancedPayment();
+            if ($advPaymentDetail = $objHotelAdvancedPayment->getIdAdvPaymentByIdProduct($idProduct)) {
+                $objHotelAdvancedPayment = new HotelAdvancedPayment($advPaymentDetail['id']);
+                $objHotelAdvancedPayment->delete();
+            }
+
+            // delete the feature prices of the room type
+            $objRoomTypeFeaturePricing = new HotelRoomTypeFeaturePricing();
+            $objRoomTypeFeaturePricing->deleteFeaturePriceByIdProduct($idProduct);
+
+            // delete the disable dates (temporary inactive status) of the room type
+            $objRoomDisableDates = new HotelRoomDisableDates();
+            $objRoomDisableDates->deleteRoomDisableDatesByIdRoomType($idProduct);
+
+            // delete all the additional demand prices and demands of this room type
+            $objRoomTypeDemandPrice = new HotelRoomTypeDemandPrice();
+            $objRoomTypeDemandPrice->deleteRoomTypeDemandPrices($idProduct); // delete prices for room type
+            $objRoomTypeDemand = new HotelRoomTypeDemand();
+            $objRoomTypeDemand->deleteRoomTypeDemands($idProduct); // delete additional demands for room type
+        }
+    }
+
+    // Add profile hotel access while profile is added
+    public function hookActionObjectProfileAddAfter($params)
+    {
+        if (isset($params['object']->id)) {
+            $idProfile = $params['object']->id;
+            $objHotelBranch = new HotelBranchInformation();
+            if (!$objHotelBranch->addHotelsAccessToProfile($idProfile)) {
+                $this->context->controller->errors[] = $this->l('Some error occurred while adding hotel accesses to this profile');
+            }
+        }
+    }
+
+    // Delete profile hotel access while profile is deleted
+    public function hookActionObjectProfileDeleteBefore($params)
+    {
+        if (isset($params['object']->id)) {
+            $idProfile = $params['object']->id;
+            $objHotelBranch = new HotelBranchInformation();
+            if (!$objHotelBranch->deleteProfileHotelsAccess($idProfile)) {
+                $this->context->controller->errors[] = $this->l('Some error occurred while deleting hotel accesses of the profile');
+            }
+        }
+    }
+
+    public function hookDisplayAdminProductsExtra($params)
+    {
+        if ($idProduct = Tools::getValue('id_product')) {
+            $objGlobalDemand = new HotelRoomTypeGlobalDemand();
+            $allDemands = $objGlobalDemand->getAllDemands();
+            $objCurrency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+            // get room type additional services
+            $objRoomDemand = new HotelRoomTypeDemand();
+            $roomDemandPrices = $objRoomDemand->getRoomTypeDemands($idProduct, 0, 0);
+            $this->context->smarty->assign(
+                array(
+                    'idProduct' => $idProduct,
+                    'roomDemandPrices' => $roomDemandPrices,
+                    'allDemands' => $allDemands,
+                    'defaultcurrencySign' => $objCurrency->sign,
+                )
+            );
+        }
+        return $this->display(__FILE__, 'roomTypeDemands.tpl');
+    }
+
+    public function moduleProductsExtraTabName()
+    {
+        return $this->l('Additional Facilities');
+    }
+
+    public function hookActionProductUpdate($params)
+    {
+        if ($idProduct = $params['id_product']) {
+            $objRoomTypeDemand = new HotelRoomTypeDemand();
+            $objRoomTypeDemandPrice = new HotelRoomTypeDemandPrice();
+            // first delete all the previously saved prices and demands of this room type
+            $objRoomTypeDemand->deleteRoomTypeDemands($idProduct);
+            $objRoomTypeDemandPrice->deleteRoomTypeDemandPrices($idProduct);
+            if ($selectedDemands = Tools::getValue('selected_demand')) {
+                $objAdvOption = new HotelRoomTypeGlobalDemandAdvanceOption();
+                foreach ($selectedDemands as $idGlobalDemand) {
+                    if (Validate::isLoadedObject($objGlobalDemand = new HotelRoomTypeGlobalDemand($idGlobalDemand))) {
+                        // save selected demands for this room type
+                        $objRoomTypeDemand = new HotelRoomTypeDemand();
+                        $objRoomTypeDemand->id_product = $idProduct;
+                        $objRoomTypeDemand->id_global_demand = $idGlobalDemand;
+                        $objRoomTypeDemand->save();
+
+                        // save selected demands prices for this room type
+                        $demandPrice = Tools::getValue('demand_price_'.$idGlobalDemand);
+                        if (Validate::isPrice($demandPrice)) {
+                            if ($objGlobalDemand->price != $demandPrice) {
+                                $objRoomTypeDemandPrice = new HotelRoomTypeDemandPrice();
+                                $objRoomTypeDemandPrice->id_product = $idProduct;
+                                $objRoomTypeDemandPrice->id_global_demand = $idGlobalDemand;
+                                $objRoomTypeDemandPrice->id_option = 0;
+                                $objRoomTypeDemandPrice->price = $demandPrice;
+                                $objRoomTypeDemandPrice->save();
+                            }
+                        } else {
+                            $this->context->controller->errors[] = $this->l('Invalid demand price of facility').
+                            ' : '.$objGlobalDemand->name[$this->context->language->id];
+                        }
+                        if ($advOptions = $objAdvOption->getGlobalDemandAdvanceOptions($idGlobalDemand)) {
+                            foreach ($advOptions as $option) {
+                                if (Validate::isLoadedObject($objAdvOption = new HotelRoomTypeGlobalDemandAdvanceOption($option['id']))) {
+                                    $optionPrice = Tools::getValue('option_price_'.$option['id']);
+                                    if (Validate::isPrice($optionPrice)) {
+                                        if ($optionPrice != $objAdvOption->price) {
+                                            $objRoomTypeDemandPrice = new HotelRoomTypeDemandPrice();
+                                            $objRoomTypeDemandPrice->id_product = $idProduct;
+                                            $objRoomTypeDemandPrice->id_global_demand = $idGlobalDemand;
+                                            $objRoomTypeDemandPrice->id_option = $option['id'];
+                                            $objRoomTypeDemandPrice->price = $optionPrice;
+                                            $objRoomTypeDemandPrice->save();
+                                        }
+                                    } else {
+                                        $this->context->controller->errors[] = $this->l('Invalid price of advance option').
+                                        ' : '.$objAdvOption->name[$this->context->language->id];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($this->context->controller->errors)) {
+                    $this->context->controller->warnings[] = $this->l('Invalid price values are not saved. Please correct them and save again');
+                }
+
+                $objCartBookingData = new HotelCartBookingData();
+                if ($cartExtraDemands = $objCartBookingData->getCartExtraDemands(0, $idProduct)) {
+                    // delete the demands from cart if not available in cart
+                    $objRoomDemand = new HotelRoomTypeDemand();
+                    $roomTypeDemandIds = array();
+                    if ($roomTypeDemands = $objRoomDemand->getRoomTypeDemands($idProduct)) {
+                        $roomTypeDemandIds = array_keys($roomTypeDemands);
+                    }
+                    foreach ($cartExtraDemands as &$demandInfo) {
+                        if (isset($demandInfo['extra_demands']) && $demandInfo['extra_demands']) {
+                            $cartChanged = 0;
+                            foreach ($demandInfo['extra_demands'] as $key => $demand) {
+                                if (!in_array($demand['id_global_demand'], $roomTypeDemandIds)) {
+                                    $cartChanged = 1;
+                                    unset($demandInfo['extra_demands'][$key]);
+                                }
+                            }
+                            if ($cartChanged) {
+                                if (Validate::isLoadedObject(
+                                    $objCartBooking = new HotelCartBookingData($demandInfo['id'])
+                                )) {
+                                    $objCartBooking->extra_demands = json_encode($demandInfo['extra_demands']);
+                                    $objCartBooking->save();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     public function hookActionProductSave($params)
     {
         $isToggling = Tools::getValue('statusproduct');
-        if (isset($isToggling))
-        {
+        if (isset($isToggling) && $isToggling) {
             $obj_htl_rm_info = new HotelRoomType();
-            $htl_rm_info = $obj_htl_rm_info->getRoomTypeInfoByIdProduct($params['id_product']);
-            if (isset($htl_rm_info) && $htl_rm_info)
-            {
+            if ($htl_rm_info = $obj_htl_rm_info->getRoomTypeInfoByIdProduct($params['id_product'])) {
                 $prod_htl_id = $htl_rm_info['id_hotel'];
-                if (isset($prod_htl_id) && $prod_htl_id)
-                {
+                if (isset($prod_htl_id) && $prod_htl_id) {
                     $obj_hotel = new HotelBranchInformation($prod_htl_id);
-                    if (!$obj_hotel->active)
-                    {
+                    if (!$obj_hotel->active) {
                         $obj_hotel->toggleStatus();
                     }
                 }
             }
-
-        }
-        else
-        {
-            if ($params['id_product'])
-            {
+        } else {
+            if (!$params['product']->quantity) {
+                StockAvailable::setQuantity($params['id_product'], 0, 999999999);
+            }
+            if ($params['id_product']) {
                 $obj_htl_rm_info = new HotelRoomType();
-                $htl_rm_info = $obj_htl_rm_info->getRoomTypeInfoByIdProduct($params['id_product']);
-                if (isset($htl_rm_info) && $htl_rm_info)
-                {
+                if ($htl_rm_info = $obj_htl_rm_info->getRoomTypeInfoByIdProduct($params['id_product'])) {
                     $prod_htl_id = $htl_rm_info['id_hotel'];
-                    if (isset($prod_htl_id) && $prod_htl_id)
-                    {
+                    if (isset($prod_htl_id) && $prod_htl_id) {
                         $obj_hotel = new HotelBranchInformation($prod_htl_id);
-                        if (!$obj_hotel->active)
-                        {
+                        if (!$obj_hotel->active) {
                             $obj_product = new Product($params['id_product']);
-                            if ($obj_product->active == 1)
+                            if ($obj_product->active == 1) {
+                                $this->context->controller->errors[] = $this->l('Room type can not be active as long as hotel is disabled.');
                                 $obj_product->toggleStatus();
+                            }
                         }
                     }
                 }
@@ -114,186 +353,227 @@ class HotelReservationSystem extends Module
         $order = $data['order'];
         $customer = $data['customer'];
 
-        $obj_cart_bk_data = new HotelCartBookingData();
-        $obj_htl_bk_dtl = new HotelBookingDetail();
-        $obj_rm_type = new HotelRoomType();
-        
-        $cart_products = $cart->getProducts();
+        $objCartBkData = new HotelCartBookingData();
+        $objHtlBkDtl = new HotelBookingDetail();
+        $objRoomType = new HotelRoomType();
 
-        // Deprecated in future
-        // For Cart Lock
-        // $this->is_back_order = 0;
-        // foreach ($cart_products as $t_key => $t_value) 
-        // {
-        //     $rm_dtl = $obj_rm_type->getRoomTypeInfoByIdProduct($t_value['id_product']);
-        //     $cart_bk_data = $obj_cart_bk_data->getOnlyCartBookingData($cart->id, $cart->id_guest, $t_value['id_product']);
+        $obj_adv_payment = new HotelAdvancedPayment();
 
-        //     $cart_data = array();
-        //     foreach ($cart_bk_data as $cd_key => $cd_val) 
-        //     {
-        //         $date_join = strtotime($cd_val['date_from']).strtotime($cd_val['date_to']);
+        $orderProducts = $order->product_list;
+        $vatAddress = new Address((int)$order->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
 
-        //         $cart_data[$date_join]['date_from'] = $cd_val['date_from'];
-        //         $cart_data[$date_join]['date_to'] = $cd_val['date_to'];
-        //         $cart_data[$date_join]['id_rms'][] = $cd_val['id_room'];
-        //     }
+        $idLang = (int)$cart->id_lang;
 
-        //     foreach ($cart_data as $cl_key => $cl_val) 
-        //     {
-        //         $avai_rm = $obj_htl_bk_dtl->DataForFrontSearch($cl_val['date_from'], $cl_val['date_to'], $rm_dtl['id_hotel'], $t_value['id_product'], 1);
+        foreach ($orderProducts as $product) {
+            $objCartBkData = new HotelCartBookingData();
+            $idProduct = $product['id_product'];
+            $cart_bk_data = $objCartBkData->getOnlyCartBookingData($cart->id, $cart->id_guest, $idProduct);
+            if ($cart_bk_data) {
+                foreach ($cart_bk_data as $cb_k => $cb_v) {
+                    $objCartBkData = new HotelCartBookingData($cb_v['id']);
+                    $objCartBkData->id_order = $order->id;
+                    $objCartBkData->id_customer = $customer->id;
+                    $objCartBkData->save();
 
-        //         if (count($avai_rm['rm_data'][0]['data']['available']) < count($cl_val['id_rms']))
-        //         {
-        //             foreach ($cl_val['id_rms'] as $cr_key => $cr_val) 
-        //             {
-        //                 $isRmBooked = $obj_htl_bk_dtl->chechRoomBooked($cr_val, $cl_val['date_from'], $cl_val['date_to']);
-        //                 if ($isRmBooked) 
-        //                 {
-        //                     $this->is_back_order = 1;         // Use for change in order status
-
-        //                     $updData = array('is_back_order' => 1);
-        //                     $updBy = array('id_cart' => $cart->id,
-        //                                     'id_room' => $cr_val,
-        //                                     'date_from' => $cl_val['date_from'],
-        //                                     'date_to' => $cl_val['date_to']);
-
-        //                     $obj_cart_bk_data->updateCartBookingData($updData, $updBy);
-        //                 }
-        //             }
-        //         }
-        //         else
-        //         {
-        //             foreach ($cl_val['id_rms'] as $cr_key => $cr_val) 
-        //             {
-        //                 $isRmBooked = $obj_htl_bk_dtl->chechRoomBooked($cr_val, $cl_val['date_from'], $cl_val['date_to']);
-        //                 if ($isRmBooked) 
-        //                 {
-        //                     foreach ($avai_rm['rm_data'][0]['data']['available'] as $av_key => $av_val) 
-        //                     {
-        //                         if (!in_array($av_val['id_room'], $cl_val['id_rms'])) 
-        //                         {
-        //                             $cl_val['id_rms'][$cr_key] = $av_val['id_room'];
-
-        //                             $updData = array('id_room' => $av_val['id_room']);
-        //                             $updBy = array('id_cart' => $cart->id,
-        //                                             'id_room' => $cr_val,
-        //                                             'date_from' => $cl_val['date_from'],
-        //                                             'date_to' => $cl_val['date_to']);
-
-        //                             $obj_cart_bk_data->updateCartBookingData($updData, $updBy);
-        //                             unset($avai_rm['rm_data'][0]['data']['available'][$av_key]);
-        //                             break;
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-        foreach ($cart_products as $k => $v) 
-        {
-            $obj_cart_bk_data = new HotelCartBookingData();
-            $cart_bk_data = $obj_cart_bk_data->getOnlyCartBookingData($cart->id, $cart->id_guest, $v['id_product']);
-            if ($cart_bk_data) 
-            {
-                foreach ($cart_bk_data as $cb_k => $cb_v) 
-                {
-                    $obj_cart_bk_data = new HotelCartBookingData($cb_v['id']);
-                    $obj_cart_bk_data->id_order = $order->id;
-                    $obj_cart_bk_data->id_customer = $customer->id;
-                    $obj_cart_bk_data->save();
-
-                    $obj_htl_bk_dtl = new HotelBookingDetail();
-                    $obj_htl_bk_dtl->id_product =   $v['id_product'];
-                    $obj_htl_bk_dtl->id_order =     $order->id;
-                    $obj_htl_bk_dtl->id_cart =      $cart->id;
-                    $obj_htl_bk_dtl->id_room =      $obj_cart_bk_data->id_room;
-                    $obj_htl_bk_dtl->id_hotel =     $obj_cart_bk_data->id_hotel;
-                    $obj_htl_bk_dtl->id_customer =  $customer->id;
-                    $obj_htl_bk_dtl->booking_type = $obj_cart_bk_data->booking_type;
-                    $obj_htl_bk_dtl->id_status =    1;
-                    $obj_htl_bk_dtl->comment =      $obj_cart_bk_data->comment;
+                    $objHtlBkDtl = new HotelBookingDetail();
+                    $id_order_detail = $objHtlBkDtl->getPsOrderDetailIdByIdProduct($idProduct, $order->id);
+                    $objHtlBkDtl->id_product = $idProduct;
+                    $objHtlBkDtl->id_order = $order->id;
+                    $objHtlBkDtl->id_order_detail = $id_order_detail;
+                    $objHtlBkDtl->id_cart = $cart->id;
+                    $objHtlBkDtl->id_room = $objCartBkData->id_room;
+                    $objHtlBkDtl->id_hotel = $objCartBkData->id_hotel;
+                    $objHtlBkDtl->id_customer = $customer->id;
+                    $objHtlBkDtl->booking_type = $objCartBkData->booking_type;
+                    $objHtlBkDtl->id_status = 1;
+                    $objHtlBkDtl->comment = $objCartBkData->comment;
 
                     // For Back Order(Because of cart lock)
-                    if ($obj_cart_bk_data->is_back_order) 
-                        $obj_htl_bk_dtl->is_back_order = 1;
+                    if ($objCartBkData->is_back_order) {
+                        $objHtlBkDtl->is_back_order = 1;
+                    }
+                    $total_price = HotelRoomTypeFeaturePricing::getRoomTypeTotalPrice(
+                        $idProduct,
+                        $objCartBkData->date_from,
+                        $objCartBkData->date_to
+                    );
+                    $objHtlBkDtl->date_from = $objCartBkData->date_from;
+                    $objHtlBkDtl->date_to = $objCartBkData->date_to;
+                    $objHtlBkDtl->total_price_tax_excl = Tools::ps_round($total_price['total_price_tax_excl'], 6);
+                    $objHtlBkDtl->total_price_tax_incl = Tools::ps_round($total_price['total_price_tax_incl'], 6);
 
-                    $obj_htl_bk_dtl->date_from =    $obj_cart_bk_data->date_from;
-                    $obj_htl_bk_dtl->date_to =      $obj_cart_bk_data->date_to;
-                    $obj_htl_bk_dtl->save();
+                    // Save hotel information/location/contact
+                    if (Validate::isLoadedObject($objRoom = new HotelRoomInformation($objCartBkData->id_room))) {
+                        $objHtlBkDtl->room_num = $objRoom->room_num;
+                    }
+                    if (Validate::isLoadedObject($objHotelBranch = new HotelBranchInformation(
+                        $objCartBkData->id_hotel,
+                        $idLang
+                    ))) {
+                        $objHtlBkDtl->hotel_name = $objHotelBranch->hotel_name;
+                        $objHtlBkDtl->room_type_name = $product['name'];
+                        $objHtlBkDtl->city = $objHotelBranch->city;
+                        $objHtlBkDtl->state = State::getNameById($objHotelBranch->state_id);
+                        $objHtlBkDtl->country = Country::getNameById($idLang, $objHotelBranch->country_id);
+                        $objHtlBkDtl->zipcode = $objHotelBranch->zipcode;
+                        $objHtlBkDtl->phone = $objHotelBranch->phone;
+                        $objHtlBkDtl->email = $objHotelBranch->email;
+                        $objHtlBkDtl->check_in_time = $objHotelBranch->check_in;
+                        $objHtlBkDtl->check_out_time = $objHotelBranch->check_out;
+                    }
+                    if ($roomTypeInfo = $objRoomType->getRoomTypeInfoByIdProduct($idProduct)) {
+                        $objHtlBkDtl->adult = $roomTypeInfo['adult'];
+                        $objHtlBkDtl->children = $roomTypeInfo['children'];
+                    }
+
+                    /*for saving details of the advance payment product wise*/
+                    $objHtlBkDtl->total_paid_amount = Tools::ps_round($total_price['total_price_tax_incl'], 5);
+                    if ($cart->is_advance_payment) {
+                        $prod_adv_payment = $obj_adv_payment->getIdAdvPaymentByIdProduct($idProduct);
+                        if (!$prod_adv_payment
+                            || (isset($prod_adv_payment['payment_type']) && $prod_adv_payment['payment_type'])
+                        ) {
+                            $objHtlBkDtl->total_paid_amount = $obj_adv_payment->getRoomMinAdvPaymentAmount(
+                                $idProduct,
+                                $objCartBkData->date_from,
+                                $objCartBkData->date_to
+                            );
+                        }
+                    }
+                    if ($objHtlBkDtl->save()) {
+                        // save extra demands info
+                        if ($objCartBkData->extra_demands
+                            && ($extraDemands = json_decode($objCartBkData->extra_demands, true))
+                        ) {
+                            $objRoomDemandPrice = new HotelRoomTypeDemandPrice();
+                            foreach ($extraDemands as $demand) {
+                                $idGlobalDemand = $demand['id_global_demand'];
+                                $idOption = $demand['id_option'];
+                                $objBookingDemand = new HotelBookingDemands();
+                                $objBookingDemand->id_htl_booking = $objHtlBkDtl->id;
+                                $objGlobalDemand = new HotelRoomTypeGlobalDemand($idGlobalDemand, $idLang);
+                                if ($idOption) {
+                                    $objOption = new HotelRoomTypeGlobalDemandAdvanceOption($idOption, $idLang);
+                                    $objBookingDemand->name = $objOption->name;
+                                } else {
+                                    $idOption = 0;
+                                    $objBookingDemand->name = $objGlobalDemand->name;
+                                }
+                                $objBookingDemand->unit_price_tax_excl = HotelRoomTypeDemand::getPriceStatic(
+                                    $idProduct,
+                                    $idGlobalDemand,
+                                    $idOption,
+                                    0
+                                );
+                                $objBookingDemand->unit_price_tax_incl = HotelRoomTypeDemand::getPriceStatic(
+                                    $idProduct,
+                                    $idGlobalDemand,
+                                    $idOption,
+                                    1
+                                );
+                                $qty = 1;
+                                if ($objGlobalDemand->price_calc_method == HotelRoomTypeGlobalDemand::WK_PRICE_CALC_METHOD_EACH_DAY) {
+                                    $numDays = $objHtlBkDtl->getNumberOfDays(
+                                        $objHtlBkDtl->date_from,
+                                        $objHtlBkDtl->date_to
+                                    );
+                                    if ($numDays > 1) {
+                                        $qty *= $numDays;
+                                    }
+                                }
+                                $objBookingDemand->total_price_tax_excl = $objBookingDemand->unit_price_tax_excl * $qty;
+                                $objBookingDemand->total_price_tax_incl = $objBookingDemand->unit_price_tax_incl * $qty;
+
+                                $objBookingDemand->price_calc_method = $objGlobalDemand->price_calc_method;
+                                $objBookingDemand->id_tax_rules_group = $objGlobalDemand->id_tax_rules_group;
+                                $taxManager = TaxManagerFactory::getManager(
+                                    $vatAddress,
+                                    $objGlobalDemand->id_tax_rules_group
+                                );
+                                $taxCalc = $taxManager->getTaxCalculator();
+                                $objBookingDemand->tax_computation_method = (int)$taxCalc->computation_method;
+                                if ($objBookingDemand->save()) {
+                                    $objBookingDemand->tax_calculator = $taxCalc;
+                                    $objBookingDemand->id_global_demand = $idGlobalDemand;
+                                    // Now save tax details of the extra demand
+                                    $objBookingDemand->setBookingDemandTaxDetails();
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        // For Advanced Payment
-        if (Configuration::get('WK_ALLOW_ADVANCED_PAYMENT'))
-        {
-            $obj_customer_adv = new HotelCustomerAdvancedPayment();
-            $customer_adv_dtl = $obj_customer_adv->getClientAdvPaymentDtl($cart->id, $cart->id_guest);
-            if ($customer_adv_dtl) 
-            {
-                $obj_customer_adv = new HotelCustomerAdvancedPayment($customer_adv_dtl['id']);
+        if (isset($_COOKIE['wk_id_cart'])) {
+            setcookie('wk_id_cart', ' ', time() - 86400, '/');
+            setcookie('wk_id_guest', ' ', time() - 86400, '/');
 
-                $obj_customer_adv->id_customer = $customer->id;
-                $obj_customer_adv->id_order = $order->id;
-                
-                //if currency is changed before order
-                if ($cart->id_currency != $obj_customer_adv->id_currency)
-                {
-                    $obj_customer_adv->total_paid_amount = Tools::convertPriceFull($obj_customer_adv->total_paid_amount, new Currency($obj_customer_adv->id_currency), new Currency($cart->id_currency));
+            unset($_COOKIE['wk_id_cart']);
+            unset($_COOKIE['wk_id_guest']);
+        }
+    }
 
-                    $order_amt = $order->total_paid;
-                    $obj_customer_adv->id_currency = $cart->id_currency;
-                } 
-                else
-                    $order_amt = $order->total_paid;
+    public function hookActionOrderStatusPostUpdate($params)
+    {
+        $objHtlBkDtl = new HotelBookingDetail();
 
-                $obj_customer_adv->total_order_amount = $order_amt;
-                $obj_customer_adv->save();
+        // Make rooms available for booking if order status is cancelled, refunded or error
+        if (in_array($params['newOrderStatus']->id, $objHtlBkDtl->getOrderStatusToFreeBookedRoom())) {
+            if (!$objHtlBkDtl->updateOrderRefundStatus($params['id_order'])) {
+                $this->context->controller->errors[] = $this->l('Error while making booked rooms available, attached with this order. Please try again !!');
             }
         }
     }
 
-    // Deprecated in future
-    // change order status in case of cart lock
-    // public function hookActionOrderHistoryAddAfter($data)
-    // {
-    //     $order_history = $data['order_history'];
-    //     $order = new Order((int)$order_history->id_order);
-        
-    //     if ($order->getCurrentState() != 9) 
-    //     {
-    //         if ($this->is_back_order) 
-    //         {
-    //             if ($order->payment == 'Bank wire')
-    //             {
-    //                 $mailVars = array(
-    //                     '{bankwire_owner}' => Configuration::get('BANK_WIRE_OWNER'),
-    //                     '{bankwire_details}' => nl2br(Configuration::get('BANK_WIRE_DETAILS')),
-    //                     '{bankwire_address}' => nl2br(Configuration::get('BANK_WIRE_ADDRESS'))
-    //                 );
-    //             }
-    //             elseif ($order->payment == 'Payment by check') 
-    //             {
-    //                 $mailVars = array(
-    //                     '{cheque_name}' => Configuration::get('CHEQUE_NAME'),
-    //                     '{cheque_address}' => Configuration::get('CHEQUE_ADDRESS'),
-    //                     '{cheque_address_html}' => str_replace("\n", '<br />', Configuration::get('CHEQUE_ADDRESS')));
-    //             }
-
-    //             $extra_vars = $mailVars;
-    //             $new_history = new OrderHistory();
-    //             $new_history->id_order = (int)$order_history->id_order;
-    //             $new_history->changeIdOrderState(9, $order, true);
-    //             $new_history->addWithemail(true, $extra_vars);
-    //         }
-    //     }
-    // }
+    public function hookActionAdminControllerSetMedia()
+    {
+        if ('AdminProducts' == Tools::getValue('controller')) {
+            $this->context->controller->addJs($this->_path.'views/js/roomTypeDemand.js');
+            $this->context->controller->addCSS($this->_path.'views/css/roomTypeDemand.css');
+        }
+    }
 
     public function hookDisplayBackOfficeHeader()
     {
         $this->context->controller->addCSS($this->_path.'views/css/admin/css/hotel_admin_tab_logo.css');
+    }
+
+    /**
+     * If admin add any language then an entry will add in defined $lang_tables array's lang table same as prestashop
+     * @param array $params
+     */
+    public function hookActionObjectLanguageAddAfter($params)
+    {
+        if ($newIdLang = $params['object']->id) {
+            $langTables = array(
+                'htl_room_type_feature_pricing',
+                'htl_branch_info',
+                'htl_features',
+                'htl_room_type_global_demand',
+                'htl_room_type_global_demand_advance_option',
+                'htl_order_refund_rules',
+            );
+            //If Admin update new language when we do entry in module all lang tables.
+            HotelHelper::updateLangTables($newIdLang, $langTables);
+
+            // update configuration keys
+            $configKeys = array(
+                'WK_HTL_CHAIN_NAME',
+                'WK_HTL_TAG_LINE',
+                'WK_HTL_SHORT_DESC',
+            );
+            HotelHelper::updateConfigurationLangKeys($newIdLang, $configKeys);
+        }
+    }
+
+    public function hookActionObjectGroupDeleteBefore($params)
+    {
+        if (isset($params['object']->id)) {
+            // delete the group entries in the feature price groups before deleting the group
+            $objFeaturePrice = new HotelRoomTypeFeaturePricing();
+            $objFeaturePrice->cleanGroups($params['object']->id);
+        }
     }
 
     public function callInstallTab()
@@ -303,540 +583,213 @@ class HotelReservationSystem extends Module
         $this->installTab('AdminHotelConfigurationSetting', 'Settings', 'AdminHotelReservationSystemManagement');
         $this->installTab('AdminAddHotel', 'Manage Hotel', 'AdminHotelReservationSystemManagement');
         $this->installTab('AdminHotelFeatures', 'Manage Hotel Features', 'AdminHotelReservationSystemManagement');
-        $this->installTab('AdminOrderRefundRules', 'Manage Order Refund Rules', 'AdminHotelReservationSystemManagement');
-        $this->installTab('AdminOrderRefundRequests', 'Manage Order Refund Requests', 'AdminHotelReservationSystemManagement');
-        return true;
-    }
-
-    public function insertDefaultHotelEntries()
-    {
-        //from setting tab
-        $home_banner_default_title = $this->l('Four Lessons Hotel Greshon Palace');
-        $home_banner_default_content = $this->l('Tofu helvetica leggings tattooed. Skateboard blue bottle green juice, brooklyn cardigan kitsch fap narwhal organic flexitarian.');
-
-        Configuration::updateValue('WK_HOTEL_LOCATION_ENABLE', 1);
-        Configuration::updateValue('WK_ROOM_LEFT_WARNING_NUMBER', 10);
-        Configuration::updateValue('WK_HOTEL_GLOBAL_CONTACT_EMAIL', 'globalhotelemail@hotels.com');
-        Configuration::updateValue('WK_HOTEL_GLOBAL_CONTACT_NUMBER', 9999999999);
-        Configuration::updateValue('WK_TITLE_HEADER_BLOCK', $home_banner_default_title);
-        Configuration::updateValue('WK_CONTENT_HEADER_BLOCK', $home_banner_default_content);
-
-        Configuration::updateValue('WK_ALLOW_ADVANCED_PAYMENT', 1);
-        Configuration::updateValue('WK_ADVANCED_PAYMENT_GLOBAL_MIN_AMOUNT', 10);
-        Configuration::updateValue('WK_ADVANCED_PAYMENT_INC_TAX', 1);
-
-        return true;
-    }
-    
-    public function insertHotelCommonFeatures()
-    {
-        $parent_features_arr = array(
-            'Business Services'=>array('Business Center','Audio-Visual Equipment','Board room','Conference Facilities','Secretaial Services','Fax Machine','Internet Access'),
-
-            'Complementry'=>array('Internet Access Free','Transfer Available','NewsPaper In Lobby','Shopping Drop Facility','Welcome Drinks'),
-
-            'Entertainment'=>array('DiscoTheatre','Casino',' Amphitheatre','Dance Performances(On Demand)','Karoke','Mini Theatre','Night Club'),
-
-            'Facilities'=>array('Laundary Service','Power BackUp','ATM/Banking','Currency Exchange','Dry Cleaning','Library','Doctor On Call','Party Hall','Yoga Hall','Pets Allowed','Kids Play Zone','Wedding Services Facilities','Fire Place Available'),
-
-            'General Services'=>array('Room Service','Cook Service','Car Rental','Door Man','Grocery','Medical Assistance','Postal Services','Spa Services','Multilingual Staff'),
-
-            'Indoors'=>array('Parking','Solarium','Veranda'),
-
-            'Internet'=>array('Internet Access-Surcharge','Internet / Fax (Reception area only)'),
-
-            'Outdoors'=>array('Gardens', 'Outdoor Parking - Secured', 'Barbecue AreaCampfire / Bon Fire', 'Childrens Park','Fishing', 'Golf Course', 'Outdoor Parking - Non Secured','Private Beach','Rooftop Garden'),
-
-            'Parking'=>array('Parking (Surcharge)', 'Parking Facilities Available', 'Valet service'),
-
-            'Sports And Recreation'=>array('Health Club / Gym Facility Available', 'Bike on Rent', 'Badminttion Court', 'Basketball Court', 'Billiards' ,'Boating' ,'Bowling', 'Camel Ride','Clubhouse' ,'Fitness Equipment','Fun Floats','Games Zone', 'Horse Ride ( Chargeable )', 'Marina On Site', 'Nature Walk', 'Pool Table','Safari', 'Skiing Facility', 'Available Spa Services', 'NearbySquash court','Table Tennis', 'Tennis Court','Virtual Golf'),
-
-            'Water Amenites'=>array('Swimming Pool', 'Jacuzzi', 'Private / Plunge Pool', 'Sauna','Whirlpool Bath / Shower Cubicle'),
-
-            'Wine And Dine'=>array('Bar / Lounge', 'Multi Cuisine Restaurant', 'Catering', 'Coffee Shop / Cafe', 'Food Facility', 'Hookah Lounge','Kitchen available (home cook food on request)', 'Open Air Restaurant / Dining' ,'Pool Cafe', 'Poolside Bar', 'Restaurant Veg / Non Veg Kitchens Separate', 'Vegetarian Food / Jain Food Available' )
+        $this->installTab(
+            'AdminOrderRefundRules',
+            'Manage Order Refund Rules',
+            'AdminHotelReservationSystemManagement'
         );
-        $i=1;
-        foreach ($parent_features_arr as $key => $value)
-        {
-            $obj_feature = new HotelFeatures();
-            $obj_feature->name = $this->l($key);
-            $obj_feature->active = 1;
-            $obj_feature->position = $i;
-            $obj_feature->parent_feature_id = 0;
-            $obj_feature->save();
-            $parent_feature_id = $obj_feature->id;
-            foreach ($value as $val)
-            {
-                $obj_feature = new HotelFeatures();
-                $obj_feature->name = $this->l($val);
-                $obj_feature->active = 1;
-                $obj_feature->parent_feature_id = $parent_feature_id;
-                $obj_feature->save();
-            }
-            $i++;
-        }
+        $this->installTab(
+            'AdminOrderRefundRequests',
+            'Manage Order Refund Requests',
+            'AdminHotelReservationSystemManagement'
+        );
+
+        //Controllers which are to be used in this modules but we have not to create tab for those ontrollers...
+        $this->installTab('AdminOrderRestrictSettings', 'order restrict configuration', false, false);
+        $this->installTab('AdminHotelGeneralSettings', 'Hotel General configuration', false, false);
+        $this->installTab('AdminHotelFeaturePricesSettings', 'feature pricing configuration', false, false);
+        $this->installTab('AdminRoomTypeGlobalDemand', 'Additional demand configuration', false, false);
+        $this->installTab('AdminAssignHotelFeatures', 'Assign Hotel Features', false, false);
+
         return true;
     }
 
-    public function insertHotelRoomsStatus()
-    {
-    	$room_status_arr = array('Available','Unavailable','Hold For Maintenance');
-    	foreach ($room_status_arr as $key=>$value)
-    	{
-	    	$obj_room_status = new HotelRoomStatus();
-	        $obj_room_status->status = $value;
-	        $obj_room_status->save();
-	    }
-        return true;
-    }
-
-    public function insertHotelOrderStatus()
-    {
-        $order_status_arr = array('Alloted','Checked In','Checked Out');
-        foreach ($order_status_arr as $key=>$value)
-        {
-            $obj_order_status = new HotelOrderStatus();
-            $obj_order_status->status = $value;
-            $obj_order_status->save();
-        }
-        return true;
-    }
-
-    public function insertHotelRoomAllotmentType()
-    {
-        $altment_type_arr = array('Random Allotment','Manual Allotment');
-        foreach ($altment_type_arr as $key=>$value)
-        {
-            $obj_allotmanet_type = new HotelRoomAllotmentType();
-            $obj_allotmanet_type->type = $value;
-            $obj_allotmanet_type->save();
-        }
-        return true;
-    }
-
-    public function deletePrestashopDefaultCategories()
-    {
-        $all_root_childrean_categories = Category::getAllCategoriesName();
-        foreach ($all_root_childrean_categories as $cat_key => $cat_value)
-        {
-            if ($cat_value['id_category'] > 2)
-            {
-                $obj_category = new Category($cat_value['id_category']);
-                $obj_category->delete();
-            }
-        }
-        return true;
-    }
-
-    public function deletePrestashopDefaultFeatures()
-    {
-        $all_features = Feature::getFeatures($this->context->language->id);
-        foreach($all_features as $ftr_k => $ftr_v)
-        {
-            $obj_feature = new Feature($ftr_v['id_feature']);
-            $obj_feature->delete();
-        }
-        return true;
-    }
-
-    public function createHotelRoomDefaultFeatures()
-    {
-        $htl_room_ftrs = array('Wi-Fi', 'News Paper', 'Power BackUp', 'Refrigerator','Restaurant', 'Room Service', 'Gym');
-        $pos = 0;
-        foreach ($htl_room_ftrs as $room_ftr_k => $room_ftr_v)
-        {
-            $obj_feature = new Feature();
-            foreach (Language::getLanguages(true) as $lang)
-                $obj_feature->name[$lang['id_lang']] = $room_ftr_v;
-            $obj_feature->position = $pos;
-            $obj_feature->save();
-            if ($obj_feature->id)
-            {
-                $obj_feature_value = new FeatureValue();
-                $obj_feature_value->id_feature = $obj_feature->id;
-                
-                foreach (Language::getLanguages(true) as $lang)
-                    $obj_feature_value->value[$lang['id_lang']] = $obj_feature->id.'.png';
-                
-                $obj_feature_value->save();
-                if ($obj_feature_value->id)
-                {
-                    if (file_exists(_PS_IMG_DIR_.'rf/'.$pos.'.png'))
-                        rename(_PS_IMG_DIR_.'rf/'.$pos.'.png', _PS_IMG_DIR_.'rf/'.$obj_feature->id.'.png');
-                }
-            }
-            $pos++;
-        }
-        return true;
-    }
-
-    public function createDummyDataForProject()
-    {
-        //delete privious products of prestashop
-        $all_products = Product::getSimpleProducts(Configuration::get('PS_LANG_DEFAULT'));
-        foreach ($all_products as $key_pro => $value_pro)
-        {
-            $obj_product = new Product($value_pro['id_product']);
-            $obj_product->delete();
-        }
-        // first add a hotel.................
-        $def_cont_id = Country::getDefaultCountryId();
-        $obj_hotel_info = new HotelBranchInformation();
-        $obj_hotel_info->active = 1;
-        $obj_hotel_info->hotel_name = "The Hotel Prime";
-        $obj_hotel_info->phone = 0123456789;
-        $obj_hotel_info->email = "prime@htl.com";
-        $obj_hotel_info->check_in = '12:00';
-        $obj_hotel_info->check_out = '12:00';
-        $obj_hotel_info->short_description = $this->l('Nice place to stay');
-        $obj_hotel_info->description = $this->l('Nice place to stay');
-        $obj_hotel_info->rating = 3;
-        $obj_hotel_info->city = 'DefCity';
-        $states = State::getStatesByIdCountry($def_cont_id);
-        $state_id = $states[0]['id_state'];
-        $obj_hotel_info->state_id = $state_id;
-        $obj_hotel_info->country_id = $def_cont_id;
-        $obj_hotel_info->zipcode = 263001;
-        $obj_hotel_info->policies = $this->l('1. intelligentsia tattooed pop-up salvia asymmetrical mixtape meggings tousled ramps VHS cred. 2. intelligentsia tattooed pop-up salvia asymmetrical mixtape meggings tousled ramps VHS cred. 3. intelligentsia tattooed pop-up salvia asymmetrical mixtape meggings tousled ramps VHS cred. 4. intelligentsia tattooed pop-up salvia asymmetrical mixtape meggings tousled ramps VHS cred.');
-        $obj_hotel_info->address = 'Near post office, Mallital, Nainital';
-        $obj_hotel_info->save();
-
-        $htl_id = $obj_hotel_info->id;
-
-        $grp_ids = array();
-        $obj_grp = new Group();
-        $data_grp_ids = $obj_grp->getGroups(1, $id_shop = false);
-
-        foreach ($data_grp_ids as $key => $value)
-        {
-            $grp_ids[] = $value['id_group'];
-        }
-        $country_name = (new Country())->getNameById(Configuration::get('PS_LANG_DEFAULT'),$def_cont_id);
-        $cat_country = $this->addCategory($country_name, false, $grp_ids);
-
-        if ($cat_country)
-        {
-            $states = State::getStatesByIdCountry($def_cont_id);
-            if (count($states) > 0)
-            {
-                $state_name = $states[0]['name'];
-                $cat_state = $this->addCategory($state_name, $cat_country, $grp_ids);
-            }
-        }
-        if (count($states) > 0)
-        {
-            if ($cat_state)
-                $cat_city = $this->addCategory('DefCity', $cat_state, $grp_ids);
-        }
-        else
-            $cat_city = $this->addCategory('DefCity', $cat_country, $grp_ids);
-        if ($cat_city)
-            $cat_hotel = $this->addCategory('The Hotel Prime', $cat_city, $grp_ids, 1, $htl_id);
-        if ($cat_hotel)
-        {
-            $obj_hotel_info = new HotelBranchInformation($htl_id);
-            $obj_hotel_info->id_category = $cat_hotel;
-            $obj_hotel_info->save();
-        }
-
-        $branch_ftr_ids = array(1, 2, 4, 7, 8, 9, 11, 12, 14, 16, 17, 18, 21);
-        foreach ($branch_ftr_ids as $key_ftr => $value_ftr)
-        {
-            $htl_ftr_obj = new HotelBranchFeatures();
-            $htl_ftr_obj->id_hotel = $htl_id;
-            $htl_ftr_obj->feature_id = $value_ftr;
-            $htl_ftr_obj->save();
-        }
-
-        $prod_arr = array('Delux Rooms', 'Executive Rooms', 'luxury Rooms');
-        $img_num = 1;
-        foreach ($prod_arr as $key_prod => $value_prod)
-        {
-            // Add Product
-            $product = new Product();
-            $product->name = array();
-            $product->description = array();
-            $product->description_short = array();
-            $product->link_rewrite = array();
-            foreach (Language::getLanguages(true) as $lang)
-            {
-                $product->name[$lang['id_lang']] = $value_prod;
-                $product->description[$lang['id_lang']] = $this->l('Fashion axe kogi yuccie, ramps shabby chic direct trade before they sold out distillery bicycle rights. Slow-carb +1 quinoa VHS. +1 brunch trust fund, meggings chartreuse sustainable everyday carry tumblr hoodie tacos tilde ramps post-ironic fixie.');
-                $product->description_short[$lang['id_lang']] = $this->l('Fashion axe kogi yuccie, ramps shabby chic direct trade before they sold out distillery bicycle rights. Slow-carb +1 quinoa VHS. +1 brunch trust fund, meggings chartreuse sustainable everyday carry tumblr hoodie tacos tilde ramps post-ironic fixie.');
-                $product->link_rewrite[$lang['id_lang']] = Tools::link_rewrite('Super Delux Rooms');
-            }
-            $product->id_shop_default = Context::getContext()->shop->id;
-            $product->id_category_default = 2;
-            $product->price = 1000;
-            $product->active = 1;
-            $product->quantity = 99999999;
-            $product->is_virtual = 1;
-            $product->indexed = 1;
-            $product->save();
-            $product_id = $product->id;
-
-            Search::indexation(Tools::link_rewrite($value_prod),$product_id);
-            
-            $product->addToCategories(2);
-            
-            StockAvailable::updateQuantity($product_id, null, 99999999);
-
-            //image upload for products
-            $count = 0;
-            $have_cover = false;
-            $old_path = _PS_MODULE_DIR_.$this->name.'/views/img/prod_imgs/'.$img_num.'.png';
-            $image_obj = new Image();
-            $image_obj->id_product = $product_id;
-            $image_obj->position = Image::getHighestPosition($product_id) + 1;
-
-            if ($count == 0)
-            {
-                if (!$have_cover)
-                    $image_obj->cover = 1;
-            }
-            else
-                $image_obj->cover = 0;
-
-            $image_obj->add();
-            $new_path = $image_obj->getPathForCreation();
-            $imagesTypes = ImageType::getImagesTypes('products');
-            
-            foreach ($imagesTypes as $image_type)
-                ImageManager::resize($old_path, $new_path.'-'.$image_type['name'].'.jpg', $image_type['width'],$image_type['height']);
-            
-            ImageManager::resize($old_path,$new_path.'.jpg');
-
-            for ($k=1; $k<=5; $k++)
-            {
-                $htl_room_info_obj = new HotelRoomInformation();
-                $htl_room_info_obj->id_product = $product_id;
-                $htl_room_info_obj->id_hotel = $htl_id;
-                $htl_room_info_obj->room_num = 'A'.$i.'-10'.$k;
-                $htl_room_info_obj->id_status = 1;
-                $htl_room_info_obj->floor = 'first';
-                $htl_room_info_obj->save();
-            }
-
-            $htl_rm_type = new HotelRoomType();
-            $htl_rm_type->id_product = $product_id;
-            $htl_rm_type->id_hotel = $htl_id;
-            $htl_rm_type->adult = 2;
-            $htl_rm_type->children = 2;
-            $htl_rm_type->save();
-            $img_num++;
-
-            // Add features to the product
-            $ftr_arr = array(0=>8, 1=>9, 2=>10, 3=>11);
-            $ftr_val_arr = array(0=>34, 1=>35, 2=>36, 3=>37);
-            foreach ($ftr_arr as $key_htl_ftr => $val_htl_ftr)
-            {
-                $product->addFeaturesToDB($val_htl_ftr, $ftr_val_arr[$key_htl_ftr]);
-            }
-        }
-        return true;
-    }
-
-    public function addCategory($name, $parent_cat=false, $group_ids, $ishotel=false, $hotel_id=false)
-    {
-        if (!$parent_cat)
-            $parent_cat = Category::getRootCategory()->id;
-
-        if ($ishotel && $hotel_id)
-        {
-            $cat_id_hotel = Db::getInstance()->getValue('SELECT `id_category` FROM `'._DB_PREFIX_.'htl_branch_info` WHERE id='.$hotel_id);
-            if ($cat_id_hotel)
-            {
-                $obj_cat = new Category($cat_id_hotel);
-                $obj_cat->name = array();
-                $obj_cat->description = array();
-                $obj_cat->link_rewrite = array();
-
-                foreach (Language::getLanguages(true) as $lang)
-                {
-                    $obj_cat->name[$lang['id_lang']] = $name;
-                    $obj_cat->description[$lang['id_lang']] = $this->l('this category are for hotels only');
-                    $obj_cat->link_rewrite[$lang['id_lang']] = $this->l(Tools::link_rewrite($name));
-                }
-                $obj_cat->id_parent = $parent_cat;
-                $obj_cat->groupBox = $group_ids;
-                $obj_cat->save();
-                $cat_id = $obj_cat->id;
-                return $cat_id;
-            }
-        }
-        $check_category_exists = Category::searchByNameAndParentCategoryId($this->context->language->id, $name, $parent_cat);
-
-        if ($check_category_exists)
-            return $check_category_exists['id_category'];
-        else
-        {
-            $obj = new Category();
-            $obj->name = array();
-            $obj->description = array();
-            $obj->link_rewrite = array();
-
-            foreach (Language::getLanguages(true) as $lang)
-            {
-                $obj->name[$lang['id_lang']] = $name;
-                $obj->description[$lang['id_lang']] = $this->l('this category are for hotels only');
-                $obj->link_rewrite[$lang['id_lang']] = $this->l(Tools::link_rewrite($name));
-            }
-            $obj->id_parent = $parent_cat;
-            $obj->groupBox = $group_ids;
-            $obj->add();
-            $cat_id = $obj->id;
-            return $cat_id;
-        }
-    }
-
-    public function installTab($class_name,$tab_name,$tab_parent_name=false) 
+    public function installTab($class_name, $tab_name, $tab_parent_name = false, $need_tab = true)
     {
         $tab = new Tab();
         $tab->active = 1;
         $tab->class_name = $class_name;
         $tab->name = array();
 
-        foreach (Language::getLanguages(true) as $lang)
+        foreach (Language::getLanguages(true) as $lang) {
             $tab->name[$lang['id_lang']] = $tab_name;
+        }
 
-        if($tab_parent_name)
-            $tab->id_parent = (int)Tab::getIdFromClassName($tab_parent_name);
-        else
+        if ($tab_parent_name) {
+            $tab->id_parent = (int) Tab::getIdFromClassName($tab_parent_name);
+        } elseif (!$need_tab) {
+            $tab->id_parent = -1;
+        } else {
             $tab->id_parent = 0;
-        
+        }
+
         $tab->module = $this->name;
         $res = $tab->add();
-        if ($tab_name == 'Hotel Reservation System')
-        {
+        //Set position of the Hotel reservation System Tab to the position wherewe want...
+        if ($tab_name == 'Hotel Reservation System') {
             $objTab = new Tab($tab->id);
             $objTab->updatePosition(0, 5);
         }
+
         return $res;
     }
-    
+
     public function install()
     {
-        if (!file_exists(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
+        if (!file_exists(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE)) {
             return false;
-        else if (!$sql = Tools::file_get_contents(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
+        } elseif (!$sql = Tools::file_get_contents(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE)) {
             return false;
+        }
 
         $sql = str_replace(array('PREFIX_',  'ENGINE_TYPE'), array(_DB_PREFIX_, _MYSQL_ENGINE_), $sql);
         $sql = preg_split("/;\s*[\r\n]+/", $sql);
 
-        foreach ($sql as $query)
-            if ($query)
-                if (!Db::getInstance()->execute(trim($query)))
+        foreach ($sql as $query) {
+            if ($query) {
+                if (!Db::getInstance()->execute(trim($query))) {
                     return false;
+                }
+            }
+        }
+
+        // if module should be populated while installation
+        $objHtlHelper = new HotelHelper();
+        if (isset($this->populateData) && $this->populateData) {
+            if (!$objHtlHelper->createHotelRoomDefaultFeatures()
+                || !$objHtlHelper->insertHotelCommonFeatures()
+                || !$objHtlHelper->createDummyDataForProject()
+            ) {
+                return false;
+            }
+        }
 
         if (!parent::install()
             || !$this->callInstallTab()
-            || !$this->insertDefaultHotelEntries()
-            || !$this->deletePrestashopDefaultCategories()
-            || !$this->deletePrestashopDefaultFeatures()
-            || !$this->createHotelRoomDefaultFeatures()
-            || !$this->insertHotelCommonFeatures()
-            || !$this->insertHotelRoomsStatus()
-            || !$this->insertHotelOrderStatus()
-            || !$this->insertHotelRoomAllotmentType()
-            || !$this->createDummyDataForProject()
-            || !$this->registerHook('footer')
-            || !$this->registerHook('actionValidateOrder')
-            || !$this->registerHook('actionOrderHistoryAddAfter')
-            || !$this->registerHook('displayBackOfficeHeader')
-            || !$this->registerHook('actionProductDelete')
-        )
+            || !$this->registerModuleHooks()
+            || !$objHtlHelper->insertDefaultHotelEntries()
+            || !$objHtlHelper->insertHotelRoomAllotmentType()
+        ) {
             return false;
-        return true;
-    }
-    
-    public function deleteTables()
-    {
-        return Db::getInstance()->execute('
-            DROP TABLE IF EXISTS
-            `'._DB_PREFIX_.'htl_room_information`,
-            `'._DB_PREFIX_.'htl_image`,
-            `'._DB_PREFIX_.'htl_features`,
-            `'._DB_PREFIX_.'htl_branch_features`,
-            `'._DB_PREFIX_.'htl_branch_info`,
-            `'._DB_PREFIX_.'htl_booking_detail`,
-            `'._DB_PREFIX_.'htl_room_status`,
-            `'._DB_PREFIX_.'htl_order_status`,
-            `'._DB_PREFIX_.'htl_room_allotment_type`,
-            `'._DB_PREFIX_.'htl_cart_booking_data`,
-            `'._DB_PREFIX_.'htl_order_refund_stages`,
-            `'._DB_PREFIX_.'htl_order_refund_info`,
-            `'._DB_PREFIX_.'htl_order_refund_rules`,
-            `'._DB_PREFIX_.'htl_customer_adv_payment`,
-            `'._DB_PREFIX_.'htl_advance_payment`,
-            `'._DB_PREFIX_.'htl_room_type`');
-    }
-        
-    public function callUninstallTab()
-    {
-        $this->uninstallTab('AdminHotelRoomsBooking');
-        $this->uninstallTab('AdminHotelConfigurationSetting');
-        $this->uninstallTab('AdminAddHotel');
-        $this->uninstallTab('AdminHotelFeatures');
-        $this->uninstallTab('AdminHotelReservationSystemManagement');
-        $this->uninstallTab('AdminOrderRefundRequests');
-        $this->uninstallTab('AdminHotelReservationSystemManagement');
-        return true;
-    }
-        
-    public function uninstallTab($class_name)
-    {
-        $id_tab = (int)Tab::getIdFromClassName($class_name);
-        if ($id_tab)
-        {
-            $tab = new Tab($id_tab);
-            return $tab->delete();
         }
-        else
-            return false;
+
+
+        return true;
     }
 
-    public function reset()
+    public function registerModuleHooks()
     {
-        if (!$this->uninstall(false))
-            return false;
-        if (!$this->install(false))
-            return false;
+        return $this->registerHook(
+            array(
+                'displayHeader',
+                'displayTop',
+                'displayAfterHookTop',
+                'actionValidateOrder',
+                'actionOrderHistoryAddAfter',
+                'displayBackOfficeHeader',
+                'actionObjectProductDeleteBefore',
+                'footer',
+                'displayAfterDefautlFooterHook',
+                'actionProductSave',
+                'addWebserviceResources',
+                'actionObjectLanguageAddAfter',
+                'actionAdminControllerSetMedia',
+                'displayAdminProductsExtra',
+                'actionProductUpdate',
+                'actionObjectProfileAddAfter',
+                'actionObjectProfileDeleteBefore',
+                'actionObjectGroupDeleteBefore',
+                'actionOrderStatusPostUpdate'
+            )
+        );
+    }
+
+    public function deleteTables()
+    {
+        return Db::getInstance()->execute(
+            'DROP TABLE IF EXISTS
+            `'._DB_PREFIX_.'htl_room_type`,
+            `'._DB_PREFIX_.'htl_room_information`,
+            `'._DB_PREFIX_.'htl_branch_info`,
+            `'._DB_PREFIX_.'htl_branch_info_lang`,
+            `'._DB_PREFIX_.'htl_image`,
+            `'._DB_PREFIX_.'htl_branch_features`,
+            `'._DB_PREFIX_.'htl_features`,
+            `'._DB_PREFIX_.'htl_features_lang`,
+            `'._DB_PREFIX_.'htl_cart_booking_data`,
+            `'._DB_PREFIX_.'htl_booking_detail`,
+            `'._DB_PREFIX_.'htl_booking_demands`,
+            `'._DB_PREFIX_.'htl_booking_demands_tax`,
+            `'._DB_PREFIX_.'htl_room_status`,
+            `'._DB_PREFIX_.'htl_room_allotment_type`,
+            `'._DB_PREFIX_.'htl_advance_payment`,
+            `'._DB_PREFIX_.'htl_order_refund_rules`,
+            `'._DB_PREFIX_.'htl_order_refund_rules_lang`,
+            `'._DB_PREFIX_.'htl_branch_refund_rules`,
+            `'._DB_PREFIX_.'htl_order_restrict_date`,
+            `'._DB_PREFIX_.'htl_room_type_feature_pricing`,
+            `'._DB_PREFIX_.'htl_room_type_feature_pricing_lang`,
+            `'._DB_PREFIX_.'htl_room_type_feature_pricing_group`,
+            `'._DB_PREFIX_.'htl_room_type_global_demand`,
+            `'._DB_PREFIX_.'htl_room_type_global_demand_lang`,
+            `'._DB_PREFIX_.'htl_room_type_global_demand_advance_option`,
+            `'._DB_PREFIX_.'htl_room_type_global_demand_advance_option_lang`,
+            `'._DB_PREFIX_.'htl_room_type_demand_price`,
+            `'._DB_PREFIX_.'htl_room_type_demand`,
+            `'._DB_PREFIX_.'htl_room_disable_dates`,
+            `'._DB_PREFIX_.'htl_access`'
+        );
+    }
+
+    public function uninstallTab()
+    {
+        $moduleTabs = Tab::getCollectionFromModule($this->name);
+        if (!empty($moduleTabs)) {
+            foreach ($moduleTabs as $moduleTab) {
+                $moduleTab->delete();
+            }
+        }
+
         return true;
     }
 
     public function deleteConfigVars()
     {
-        $var = array('WK_HOTEL_LOCATION_ENABLE', 
-                     'WK_ROOM_LEFT_WARNING_NUMBER', 
-                     'WK_HOTEL_GLOBAL_CONTACT_EMAIL', 
-                     'WK_HOTEL_GLOBAL_CONTACT_NUMBER',
-                     'WK_HTL_ESTABLISHMENT_YEAR',
-                     'WK_HTL_CHAIN_NAME',
-                     'WK_TITLE_HEADER_BLOCK',
-                     'WK_CONTENT_HEADER_BLOCK',
-                     'WK_HTL_HEADER_IMAGE',
-                     'WK_ALLOW_ADVANCED_PAYMENT',
-                     'WK_ADVANCED_PAYMENT_GLOBAL_MIN_AMOUNT',
-                     'WK_ADVANCED_PAYMENT_INC_TAX',
-                     );
-
-        foreach ($var as $key)
-            if (!Configuration::deleteByName($key))
+        $configKeys = array(
+            'WK_HOTEL_LOCATION_ENABLE',
+            'WK_ROOM_LEFT_WARNING_NUMBER',
+            'WK_HOTEL_GLOBAL_ADDRESS',
+            'WK_HOTEL_GLOBAL_CONTACT_EMAIL',
+            'WK_HOTEL_GLOBAL_CONTACT_NUMBER',
+            'WK_HTL_ESTABLISHMENT_YEAR',
+            'WK_HTL_CHAIN_NAME',
+            'WK_TITLE_HEADER_BLOCK',
+            'WK_CONTENT_HEADER_BLOCK',
+            'WK_HTL_HEADER_IMAGE',
+            'WK_ALLOW_ADVANCED_PAYMENT',
+            'WK_ADVANCED_PAYMENT_GLOBAL_MIN_AMOUNT',
+            'WK_ADVANCED_PAYMENT_INC_TAX',
+            'WK_GOOGLE_ACTIVE_MAP',
+            'WK_MAP_HOTEL_ACTIVE_ONLY',
+            'WK_HOTEL_NAME_ENABLE'
+        );
+        foreach ($configKeys as $key) {
+            if (!Configuration::deleteByName($key)) {
                 return false;
-        
+            }
+        }
         return true;
     }
 
-    public function uninstall($keep = true)
+    public function uninstall()
     {
-        if(!parent::uninstall() 
+        if (!parent::uninstall()
             || !$this->deleteConfigVars()
             || !$this->deleteTables()
-            || !$this->callUninstallTab())
+            || !$this->uninstallTab()
+        ) {
             return false;
-
+        }
         return true;
     }
 }
-?>

@@ -120,11 +120,11 @@
       <value>#IN</value>
     </configuration>
     <configuration id="PS_INVCE_INVOICE_ADDR_RULES" name="PS_INVCE_INVOICE_ADDR_RULES">
-      <value>{"avoid":["vat_number","phone","phone_mobile"]}</value>
+      <value>{"avoid":[]}</value>
     </configuration>
     <configuration id="PS_INVCE_DELIVERY_ADDR_RULES" name="PS_INVCE_DELIVERY_ADDR_RULES">
-      <value>{"avoid":["vat_number","phone","phone_mobile"]}</value>
-    </configuration>
+      <value>{"avoid":[]}</value>
+	</configuration>
 	<configuration id="PS_DELIVERY_PREFIX" name="PS_DELIVERY_PREFIX">
 		<value>#DE</value>
 	</configuration>
@@ -323,6 +323,18 @@
 	<configuration id="PS_GUEST_CHECKOUT_ENABLED" name="PS_GUEST_CHECKOUT_ENABLED">
 		<value>0</value>
 	</configuration>
+	<configuration id="PS_ORDER_CONF_MAIL_TO_CUSTOMER" name="PS_ORDER_CONF_MAIL_TO_CUSTOMER">
+		<value>1</value>
+	</configuration>
+	<configuration id="PS_ORDER_CONF_MAIL_TO_SUPERADMIN" name="PS_ORDER_CONF_MAIL_TO_SUPERADMIN">
+		<value>1</value>
+	</configuration>
+	<configuration id="PS_ORDER_CONF_MAIL_TO_HOTEL_MANAGER" name="PS_ORDER_CONF_MAIL_TO_HOTEL_MANAGER">
+		<value>1</value>
+	</configuration>
+	<configuration id="PS_ORDER_CONF_MAIL_TO_EMPLOYEE" name="PS_ORDER_CONF_MAIL_TO_EMPLOYEE">
+		<value>1</value>
+	</configuration>
 	<configuration id="PS_DISPLAY_SUPPLIERS" name="PS_DISPLAY_SUPPLIERS">
 		<value>1</value>
 	</configuration>
@@ -368,40 +380,40 @@
 	<configuration id="PS_OS_PREPARATION" name="PS_OS_PREPARATION">
 		<value>3</value>
 	</configuration>
-	<configuration id="PS_OS_SHIPPING" name="PS_OS_SHIPPING">
+	<configuration id="PS_OS_CANCELED" name="PS_OS_CANCELED">
 		<value>4</value>
 	</configuration>
-	<configuration id="PS_OS_DELIVERED" name="PS_OS_DELIVERED">
+	<configuration id="PS_OS_REFUND" name="PS_OS_REFUND">
 		<value>5</value>
 	</configuration>
-	<configuration id="PS_OS_CANCELED" name="PS_OS_CANCELED">
+	<configuration id="PS_OS_ERROR" name="PS_OS_ERROR">
 		<value>6</value>
 	</configuration>
-	<configuration id="PS_OS_REFUND" name="PS_OS_REFUND">
+	<configuration id="PS_OS_OUTOFSTOCK" name="PS_OS_OUTOFSTOCK">
 		<value>7</value>
 	</configuration>
-	<configuration id="PS_OS_ERROR" name="PS_OS_ERROR">
+	<configuration id="PS_OS_BANKWIRE" name="PS_OS_BANKWIRE">
 		<value>8</value>
 	</configuration>
-	<configuration id="PS_OS_OUTOFSTOCK" name="PS_OS_OUTOFSTOCK">
-		<value>9</value>
-	</configuration>
-	<configuration id="PS_OS_BANKWIRE" name="PS_OS_BANKWIRE">
-		<value>10</value>
-	</configuration>
 	<configuration id="PS_OS_PAYPAL" name="PS_OS_PAYPAL">
-		<value>11</value>
+		<value>9</value>
 	</configuration>
 	<configuration id="PS_OS_WS_PAYMENT" name="PS_OS_WS_PAYMENT">
-		<value>12</value>
+		<value>10</value>
 	</configuration>
 	<configuration id="PS_OS_OUTOFSTOCK_PAID" name="PS_OS_OUTOFSTOCK_PAID">
-		<value>9</value>
+		<value>7</value>
 	</configuration>
 	<configuration id="PS_OS_OUTOFSTOCK_UNPAID" name="PS_OS_OUTOFSTOCK_UNPAID">
+		<value>11</value>
+	</configuration>
+	<configuration id="PS_OS_AWAITING_REMOTE_PAYMENT" name="PS_OS_AWAITING_REMOTE_PAYMENT">
+		<value>12</value>
+	</configuration>
+	<configuration id="PS_OS_AWAITING_PARTIAL_PAYMENT" name="PS_OS_AWAITING_PARTIAL_PAYMENT">
 		<value>13</value>
 	</configuration>
-	<configuration id="PS_OS_COD_VALIDATION" name="PS_OS_COD_VALIDATION">
+	<configuration id="PS_OS_PARTIAL_PAYMENT" name="PS_OS_PARTIAL_PAYMENT">
 		<value>14</value>
 	</configuration>
 	<configuration id="PS_LEGACY_IMAGES" name="PS_LEGACY_IMAGES">
@@ -627,7 +639,7 @@
 		<value>1</value>
 	</configuration>
 	<configuration id="BLOCKADVERT_LINK" name="BLOCKADVERT_LINK">
-		<value>http://www.prestashop.com</value>
+		<value>http://www.qloapps.com</value>
 	</configuration>
 	<configuration id="BLOCKSTORE_IMG" name="BLOCKSTORE_IMG">
 		<value>store.jpg</value>
@@ -642,13 +654,10 @@
 		<value/>
 	</configuration>
 	<configuration id="blocksocial_facebook" name="BLOCKSOCIAL_FACEBOOK">
-		<value>http://www.facebook.com/prestashop</value>
+		<value>http://www.facebook.com/qloapps</value>
 	</configuration>
 	<configuration id="blocksocial_twitter" name="BLOCKSOCIAL_TWITTER">
-		<value>http://www.twitter.com/prestashop</value>
-	</configuration>
-	<configuration id="blocksocial_rss" name="BLOCKSOCIAL_RSS">
-		<value>http://www.prestashop.com/blog/en/feed/</value>
+		<value>http://www.twitter.com/qloapps</value>
 	</configuration>
 	<configuration id="blockcontactinfos_company" name="BLOCKCONTACTINFOS_COMPANY">
 		<value>Your company</value>
@@ -662,13 +671,13 @@ Country</value>
 		<value>0123-456-789</value>
 	</configuration>
 	<configuration id="blockcontactinfos_email" name="BLOCKCONTACTINFOS_EMAIL">
-		<value>pub@prestashop.com</value>
+		<value>pub@qloapps.com</value>
 	</configuration>
 	<configuration id="blockcontact_telnumber" name="BLOCKCONTACT_TELNUMBER">
 		<value>0123-456-789</value>
 	</configuration>
 	<configuration id="blockcontact_email" name="BLOCKCONTACT_EMAIL">
-		<value>pub@prestashop.com</value>
+		<value>pub@qloapps.com</value>
 	</configuration>
 	<configuration id="SUPPLIER_DISPLAY_TEXT" name="SUPPLIER_DISPLAY_TEXT">
 		<value>1</value>
@@ -716,7 +725,7 @@ Country</value>
 		<value>PrestaShop</value>
 	</configuration>
 	<configuration id="PS_SHOP_EMAIL" name="PS_SHOP_EMAIL">
-		<value>pub@prestashop.com</value>
+		<value>pub@qloapps.com</value>
 	</configuration>
 	<configuration id="PS_MAIL_METHOD" name="PS_MAIL_METHOD">
 		<value>1</value>

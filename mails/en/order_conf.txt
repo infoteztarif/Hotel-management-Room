@@ -1,70 +1,54 @@
-
-[{shop_url}] 
-
+Message from {shop_name}
 Hi {firstname} {lastname},
+Thank you for selecting our hotel!
+Order details
+Order: {order_name} Placed on {date}
+Room Image
+Room Description
+Hotel
+Room Capcity
+Unit Price
+Rooms Qty
+Check-in Date
+Check-out Date
+Total
 
-Thank you for shopping with {shop_name}! 
+{cart_booking_data_text}
 
-ORDER: {order_name} Placed on {date}
+{extra_demands_details_text}
 
-PAYMENT: {payment} 		 
+{discounts}
 
-REFERENCE
+Total Rooms Cost
+{total_products}
 
-PRODUCT
+Total Additional Facilities Cost
+{total_extra_demands_te}
 
-UNIT PRICE
+Discounts
+{total_discounts}
 
-QUANTITY
+Total Rooms Tax
+{total_tax_paid}
 
-TOTAL PRICE
+Additional Facilities Tax
+{extra_demands_tax}
 
-{products_txt} 
+Final Booking Amount
+{total_paid}
 
-{discounts} 
-
-PRODUCTS 
-
-{total_products} 
-
-DISCOUNTS 
-
-{total_discounts} 
-
-GIFT-WRAPPING 
-
-{total_wrapping} 
-
-SHIPPING 
-
-{total_shipping} 
-
-TOTAL TAX PAID 
-
-{total_tax_paid} 
-
-TOTAL PAID 
-
-{total_paid} 
-
-CARRIER: {carrier}
-
-PAYMENT: {payment} 		 
-
-{delivery_block_txt} 
-
-{invoice_block_txt} 
+Customer address
+{invoice_block_html}
 
 You can review your order and download your invoice from the
 "Order history" [{history_url}] section of your
 customer account by clicking "My account"
-[{my_account_url}] on our shop. 
+[{my_account_url}] on our shop.
 
 If you have a guest account, you can follow your order via the
 "Guest Tracking"
 [{guest_tracking_url}?id_order={order_name}] section
-on our shop. 
+on our shop.
 
 {shop_name} [{shop_url}] powered by
-PrestaShop(tm) [http://www.prestashop.com/] 
-
+Webkul(tm) [https://webkul.com]

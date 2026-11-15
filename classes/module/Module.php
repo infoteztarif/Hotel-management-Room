@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -41,6 +41,9 @@ abstract class ModuleCore
 
     /** @var array filled with known compliant PS versions */
     public $ps_versions_compliancy = array();
+
+    /** @var array filled with known compliant Qloapps versions */
+    public $qloapps_versions_compliancy = array();
 
     /** @var array filled with modules needed for install */
     public $dependencies = array();
@@ -231,6 +234,7 @@ abstract class ModuleCore
      */
     public function __construct($name = null, Context $context = null)
     {
+        // for Prestashop version compliancy
         if (isset($this->ps_versions_compliancy) && !isset($this->ps_versions_compliancy['min'])) {
             $this->ps_versions_compliancy['min'] = '1.4.0.0';
         }
@@ -245,6 +249,31 @@ abstract class ModuleCore
 
         if (strlen($this->ps_versions_compliancy['max']) == 3) {
             $this->ps_versions_compliancy['max'] .= '.999.999';
+        }
+
+        // for Qloapps version compliancy
+        if (isset($this->qloapps_versions_compliancy) && !isset($this->qloapps_versions_compliancy['min'])) {
+            $this->qloapps_versions_compliancy['min'] = '0.9.0.0';
+        }
+
+        if (isset($this->qloapps_versions_compliancy) && !isset($this->qloapps_versions_compliancy['max'])) {
+            $this->qloapps_versions_compliancy['max'] = _QLOAPPS_VERSION_;
+        }
+
+        if (strlen($this->qloapps_versions_compliancy['min']) == 3) {
+            $this->qloapps_versions_compliancy['min'] .= '.0.0';
+        }
+
+        if (strlen($this->qloapps_versions_compliancy['max']) == 3) {
+            $this->qloapps_versions_compliancy['max'] .= '.999.999';
+        }
+
+        if (strlen($this->qloapps_versions_compliancy['min']) == 5) {
+            $this->qloapps_versions_compliancy['min'] .= '.0';
+        }
+
+        if (strlen($this->qloapps_versions_compliancy['max']) == 5) {
+            $this->qloapps_versions_compliancy['max'] .= '.999';
         }
 
         // Load context and smarty
@@ -287,7 +316,7 @@ abstract class ModuleCore
                     $this->id = self::$modules_cache[$this->name]['id_module'];
                 }
                 foreach (self::$modules_cache[$this->name] as $key => $value) {
-                    if (array_key_exists($key, $this)) {
+                    if (property_exists($this, $key)) {
                         $this->{$key} = $value;
                     }
                 }
@@ -314,7 +343,7 @@ abstract class ModuleCore
 
         // Check PS version compliancy
         if (!$this->checkCompliancy()) {
-            $this->_errors[] = Tools::displayError('The version of your module is not compliant with your PrestaShop version.');
+            $this->_errors[] = Tools::displayError('The version of your module is not compliant with your Qloapps version.');
             return false;
         }
 
@@ -397,7 +426,11 @@ abstract class ModuleCore
 
     public function checkCompliancy()
     {
-        if (version_compare(_PS_VERSION_, $this->ps_versions_compliancy['min'], '<') || version_compare(_PS_VERSION_, $this->ps_versions_compliancy['max'], '>')) {
+        if (version_compare(_PS_VERSION_, $this->ps_versions_compliancy['min'], '<')
+            || version_compare(_PS_VERSION_, $this->ps_versions_compliancy['max'], '>')
+            || version_compare(_QLOAPPS_VERSION_, $this->qloapps_versions_compliancy['min'], '<')
+            || version_compare(_QLOAPPS_VERSION_, $this->qloapps_versions_compliancy['max'], '>')
+        ) {
             return false;
         } else {
             return true;
@@ -751,7 +784,7 @@ abstract class ModuleCore
         Db::getInstance()->execute('
 			UPDATE '._DB_PREFIX_.'module_shop
 			SET enable_device = enable_device + '.(int)$device.'
-			WHERE enable_device &~ '.(int)$device.' AND id_module='.(int)$this->id.
+			WHERE (enable_device &~ '.(int)$device.' OR enable_device = 0) AND id_module='.(int)$this->id.
             Shop::addSqlRestriction()
         );
 
@@ -878,7 +911,6 @@ abstract class ModuleCore
             Hook::exec('actionModuleRegisterHookBefore', array('object' => $this, 'hook_name' => $hook_name));
             // Get hook id
             $id_hook = Hook::getIdByName($hook_name);
-            $live_edit = Hook::getLiveEditById((int)Hook::getIdByName($hook_name_bak));
 
             // If hook does not exist, we create it
             if (!$id_hook) {
@@ -1359,7 +1391,7 @@ abstract class ModuleCore
 
                     // If (false) is a trick to not load the class with "eval".
                     // This way require_once will works correctly
-                    if (eval('if (false){	'.$file.' }') !== false) {
+                    if (eval('if (false){	'.$file."\n".' }') !== false) {
                         require_once(_PS_MODULE_DIR_.$module.'/'.$module.'.php');
                     } else {
                         $errors[] = sprintf(Tools::displayError('%1$s (parse error in %2$s)'), $module, substr($file_path, strlen(_PS_ROOT_DIR_)));
@@ -1442,7 +1474,6 @@ abstract class ModuleCore
             }
         }
 
-        // Get Default Country Modules and customer module
         $files_list = array(
             array('type' => 'addonsNative', 'file' => _PS_ROOT_DIR_.self::CACHE_FILE_DEFAULT_COUNTRY_MODULES_LIST, 'loggedOnAddons' => 0),
             array('type' => 'addonsMustHave', 'file' => _PS_ROOT_DIR_.self::CACHE_FILE_MUST_HAVE_MODULES_LIST, 'loggedOnAddons' => 0),
@@ -1458,7 +1489,6 @@ abstract class ModuleCore
                 $file = $f['file'];
                 $content = Tools::file_get_contents($file);
                 $xml = @simplexml_load_string($content, null, LIBXML_NOCDATA);
-
                 if ($xml && isset($xml->module)) {
                     foreach ($xml->module as $modaddons) {
                         $flag_found = 0;
@@ -1551,8 +1581,7 @@ abstract class ModuleCore
                 $module->interest = 0;
             }
         }
-
-        usort($module_list, create_function('$a,$b', 'return strnatcasecmp($a->displayName, $b->displayName);'));
+        usort($module_list, function ($a, $b) { return strnatcasecmp($a->displayName, $b->displayName); });
         if ($errors) {
             if (!isset(Context::getContext()->controller) && !Context::getContext()->controller->controller_name) {
                 echo '<div class="alert error"><h3>'.Tools::displayError('The following module(s) could not be loaded').':</h3><ol>';
@@ -1641,7 +1670,7 @@ abstract class ModuleCore
         }
 
         $modules = array();
-        if (is_array($native_modules)) {
+        if (is_object($native_modules)) {
             foreach ($native_modules as $native_modules_type) {
                 if (in_array($native_modules_type['type'], array('native', 'partner'))) {
                     foreach ($native_modules_type->module as $module) {
@@ -1719,19 +1748,21 @@ abstract class ModuleCore
             $untrusted_modules_list_content = Tools::file_get_contents(_PS_ROOT_DIR_.self::CACHE_FILE_UNTRUSTED_MODULES_LIST);
         }
 
+        $objModule = Module::getInstanceByName($module_name);
+
         // If the module is trusted, which includes both partner modules and modules bought on Addons
 
-        if (strpos($trusted_modules_list_content, $module_name) !== false) {
+        if (stripos($trusted_modules_list_content, $module_name) !== false) {
             // If the module is not a partner, then return 1 (which means the module is "trusted")
-            if (strpos($modules_list_content, '<module name="'.$module_name.'"/>') == false) {
+            if (stripos($modules_list_content, '<module name="'.$module_name.'"/>') == false) {
                 return 1;
-            } elseif (strpos($default_country_modules_list_content, '<name><![CDATA['.$module_name.']]></name>') !== false) {
+            } elseif (stripos($default_country_modules_list_content, '<name><![CDATA['.$module_name.']]></name>') !== false) {
                 // The module is a parter. If the module is in the file that contains module for this country then return 1 (which means the module is "trusted")
                 return 1;
             }
             // The module seems to be trusted, but it does not seem to be dedicated to this country
             return 2;
-        } elseif (strpos($untrusted_modules_list_content, $module_name) !== false) {
+        } elseif (stripos($untrusted_modules_list_content, $module_name) !== false) {
             // If the module is already in the untrusted list, then return 0 (untrusted)
             return 0;
         } else {
@@ -2674,7 +2705,7 @@ abstract class ModuleCore
      * Install module's controllers using public property $controllers
      * @return bool
      */
-    private function installControllers()
+    protected function installControllers()
     {
         $themes = Theme::getThemes();
         $theme_meta_value = array();

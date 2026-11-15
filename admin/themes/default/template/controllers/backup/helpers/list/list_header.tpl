@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -47,8 +47,8 @@
 			<button data-dismiss="alert" class="close" type="button">×</button>
 			<h4>{l s='Disclaimer before creating a new backup'}</h4>
 			<ol>
-				<li>{l s='PrestaShop is not responsible for your database, its backups and/or recovery.'}</li>
-				<li>{l s='PrestaShop is open-source software. You are using it at your own risk under the license agreement.'}</li>
+				<li>{l s='Qloapps is not responsible for your database, its backups and/or recovery.'}</li>
+				<li>{l s='Qloapps is open-source software. You are using it at your own risk under the license agreement.'}</li>
 				<li>{l s='You should back up your data on a regular basis (both files and database).'}</li>
 				<li>{l s='This function only backs up your database, not your files.'}</li>
 				<li>{l s='By default, your existing database tables will be dropped during the backup recovery (see "Backup options" below).'}</li>

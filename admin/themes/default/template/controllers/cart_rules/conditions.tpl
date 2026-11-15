@@ -6,10 +6,10 @@
 		</span>
 	</label>
 	<div class="col-lg-9">
-		<div class="input-group col-lg-12">		
+		<div class="input-group col-lg-12">
 			<span class="input-group-addon"><i class="icon-user"></i></span>
 			<input type="hidden" id="id_customer" name="id_customer" value="{$currentTab->getFieldValue($currentObject, 'id_customer')|intval}" />
-			<input type="text" id="customerFilter" class="input-xlarge" name="customerFilter" value="{$customerFilter|escape:'html':'UTF-8'}" />
+			<input type="text" id="customerFilter" class="input-xlarge" name="customerFilter" value="{if $customerFilter}{$customerFilter|escape:'html':'UTF-8'}{elseif isset($smarty.post.customerFilter)}{$smarty.post.customerFilter|escape}{/if}" />
 			<span class="input-group-addon"><i class="icon-search"></i></span>
 		</div>
 	</div>
@@ -53,10 +53,10 @@
 	</label>
 	<div class="col-lg-9">
 		<div class="row">
-			<div class="col-lg-3">
+			<div class="col-lg-4">
 				<input type="text" name="minimum_amount" value="{$currentTab->getFieldValue($currentObject, 'minimum_amount')|floatval}" />
 			</div>
-			<div class="col-lg-2">
+			<div class="col-lg-4">
 				<select name="minimum_amount_currency">
 				{foreach from=$currencies item='currency'}
 					<option value="{$currency.id_currency|intval}"
@@ -70,18 +70,19 @@
 				{/foreach}
 				</select>
 			</div>
-			<div class="col-lg-3">
+			<div class="col-lg-4">
 				<select name="minimum_amount_tax">
 					<option value="0" {if $currentTab->getFieldValue($currentObject, 'minimum_amount_tax') == 0}selected="selected"{/if}>{l s='Tax excluded'}</option>
 					<option value="1" {if $currentTab->getFieldValue($currentObject, 'minimum_amount_tax') == 1}selected="selected"{/if}>{l s='Tax included'}</option>
 				</select>
 			</div>
-			<div class="col-lg-4">
+			<input type="hidden" name="minimum_amount_shipping" value="0">
+			{* <div class="col-lg-4">
 				<select name="minimum_amount_shipping">
 					<option value="0" {if $currentTab->getFieldValue($currentObject, 'minimum_amount_shipping') == 0}selected="selected"{/if}>{l s='Shipping excluded'}</option>
 					<option value="1" {if $currentTab->getFieldValue($currentObject, 'minimum_amount_shipping') == 1}selected="selected"{/if}>{l s='Shipping included'}</option>
 				</select>
-			</div>
+			</div> *}
 		</div>
 	</div>
 </div>
@@ -153,7 +154,7 @@
 		{/if}
 
 		{if $carriers.unselected|@count + $carriers.selected|@count > 1}
-			<p class="checkbox">
+			<p class="checkbox hidden">
 				<label>
 					<input type="checkbox" id="carrier_restriction" name="carrier_restriction" value="1" {if $carriers.unselected|@count}checked="checked"{/if} />
 					{l s='Carrier selection'}
@@ -255,7 +256,7 @@
 			<p class="checkbox">
 				<label>
 					<input type="checkbox" id="product_restriction" name="product_restriction" value="1" {if $product_rule_groups|@count}checked="checked"{/if} />
-					{l s='Product selection'}
+					{l s='Room Type selection'}
 				</label>
 			</p>
 			<div id="product_restriction_div">
@@ -266,7 +267,7 @@
 					{/foreach}
 				</table>
 				<a href="javascript:addProductRuleGroup();" class="btn btn-default ">
-					<i class="icon-plus-sign"></i> {l s='Product selection'}
+					<i class="icon-plus-sign"></i> {l s='Room Type selection'}
 				</a>
 			</div>
 

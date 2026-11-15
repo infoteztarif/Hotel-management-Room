@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -46,7 +46,7 @@
 	        		{$HOOK_MAINTENANCE}
 	        		<div id="message">
 	             			<h1 class="maintenance-heading">{l s='We\'ll be back soon.'}</h1>
-							{l s='We are currently updating our shop and will be back really soon.'}
+							{l s='We are currently updating our site and will be back really soon.'}
 							<br />
 							{l s='Thanks for your patience.'}
 					</div>

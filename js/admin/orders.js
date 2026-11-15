@@ -1,5 +1,5 @@
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -321,6 +321,9 @@ function init()
 	$('#add_product').unbind('click').click(function(e) {
 		$('.cancel_product_change_link:visible').trigger('click');
 		$('.add_product_fields').show();
+		//invoice field is hidden because has not to be edited by webkul
+		$('#add_product_product_invoice').hide();
+
 		$('.edit_product_fields, .standard_refund_fields, .partial_refund_fields, .order_action').hide();
 		$('tr#new_product').slideDown('fast', function () {
 			$('tr#new_product td').fadeIn('fast', function() {
@@ -384,6 +387,15 @@ function init()
 			$('#add_product_product_name').val(data.name);
 			$('#add_product_product_price_tax_incl').val(data.price_tax_incl);
 			$('#add_product_product_price_tax_excl').val(data.price_tax_excl);
+
+			//Added by webkul to set curent date in the date fields by default
+			var date_in = $.datepicker.formatDate('dd-mm-yy', new Date());
+        	var date_out = $.datepicker.formatDate('dd-mm-yy', new Date(new Date().getTime()+24*60*60*1000));
+        	var tr_product = $(this).closest('#new_product');
+        	tr_product.find("input.add_product_date_from").val(date_in);
+        	tr_product.find("input.add_product_date_to").val(date_out);
+			//End
+
 			addProductRefreshTotal();
 			if (stock_management)
 				$('#add_product_product_stock').html(data.stock[0]);
@@ -481,6 +493,7 @@ function init()
 
 			if (go)
 			{
+				$('#submitAddProduct').attr('disabled', true);
 				var query = 'ajax=1&token='+token+'&action=addProductOnOrder&id_order='+id_order+'&';
 
 				query += $('#add_product_warehouse').serialize()+'&';
@@ -503,25 +516,31 @@ function init()
 								return;
 							}
 							go = false;
-							addViewOrderDetailRow(data.view);
-							updateAmounts(data.order);
+							//commented by webkul
+							//addViewOrderDetailRow(data.view);
+							/*updateAmounts(data.order);
 							updateInvoice(data.invoices);
 							updateDocuments(data.documents_html);
 							updateShipping(data.shipping_html);
-							updateDiscountForm(data.discount_form_html);
+							updateDiscountForm(data.discount_form_html);*/
 
 							// Initialize all events
 							init();
-
-							$('.standard_refund_fields').hide();
+							//Added by webkul
+							location.reload();
+							//End
+							/*$('.standard_refund_fields').hide();
 							$('.partial_refund_fields').hide();
-							$('.order_action').show();
+							$('.order_action').show();*/
 						}
 						else
 							jAlert(data.error);
 					},
 					error : function(XMLHttpRequest, textStatus, errorThrown) {
-						jAlert("Impossible to add the product to the cart.\n\ntextStatus: '" + textStatus + "'\nerrorThrown: '" + errorThrown + "'\nresponseText:\n" + XMLHttpRequest.responseText);
+						jAlert("Impossible to add the room to the cart.\n\ntextStatus: '" + textStatus + "'\nerrorThrown: '" + errorThrown + "'\nresponseText:\n" + XMLHttpRequest.responseText);
+					},
+					complete: function() { 
+						$('#submitAddProduct').removeAttr('disabled');
 					}
 				});
 				ajaxQueries.push(ajax_query);
@@ -584,6 +603,11 @@ function init()
 		$('.row-editing-warning').hide();
 		$('.cancel_product_change_link:visible').trigger('click');
 		closeAddProduct();
+
+		/*By webkul*/
+		var tr_product = $(this).closest('.product-line-row');
+		var id_product = tr_product.data('id_product');
+		/*End*/
 		var element = $(this);
 		$.ajax({
 			type: 'POST',
@@ -596,6 +620,7 @@ function init()
 				action: 'loadProductInformation',
 				id_order_detail: element.closest('tr.product-line-row').find('input.edit_product_id_order_detail').val(),
 				id_address: id_address,
+				id_product : id_product,
 				id_order: id_order
 			},
 			success : function(data)
@@ -608,19 +633,19 @@ function init()
 					if (!element_list.length)
 					{
 						element_list = element.parents('.product-line-row');
-						element_list.find('td .product_quantity_show').hide();
-						element_list.find('td .product_quantity_edit').show();
+						element_list.find('td .booking_duration_show').hide();
+						element_list.find('td .booking_duration_edit').show();
 					}
 					else
 					{
-						element_list.find('td .product_quantity_show').hide();
-						element_list.find('td .product_quantity_edit').show();
+						element_list.find('td .booking_duration_show').hide();
+						element_list.find('td .booking_duration_edit').show();
 					}
-					element_list.find('td .product_price_show').hide();
-					element_list.find('td .product_price_edit').show();
+					//element_list.find('td .product_price_show').hide();
+					//element_list.find('td .product_price_edit').show();
 					element_list.find('td.cancelCheck').hide();
 					element_list.find('td.cancelQuantity').hide();
-					element_list.find('td.product_invoice').show();
+					//element_list.find('td.product_invoice').show();
 					$('td.product_action').attr('colspan', 3);
 					$('th.edit_product_fields').show();
 					$('th.edit_product_fields').attr('colspan',  2);
@@ -651,9 +676,9 @@ function init()
 		if (!element_list.length)
 			element_list = $($(this).parent().parent());
 		element_list.find('td .product_price_show').show();
-		element_list.find('td .product_quantity_show').show();
+		element_list.find('td .booking_duration_show').show();
 		element_list.find('td .product_price_edit').hide();
-		element_list.find('td .product_quantity_edit').hide();
+		element_list.find('td .booking_duration_edit').hide();
 		element_list.find('td.product_invoice').hide();
 		element_list.find('td.cancelCheck').show();
 		element_list.find('td.cancelQuantity').show();
@@ -682,11 +707,21 @@ function init()
 		{
 			var element = $(this);
 			var element_list = $('.customized-' + $(this).parent().parent().find('.edit_product_id_order_detail').val());
-			query = 'ajax=1&token='+token+'&action=editProductOnOrder&id_order='+id_order+'&';
+			/*variables are added to the ajax By webkul*/
+			var tr_product = $(this).closest('.product-line-row');
+			var id_room = tr_product.data('id_room');
+			var id_product = tr_product.data('id_product');
+			var id_hotel = tr_product.data('id_hotel');
+			var date_from = tr_product.data('date_from');
+			var date_to = tr_product.data('date_to');
+			var order_detail_id = tr_product.data('order_detail_id');
+			var id_order_detail = $(this).closest('.product-line-row').find('td .edit_product_id_order_detail').val();
+			//some vaues are added to the query by webkul
+			query = 'ajax=1&token='+token+'&action=editProductOnOrder&id_order='+id_order+'&id_room='+id_room+'&id_product='+id_product+'&id_hotel='+id_hotel+'&date_from='+date_from+'&date_to='+date_to+'&order_detail_id='+order_detail_id+'&';
 			if (element_list.length)
-				query += element_list.parent().parent().find('input:visible, select:visible, .edit_product_id_order_detail').serialize();
+				query += element_list.parent().parent().find('input, select, .edit_product_id_order_detail').serialize();
 			else
-				query += element.parent().parent().find('input:visible, select:visible, .edit_product_id_order_detail').serialize();
+				query += element.parent().parent().find('input, select, .edit_product_id_order_detail').serialize();
 
 			$.ajax({
 				type: 'POST',
@@ -698,20 +733,23 @@ function init()
 				{
 					if (data.result)
 					{
-						refreshProductLineView(element, data.view);
-						updateAmounts(data.order);
+						//Commented By webkul
+						//refreshProductLineView(element, data.view);
+						/*updateAmounts(data.order);
 						updateInvoice(data.invoices);
 						updateDocuments(data.documents_html);
-						updateDiscountForm(data.discount_form_html);
+						updateDiscountForm(data.discount_form_html);*/
 
 						// Initialize all events
 						init();
-
-						$('.standard_refund_fields').hide();
+						/*Added By Webkul*/
+						location.reload();
+						/*ENd*/
+						/*$('.standard_refund_fields').hide();
 						$('.partial_refund_fields').hide();
 						$('.add_product_fields').hide();
 						$('.row-editing-warning').hide();
-						$('td.product_action').attr('colspan', 3);
+						$('td.product_action').attr('colspan', 3);*/
 					}
 					else
 						jAlert(data.error);
@@ -758,9 +796,15 @@ function init()
 		if (!confirm(txt_confirm))
 			return false;
 		var tr_product = $(this).closest('.product-line-row');
-		var id_order_detail = $(this).closest('.product-line-row').find('td .edit_product_id_order_detail').val();
-		var query = 'ajax=1&action=deleteProductLine&token='+token+'&id_order_detail='+id_order_detail+'&id_order='+id_order;
-
+		var id_room = tr_product.data('id_room');
+		var id_product = tr_product.data('id_product');
+		var id_hotel = tr_product.data('id_hotel');
+		var date_from = tr_product.data('date_from');
+		var date_to = tr_product.data('date_to');
+		var order_detail_id = tr_product.data('order_detail_id');
+		//var id_order_detail = $(this).closest('.product-line-row').find('td .edit_product_id_order_detail').val();
+		var query = 'ajax=1&action=deleteProductLine&token='+token+'&id_order='+id_order+'&id_room='+id_room+'&id_product='+id_product+'&id_hotel='+id_hotel+'&date_from='+date_from+'&date_to='+date_to+'&order_detail_id='+order_detail_id;
+		query += $(this).parent().parent().find('input, select:visible, .edit_product_id_order_detail').serialize();
 		$.ajax({
 			type: 'POST',
 			url: admin_order_tab_link,
@@ -778,6 +822,7 @@ function init()
 					updateInvoice(data.invoices);
 					updateDocuments(data.documents_html);
 					updateDiscountForm(data.discount_form_html);
+					location.reload();
 				}
 				else
 					jAlert(data.error);
@@ -847,6 +892,32 @@ function init()
 			$(this).parent().parent().next('tr').show();
 		e.preventDefault();
 	});
+
+	/*By webkul Code for the datepicker*/
+	$(".add_product_date_from").datepicker(
+    {
+    	showOtherMonths: true,
+        dateFormat: 'dd-mm-yy',
+		onSelect: function(selectedDate) {
+            var date_format = selectedDate.split("-");
+            var selectedDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date(date_format[2], date_format[1] - 1, date_format[0])));
+            selectedDate.setDate(selectedDate.getDate() + 1);
+            $(".add_product_date_to").datepicker("option", "minDate", selectedDate);
+        },
+    });
+
+    $(".add_product_date_to").datepicker(
+    {
+    	showOtherMonths: true,
+        dateFormat: 'dd-mm-yy',
+        onSelect: function(selectedDate) {
+            var date_format = selectedDate.split("-");
+            var selectedDate = new Date($.datepicker.formatDate('yy-mm-dd', new Date(date_format[2], date_format[1] - 1, date_format[0])));
+            selectedDate.setDate(selectedDate.getDate() - 1);
+            $(".add_product_date_from").datepicker("option", "maxDate", selectedDate);
+        }
+    });
+	/*End*/
 }
 
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,9 +38,11 @@ class HelperTreeCategoriesCore extends TreeCore
     private $_full_tree = false;
     private $_shop;
     private $_use_checkbox;
+    private $_use_bulk_actions = true;
     private $_use_search;
     private $_use_shop_restriction;
     private $_children_only = false;
+    private $_disable_all_categories = false;
 
     public function __construct($id, $title = null, $root_category = null,
         $lang = null, $use_shop_restriction = true)
@@ -59,17 +61,45 @@ class HelperTreeCategoriesCore extends TreeCore
         $this->setUseShopRestriction($use_shop_restriction);
     }
 
-    private function fillTree(&$categories, $id_category)
+    private function fillTree(&$categories, $rootCategoryId)
     {
         $tree = array();
-        foreach ($categories[$id_category] as $category) {
-            $tree[$category['id_category']] = $category;
-            if (!empty($categories[$category['id_category']])) {
-                $tree[$category['id_category']]['children'] = $this->fillTree($categories, $category['id_category']);
-            } elseif ($result = Category::hasChildren($category['id_category'], $this->getLang(), false, $this->getShop()->id)) {
-                $tree[$category['id_category']]['children'] = array($result[0]['id_category'] => $result[0]);
+        $rootCategoryId = (int)$rootCategoryId;
+
+        foreach ($categories[$rootCategoryId] as $category) {
+            $categoryId = (int)$category['id_category'];
+            $tree[$categoryId] = $category;
+
+            if (Category::hasChildren($categoryId, $this->getLang(), false, $this->getShop()->id)) {
+                $categoryChildren = Category::getChildren(
+                    $categoryId,
+                    $this->getLang(),
+                    false,
+                    $this->getShop()->id
+                );
+
+                foreach ($categoryChildren as $index => $child) {
+                    $childId = (int)$child['id_category'];
+
+                    if (!array_key_exists('children', $tree[$categoryId])) {
+                        $tree[$categoryId]['children'] = array($childId => $child);
+                    } else {
+                        $tree[$categoryId]['children'][$childId] = $child;
+                    }
+
+                    $categories[$childId] = array($child);
+                }
+
+                foreach ($tree[$categoryId]['children'] as $childId => $child) {
+                    $subtree = $this->fillTree($categories, $childId);
+
+                    foreach ($subtree as $subcategoryId => $subcategory) {
+                        $tree[$categoryId]['children'][$subcategoryId] = $subcategory;
+                    }
+                }
             }
         }
+
         return $tree;
     }
 
@@ -153,9 +183,20 @@ class HelperTreeCategoriesCore extends TreeCore
         return $this;
     }
 
+    public function setDisablAllCategories($value)
+    {
+        $this->_disable_all_categories = $value;
+        return $this;
+    }
+
     public function getDisabledCategories()
     {
         return $this->_disabled_categories;
+    }
+
+    public function getDisablAllCategories()
+    {
+        return $this->_disable_all_categories;
     }
 
     public function setInputName($value)
@@ -278,6 +319,12 @@ class HelperTreeCategoriesCore extends TreeCore
         return $this;
     }
 
+    public function setUseBulkActions($value)
+    {
+        $this->_use_bulk_actions = (bool)$value;
+        return $this;
+    }
+
     public function setUseSearch($value)
     {
         $this->_use_search = (bool)$value;
@@ -293,6 +340,11 @@ class HelperTreeCategoriesCore extends TreeCore
     public function useCheckBox()
     {
         return (isset($this->_use_checkbox) && $this->_use_checkbox);
+    }
+
+    public function useBulkActions()
+    {
+        return (isset($this->_use_bulk_actions) && $this->_use_bulk_actions);
     }
 
     public function useSearch()
@@ -314,6 +366,10 @@ class HelperTreeCategoriesCore extends TreeCore
         if (isset($this->_disabled_categories)
             && !empty($this->_disabled_categories)) {
             $this->_disableCategories($data, $this->getDisabledCategories());
+        }
+
+        if($this->getDisablAllCategories()) {
+            $this->_disableCategories($data);
         }
 
         if (isset($this->_selected_categories)
@@ -346,20 +402,22 @@ class HelperTreeCategoriesCore extends TreeCore
         $this->addAction($expand_all);
 
         if ($this->useCheckBox()) {
-            $check_all = new TreeToolbarLink(
-                'Check All',
-                '#',
-                'checkAllAssociatedCategories($(\'#'.$this->getId().'\')); return false;',
-                'icon-check-sign');
-            $check_all->setAttribute('id', 'check-all-'.$this->getId());
-            $uncheck_all = new TreeToolbarLink(
-                'Uncheck All',
-                '#',
-                'uncheckAllAssociatedCategories($(\'#'.$this->getId().'\')); return false;',
-                'icon-check-empty');
-            $uncheck_all->setAttribute('id', 'uncheck-all-'.$this->getId());
-            $this->addAction($check_all);
-            $this->addAction($uncheck_all);
+            if($this->useBulkActions()) {
+                $check_all = new TreeToolbarLink(
+                    'Check All',
+                    '#',
+                    'checkAllAssociatedCategories($(\'#'.$this->getId().'\')); return false;',
+                    'icon-check-sign');
+                $check_all->setAttribute('id', 'check-all-'.$this->getId());
+                $uncheck_all = new TreeToolbarLink(
+                    'Uncheck All',
+                    '#',
+                    'uncheckAllAssociatedCategories($(\'#'.$this->getId().'\')); return false;',
+                    'icon-check-empty');
+                $uncheck_all->setAttribute('id', 'uncheck-all-'.$this->getId());
+                $this->addAction($check_all);
+                $this->addAction($uncheck_all);
+            }
             $this->setNodeFolderTemplate('tree_node_folder_checkbox.tpl');
             $this->setNodeItemTemplate('tree_node_item_checkbox.tpl');
             $this->setAttribute('use_checkbox', $this->useCheckBox());

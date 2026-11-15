@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -127,6 +127,7 @@ class EmployeeCore extends ObjectModel
 
     protected $webserviceParameters = array(
         'fields' => array(
+            'email' => array('setter' => 'setWsEmail'),
             'id_lang' => array('xlink_resource' => 'languages'),
             'last_passwd_gen' => array('setter' => null),
             'stats_date_from' => array('setter' => null),
@@ -242,7 +243,7 @@ class EmployeeCore extends ObjectModel
                 'visitorType' => 1,
                 'source' => 'backoffice'
             ));
-            Tools::file_get_contents('http://www.prestashop.com/ajax/controller.php?'.$params);
+            Tools::file_get_contents('https://www.prestashop.com/ajax/controller.php?'.$params);
         }
     }
 
@@ -344,15 +345,41 @@ class EmployeeCore extends ObjectModel
         );
     }
 
+    // validate and set email for the employee
+    public function setWsEmail($email)
+    {
+        if (Validate::isEmail($email)
+            && Employee::employeeExists($email)
+            && (!$this->email || ($employee = new Employee((int)$this->id)) && $employee->email != $email)
+        ) {
+            WebserviceRequest::getInstance()->setError(400, 'An account already exists for this email address: '.$email, 134);
+
+            return false;
+        }
+        $this->email = $email;
+
+        return true;
+    }
+
+    // validate and set password for the employee
     public function setWsPasswd($passwd)
     {
         if ($this->id != 0) {
             if ($this->passwd != $passwd) {
-                $this->passwd = Tools::encrypt($passwd);
+                if (!Validate::isPasswd($passwd, Validate::ADMIN_PASSWORD_LENGTH)) {
+                    WebserviceRequest::getInstance()->setError(400, 'The password must be at least '.Validate::ADMIN_PASSWORD_LENGTH.' characters long.', 134);
+                } else {
+                    $this->passwd = Tools::encrypt($passwd);
+                }
             }
         } else {
-            $this->passwd = Tools::encrypt($passwd);
+            if (!Validate::isPasswd($passwd, Validate::ADMIN_PASSWORD_LENGTH)) {
+                WebserviceRequest::getInstance()->setError(400, 'The password must be at least '.Validate::ADMIN_PASSWORD_LENGTH.' characters long.', 134);
+            } else {
+                $this->passwd = Tools::encrypt($passwd);
+            }
         }
+
         return true;
     }
 

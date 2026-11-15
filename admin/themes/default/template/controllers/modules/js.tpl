@@ -1,5 +1,5 @@
 {*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -34,7 +34,7 @@
 	var currentIndexWithToken = '{$currentIndex|escape:'html':'UTF-8'}&token={$token|escape:'html':'UTF-8'}';
 	var dirNameCurrentIndex = '{$dirNameCurrentIndex}';
 	var ajaxCurrentIndex = '{$ajaxCurrentIndex}';
-	var installed_modules = {if isset($installed_modules) && count($installed_modules)}{$installed_modules}{else}false{/if};
+	var installed_modules = {if isset($installed_modules) && is_array($installed_modules) && count($installed_modules)}{$installed_modules}{else}false{/if};
 	var by = '{l s='by'}';
 	var confirmPreferencesSaved = '{l s='Preferences saved'}';
 	{if isset($smarty.get.anchor) && !isset($error_module)}var anchor = '{$smarty.get.anchor|htmlentities|replace:'(':''|replace:')':''|replace:'{':''|replace:'}':''|replace:'\'':''|replace:'/':''}';{else}var anchor = '';{/if}

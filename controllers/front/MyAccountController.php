@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2015 PrestaShop
+* 2007-2017 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2015 PrestaShop SA
+*  @copyright  2007-2017 PrestaShop SA
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -49,7 +49,7 @@ class MyAccountControllerCore extends FrontController
         $this->context->smarty->assign(array(
             'has_customer_an_address' => empty($has_address),
             'voucherAllowed' => (int)CartRule::isFeatureActive(),
-            'returnAllowed' => (int)Configuration::get('PS_ORDER_RETURN')
+            'refundAllowed' => (int)Configuration::get('WK_ORDER_REFUND_ALLOWED')
         ));
         $this->context->smarty->assign('HOOK_CUSTOMER_ACCOUNT', Hook::exec('displayCustomerAccount'));
 
