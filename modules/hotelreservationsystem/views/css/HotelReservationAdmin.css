@@ -1,3 +1,21 @@
+/*----- Hotel Images -----*/
+a.deleteHtlImage {
+	cursor: pointer;
+	color: inherit;
+}
+.deleteHtlImage i {
+	font-size: 20px;
+}
+.dlt-link-div {
+    width: 100%;
+    float: right;
+    padding: 7px;
+}
+.img-container {
+	margin-bottom:20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
 
 /*----- Accordion -----*/
 .accordion, .accordion * {
@@ -478,4 +496,106 @@
 .error_text
 {
   color: #AA1F00;
+}
+
+/*AdminHotelConfigurationSetting controller*/
+
+#max_global_book_date
+{
+    width: 30%;
+}
+
+.htl_all_setting .btn.btn-default {
+    margin: 20px!important;
+}
+
+.setting-link-div .btn
+{
+    font-size: 15px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+.setting-link-div
+{
+    padding-top: 10px;
+}
+.setting-title
+{
+    overflow: hidden;
+}
+.htl_conf_panel h3
+{
+    margin: 0px !important;
+    height: auto !important;
+}
+
+/* ==== Google Map ==== */
+ #googleMapContainer {
+    height: 500px;
+}
+#map {
+    width: 100%;
+    height: 100%;
+}
+.controls {
+    margin-top: 10px;
+    border: 1px solid transparent;
+    border-radius: 2px 0 0 2px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    height: 32px;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+#pac-input {
+    background-color: #fff;
+    font-family: Roboto;
+    font-size: 15px;
+    font-weight: 300;
+    margin-left: 12px;
+    padding: 0 11px 0 13px;
+    text-overflow: ellipsis;
+    width: 300px;
+}
+
+#pac-input:focus {
+    border-color: #4d90fe;
+}
+
+.pac-container {
+    font-family: Roboto;
+} 
+
+
+/* ==== AdminHotelFeaturePricesSettingsController ==== */
+.week_days {
+    display: none;
+}
+.room_type_search_results_ul {
+    padding: 0px;
+    background: #ffffff none repeat scroll 0 0;
+    display: block;
+    position: absolute;
+    width: 100%;
+    z-index: 122222;
+    border-bottom: 1px solid #cccccc;
+    border-left: 1px solid #cccccc;
+    border-right: 1px solid #cccccc;
+    max-height: 145px;
+    overflow-y: auto;
+}
+.room_type_search_results_ul li {
+    width: 100%;
+    background-color: #fff;
+    color: #333333;
+    cursor: pointer;
+    text-align: left;
+    font-size: 12px;
+    list-style: outside none none;
+    padding: 7px;
+}
+.room_type_search_results_ul li:hover, .room_type_search_results_ul li:focus, .room_type_search_results_ul li:active {
+    background-color: #379bf0;
+    color: #FFFFFF;
 }

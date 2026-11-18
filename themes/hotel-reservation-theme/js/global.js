@@ -341,7 +341,7 @@ function display(view)
 
 function dropDown()
 {
-	elementClick = '#header .current';
+	elementClick = '#header .current, #footer .current';
 	elementSlide =  'ul.toogle_content';
 	activeClass = 'active';
 
@@ -411,4 +411,17 @@ function accordion(status)
 		$('#right_column .block .title_block, #left_column .block .title_block, #left_column #newsletter_block_left h4').removeClass('active').off().parent().find('.block_content').removeAttr('style').slideDown('fast');
 		$('#left_column, #right_column').removeClass('accordion');
 	}
+}
+
+/*Growl plulin implementation to show notifications on front office*/
+function showSuccessMessage(msg) {
+	$.growl.notice({ title: "", message:msg});
+}
+
+function showErrorMessage(msg) {
+	$.growl.error({ title: "", message:msg});
+}
+
+function showNoticeMessage(msg) {
+	$.growl.notice({ title: "", message:msg});
 }

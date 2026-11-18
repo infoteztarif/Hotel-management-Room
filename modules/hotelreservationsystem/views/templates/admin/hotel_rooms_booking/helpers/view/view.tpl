@@ -5,7 +5,7 @@
 		<button type="button" class="btn btn-primary pull-right margin-right-10" id="cart_btn" data-toggle="modal" data-target="#cartModal"><i class="icon-shopping-cart"></i> {l s='Cart' mod='hotelreservationsystem'} <span class="badge" id="cart_record">{$rms_in_cart}</span></button>
 	</h3>
 	<div class="panel-body padding-0">
-	{if $booking_data}
+	{if isset($booking_data)}
 		<div class="row">
 			<div class="col-sm-4">
 				<div class="row box-border margin-right-10">
@@ -52,9 +52,11 @@
 									<select class="form-control" name="room_type" id="room_type">
 										{if isset($room_type)}
 											<option value='0' {if ($room_type == 0)}selected{/if}>{l s='All Types' mod='hotelreservationsystem'}</option>
-											{foreach $all_room_type as $val_type}
-												<option value="{$val_type['id_product']}" {if ($val_type['id_product'] == $room_type)}selected{/if}>{$val_type['room_type']}</option>
-											{/foreach}
+											{if (isset($all_room_type) && $all_room_type)}
+												{foreach $all_room_type as $val_type}
+													<option value="{$val_type['id_product']}" {if ($val_type['id_product'] == $room_type)}selected{/if}>{$val_type['room_type']}</option>
+												{/foreach}
+											{/if}
 										{/if}
 									</select>
 									<input type="hidden" name="search_id_prod" id="search_id_prod" value="{$room_type}">
@@ -95,7 +97,7 @@
 								<div class="row">
 									<div class="col-sm-12 htl_room_cat_data">
 										<p class="room_cat_header">{l s='Total Rooms' mod='hotelreservationsystem'}</p>
-										<p class="room_cat_data">{if isset($booking_data) && $booking_data}{$booking_data['stats']['total_rooms']}{/if}</p>
+										<p class="room_cat_data">{if isset($booking_data) && $booking_data}{$booking_data['stats']['total_rooms']}{else}00{/if}</p>
 									</div>
 								</div>
 								<hr class="hr_style" />
@@ -104,7 +106,7 @@
 								<div class="row">
 									<div class="col-sm-12 htl_room_cat_data no_border">
 										<p class="room_cat_header">{l s='Partially Available' mod='hotelreservationsystem'}</p>
-										<p class="room_cat_data" id="num_part">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_part_avai']}{/if}</p>
+										<p class="room_cat_data" id="num_part">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_part_avai']}{else}00{/if}</p>
 									</div>
 								</div>
 								<hr class="hr_style" />
@@ -115,7 +117,7 @@
 								<div class="row">
 									<div class="col-sm-12 htl_room_cat_data">
 										<p class="room_cat_header">{l s='Available Rooms' mod='hotelreservationsystem'}</p>
-										<p class="room_cat_data" id="num_avail">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_avail']}{/if}</p>
+										<p class="room_cat_data" id="num_avail">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_avail']}{else}00{/if}</p>
 									</div>
 								</div>
 								<hr class="hr_style" />
@@ -124,7 +126,7 @@
 								<div class="row">
 									<div class="col-sm-12 htl_room_cat_data no_border">
 										<p class="room_cat_header">{l s='Booked Rooms' mod='hotelreservationsystem'}</p>
-										<p class="room_cat_data">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_booked']}{/if}</p>
+										<p class="room_cat_data">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_booked']}{else}00{/if}</p>
 									</div>
 								</div>
 								<hr class="hr_style" />
@@ -136,7 +138,7 @@
 								<div class="row">
 									<div class="col-sm-12 htl_room_cat_data">
 										<p class="room_cat_header">{l s='Unavailable Rooms' mod='hotelreservationsystem'}</p>
-										<p class="room_cat_data">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_unavail']}{/if}</p>
+										<p class="room_cat_data">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_unavail']}{else}00{/if}</p>
 									</div>
 								</div>
 								<hr class="hr_style" />
@@ -145,7 +147,7 @@
 								<div class="row">
 									<div class="col-sm-12 htl_room_cat_data">
 										<p class="room_cat_header">{l s='In-Cart Rooms' mod='hotelreservationsystem'}</p>
-										<p class="room_cat_data" id="cart_stats">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_cart']}{/if}</p>
+										<p class="room_cat_data" id="cart_stats">{if isset($booking_data) && $booking_data}{$booking_data['stats']['num_cart']}{else}00{/if}</p>
 									</div>
 								</div>
 								<hr class="hr_style" />
@@ -212,7 +214,7 @@
 												{foreach from=$book_v['data']['available'] key=avai_k item=avai_v}
 													<tr>
 														<td>{$avai_v['room_num']}</td>
-														<td>{$date_from|date_format:'%d %b %Y'} - {$date_to|date_format:'%d %b %Y'}</td>
+														<td>{$date_from|date_format:'%d-%m-%Y'} - {$date_to|date_format:'%d-%m-%Y'}</td>
 														<td>{$avai_v['room_comment']}</td>
 														<td>
 															<label class="control-label">
@@ -254,7 +256,7 @@
 																{foreach from=$part_v['avai_dates'] key=sub_part_k item=sub_part_v}
 																	<tr>
 																		<td class="text-center">
-																			<p>{$sub_part_v['date_from']|date_format:'%d %b %Y'} - {$sub_part_v['date_to']|date_format:'%d %b %Y'}</p>
+																			<p>{$sub_part_v['date_from']|date_format:'%d-%m-%Y'} - {$sub_part_v['date_to']|date_format:'%d-%m-%Y'}</p>
 																		</td>
 																		<td class="text-center">
 																			<label class="control-label">
@@ -300,7 +302,7 @@
 															<table class="table">
 																{foreach from=$booked_v['detail'] key=rm_dtl_k item=rm_dtl_v}
 																	<tr>
-																		<td class="col-xs-3">{$rm_dtl_v['date_from']|date_format:'%d %b %Y'} - {$rm_dtl_v['date_to']|date_format:'%d %b %Y'}</td>
+																		<td class="col-xs-3">{$rm_dtl_v['date_from']|date_format:'%d-%m-%Y'} - {$rm_dtl_v['date_to']|date_format:'%d-%m-%Y'}</td>
 																		<td class="col-xs-3">{$rm_dtl_v['comment']}</td>
 																		<td class="col-xs-3">
 																			<label class="control-label">
@@ -388,7 +390,7 @@
 										<td>{$cart_data['room_num']}</td>
 										<td>{$cart_data['room_type']}</td>
 										<td>
-											{$cart_data['date_from']|date_format:'%d %b %Y'} - {$cart_data['date_to']|date_format:'%d %b %Y'}
+											{$cart_data['date_from']|date_format:'%d-%m-%Y'} - {$cart_data['date_to']|date_format:'%d-%m-%Y'}
 										</td>
 										<td>{convertPrice price=$cart_data['amt_with_qty']}</td>
 										<td><button class="btn btn-default ajax_cart_delete_data" data-id-product="{$cart_data['id_product']}" data-id-hotel="{$cart_data['id_hotel']}" data-id-cart="{$cart_data['id_cart']}" data-id-cart-book-data="{$cart_data['id_cart_book_data']}" data-date-from="{$cart_data['date_from']}" data-date-to="{$cart_data['date_to']}"><i class='icon-trash'></i></button></td>

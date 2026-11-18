@@ -880,7 +880,6 @@ $_ERRORS['4f0a091bd82d0f5be5676bfedb26cfb2'] = 'Fornecedor não existe.';
 $_ERRORS['3fe46a677aa76978d058880999b3fffb'] = 'Erro ao apagar';
 $_ERRORS['7888708f8333162b49d1182e732693af'] = 'Ocorreu um erro ao enviar a imagem:';
 $_ERRORS['2b4de48b49648d3323f20b6371f7e3c1'] = 'Você não pode enviar mais arquivos';
-$_ERRORS['e2b7dec8fa4b498156dfee6e4c84b156'] = 'Este método de pagamento não está disponível.';
 $_ERRORS['05f89c31663a09912af64c539524588f'] = 'Número VAT inválido';
 $_ERRORS['deec1d85e431dfa0f76e48cfd764f8d5'] = 'número VAT não encontrado';
 $_ERRORS['059d29a2088bcf0b9bae76a11f3a07e3'] = 'Serviço VAT de validação de número indisponível';

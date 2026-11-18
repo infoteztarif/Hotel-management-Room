@@ -116,14 +116,14 @@ $(document).ready(function () {
 	<div class="form-group">
 		<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="wholesale_price" type="default"}</span></div>
 		<label class="control-label col-lg-2" for="wholesale_price">
-			<span class="label-tooltip" data-toggle="tooltip" title="{l s='The wholesale price is the price you paid for the product. Do not include the tax.'}">{if !$country_display_tax_label || $tax_exclude_taxe_option}{l s='Wholesale price'}{else}{l s='Pre-tax wholesale price'}{/if}</span>
+			<span class="label-tooltip" data-toggle="tooltip" title="{l s='The wholesale price is the price you paid for the room type. Do not include the tax.'}">{if !$country_display_tax_label || $tax_exclude_taxe_option}{l s='Wholesale price'}{else}{l s='Pre-tax wholesale price'}{/if}</span>
 		</label>
 		<div class="col-lg-2">
 			<div class="input-group">
 				<span class="input-group-addon">{$currency->prefix}{$currency->suffix}</span>
 				<input maxlength="27" name="wholesale_price" id="wholesale_price" type="text" value="{{toolsConvertPrice price=$product->wholesale_price}|string_format:$priceDisplayPrecisionFormat}" onchange="this.value = this.value.replace(/,/g, '.');" />
 			</div>
-			{if isset($pack) && $pack->isPack($product->id)}<p class="help-block">{l s='The sum of wholesale prices of the products in the pack is %s%s%s' sprintf=[$currency->prefix,{toolsConvertPrice price=$pack->noPackWholesalePrice($product->id)|string_format:$priceDisplayPrecisionFormat},$currency->suffix]}</p>{/if}
+			{if isset($pack) && $pack->isPack($product->id)}<p class="help-block">{l s='The sum of wholesale prices of the room types in the pack is %s%s%s' sprintf=[$currency->prefix,{toolsConvertPrice price=$pack->noPackWholesalePrice($product->id)|string_format:$priceDisplayPrecisionFormat},$currency->suffix]}</p>{/if}
 		</div>
 	</div>
 	<div class="form-group">
@@ -236,7 +236,7 @@ $(document).ready(function () {
 			<div class="checkbox">
 				<label class="control-label" for="on_sale" >
 					<input type="checkbox" name="on_sale" id="on_sale" {if $product->on_sale}checked="checked"{/if} value="1" />
-					{l s='Display the "on sale" icon on the product page, and in the text found within the product listing.'}
+					{l s='Display the "on sale" icon on the room type page, and in the text found within the room type listing.'}
 				</label>
 			</div>
 		</div>
@@ -270,7 +270,7 @@ $(document).ready(function () {
 			<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="price" type="price"}</span></div>
 			<label class="control-label col-sm-2">
 				<input type="hidden" name="id_adv_pmt" {if isset($adv_pay_dtl)}value="{$adv_pay_dtl['id']}"{/if}>
-				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If Disabled, Advanced payment will not appliy on this product.'}">
+				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If Disabled, Advanced payment will not appliy on this room type.'}">
 					{l s='Allow Advanced Payment'}
 				</span>
 			</label>
@@ -288,7 +288,7 @@ $(document).ready(function () {
 		<div class="form-group adv_payment_field">
 			<div class="col-lg-1"><span class="pull-right">{include file="controllers/products/multishop/checkbox.tpl" field="price" type="price"}</span></div>
 			<label class="control-label col-sm-2">
-				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If disabled, Advanced Payment for the product will be calculated By Global Advanced payment settings.'}">
+				<span class="label-tooltip" data-toggle="tooltip" title="{l s='If disabled, Advanced Payment for the room type will be calculated By Global Advanced payment settings.'}">
 					{l s='Apply Product Advanced Payment Setting.'}
 				</span>
 			</label>
@@ -374,6 +374,85 @@ $(document).ready(function () {
 		<button type="submit" name="submitAddproductAndStay" class="btn btn-default pull-right" disabled="disabled"><i class="process-icon-loading"></i> {l s='Save and stay'}</button>
 	</div>
 </div>
+
+<div class="panel">
+	<h3>{l s='Feature Price Plans'}</h3>
+	<div class="alert alert-info">
+		{l s='You can set feature price plans by visiting '}
+		<a target="_blank" href="{$link->getAdminLink('AdminHotelFeaturePricesSettings')}">{l s='create feature price plans'}</a>
+	</div>
+	<div class="table-responsive">
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>#{l s='Id'}</th>
+					<th>{l s='Plan Name'}</th>
+					<th>{l s='Impact way'}</th>
+					<th>{l s='Impact Type'}</th>
+					<th>{l s='Impact Value'}</th>
+					<th>{l s='Date From'}</th>
+					<th>{l s='Date To'}</th>
+					<th class="text-center">{l s='Status'}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{if isset($productFeaturePrices) && $productFeaturePrices}
+					{foreach $productFeaturePrices as $featurePlan}
+						<tr>
+							<td>
+								{$featurePlan['id']}
+							</td>
+							<td>
+								{$featurePlan['feature_price_name']}
+							</td>
+							<td>
+								{if $featurePlan['impact_way'] == 1}
+									{l s='Percentage'}
+								{else}
+									{l s='Fixed Amount'}
+								{/if}
+							</td>
+							<td>
+								{if $featurePlan['impact_type'] == 1}
+									{l s='Decrease'}
+								{else}
+									{l s='Increase'}
+								{/if}
+							</td>
+							<td>
+								{if $featurePlan['impact_way'] == 1}
+									{$featurePlan['impact_value']|round:2}%
+								{else}
+									{displayPrice price=$featurePlan['impact_value']}
+								{/if}
+							</td>
+							<td>
+								{$featurePlan['date_from']|date_format:"%d-%m-%Y"}
+							</td>
+							<td>
+								{$featurePlan['date_to']|date_format:"%d-%m-%Y"}
+							</td>
+							<td class="text-center">
+								{if $featurePlan['active'] == 1}
+									<i class="icon-check text-success"></i>
+								{else}
+									<i class="icon-times text-danger"></i>
+								{/if}
+							</td>
+						</tr>
+					{/foreach}
+				{else}
+					<tr>
+						<td class="text-center" colspan="6">
+							<i class="icon-warning-sign"></i> {l s='No feature price plans.'}
+						</td>
+					</tr>
+				{/if}
+			</tbody>
+		</table>
+	</div>
+</div>
+
 {if isset($specificPriceModificationForm)}
 <div class="panel">
 	<h3>{l s='Specific prices'}</h3>

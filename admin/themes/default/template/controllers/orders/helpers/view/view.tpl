@@ -98,7 +98,7 @@
 						<!-- <span class="title">{l s='Total'}</span>
 						<span class="value">{sizeof($products)}</span> -->
 						<span class="title">{l s='Total Rooms'}</span>
-						<span class="value">{$cart_detail_data|@count}</span>
+						<span class="value">{$order_detail_data|@count}</span>
 					</div>
 				</a>
 			</div>
@@ -291,10 +291,10 @@
 												{$data['room_num']}
 											</td>
 											<td>
-												{$data['date_from']|date_format:"%d %b %Y"}
+												{$data['date_from']|date_format:"%d-%m-%Y"}
 											</td>
 											<td>
-												{$data['date_to']|date_format:"%d %b %Y"}
+												{$data['date_to']|date_format:"%d-%m-%Y"}
 											</td>
 											<td>
 												<form action="" method="post" class="form-horizontal">
@@ -303,6 +303,8 @@
 														<option value="{$state['id']|intval}" {if isset($data.id_status) && $state.id == $data.id_status} selected="selected" disabled="disabled"{/if}>{$state.status|escape}</option>
 													{/foreach} 
 													</select>
+													<input type="hidden" name="date_from" value="{$data['date_from']}" />
+													<input type="hidden" name="date_to" value="{$data['date_to']}" />
 													<input type="hidden" name="id_room" value="{$data['id_room']}" />
 													<input type="hidden" name="id_order" value="{$order->id}" />
 													<button style="margin-left:20px;" type="submit" name="submitbookingOrderStatus" class="btn btn-primary">
@@ -956,7 +958,7 @@
 				<div class="panel">
 					<div class="panel-heading">
 						<i class="icon-shopping-cart"></i>
-						{l s='Rooms In This Order'} <span class="badge">{$cart_detail_data|@count}</span><!-- by webkul products changes as rooms -->
+						{l s='Rooms In This Order'} <span class="badge">{$order_detail_data|@count}</span><!-- by webkul products changes as rooms -->
 					</div>
 					<!--by webkul this code is added for showing rooms information on the order detail page-->
 					<div class="row">
@@ -964,87 +966,46 @@
 							<table class="table" id="customer_cart_details">
 								<thead>
 									<tr>
-										<th><span class="title_box">{l s='Room No.'}</span></th>
-										<th><span class="title_box">{l s='Room Image'}</th>
-										<th><span class="title_box">{l s='Room Type'}</span></th>
-										<th><span class="title_box">{l s='Duration'}</span></th>
-										<th><span class="title_box">{l s='Total Price'}</span></th>
-										<th><span class="title_box">{l s='Refund Stage'}</span></th>
-										<th><span class="title_box">{l s='Refund Status'}</span></th>
-										<th><span class="title_box">{l s='Reallocate Room'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Room No.'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Room Image'}</th>
+										<th class="text-center"><span class="title_box">{l s='Room Type'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Duration'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Unit Price'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Total Price'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Refund Stage'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Refund Status'}</span></th>
+										<th class="text-center"><span class="title_box">{l s='Reallocate Room'}</span></th>
+										{if ($can_edit && !$order->hasBeenDelivered())}
+										<th class="text-center"><span class="title_box">{l s='Edit Order'}</th>
+										{/if}
 									</tr>
 								</thead>
 								<tbody>
-								{if $cart_detail_data}
-									{foreach from=$cart_detail_data item=data}
-										<tr>
-											<td>
-												{$data.room_num}
-											</td>
-											<td>
-												<img src="{$data.image_link}" title="Room image" />
-											</td>
-											<td>
-												{$data.room_type}
-											</td>
-											<td>
-												{$data.date_from|date_format:"%d %b %Y"}&nbsp-&nbsp {$data.date_to|date_format:"%d %b %Y"}
-											</td>
-											<td>
-												{convertPriceWithCurrency price=$data.amt_with_qty currency=$currency->id}
-											</td>
-											
-											<td class="text-center stage_name">
-												<p>
-													{if isset($data['stage_name']) && $data['stage_name']}
-														{$data['stage_name']}
-													{else}
-														--
-													{/if}
-												</p>
-											</td>
-											<td class="text-center status_name">
-												<p>
-													{if $data['stage_name'] == 'Refunded' || $data['stage_name'] == 'Rejected'}
-														{l s="Done!"}
-													{else if $data['stage_name'] == 'Waitting' || $data['stage_name'] == 'Accepted'}
-														{l s="Pending..."}
-													{else}
-														--
-													{/if}
-												</p>
-											</td>
-
-											{if $data.booking_type == 1}
-											<td>
-												{if $data['stage_name'] == 'Refunded' || $data['stage_name'] == 'Rejected'}
-													<p class="text-center">----</p>
-												{else}
-													<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#mySwappigModal" data-id_order="{$order->id}" data-room_num={$data['room_num']} data-date_from={$data['date_from']} data-date_to={$data['date_to']} data-id_room={$data['id_room']} data-cust_name="{$data['alloted_cust_name']}" data-cust_email="{$data['alloted_cust_email']}" data-avail_rm_swap={$data['avail_rooms_to_swap']|@json_encode} data-avail_rm_realloc={$data['avail_rooms_to_realloc']|@json_encode}>
-														{l s='Reallocate Room' mod='hotelreservationsystem'}
-													</button>
-												{/if}
-											</td>
-											{/if}
-										</tr>
+								{if $order_detail_data}
+									{foreach from=$order_detail_data item=data}
+										{* Include product line partial *}
+										{include file='controllers/orders/_product_line.tpl'}
 									{/foreach}
 								{else}
 									<tr>
 										<td>{l s='No Data Found.'}</td>
 									</tr>
 								{/if}
+								{* Include product line partial *}
+								{include file='controllers/orders/_new_product.tpl'}
 								</tbody>
 							</table>
 						</div>
 					</div>
 					<div id="refundForm">
-					<!--
+					{*
 						<a href="#" class="standard_refund"><img src="../img/admin/add.gif" alt="{l s='Process a standard refund'}" /> {l s='Process a standard refund'}</a>
 						<a href="#" class="partial_refund"><img src="../img/admin/add.gif" alt="{l s='Process a partial refund'}" /> {l s='Process a partial refund'}</a>
-					--><!-- by webkul to hide unnessary things in the page-->
+					<!-- by webkul to hide unnessary things in the page -->
+					*}
 					</div>
 
-					<!-- {capture "TaxMethod"}
+					{*	{capture "TaxMethod"}
 						{if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
 							{l s='tax excluded.'}
 						{else}
@@ -1099,9 +1060,9 @@
 							</thead>
 							<tbody>
 							{foreach from=$products item=product key=k}
-								{* Include customized datas partial *}
+								 <!-- Include customized datas partial  -->
 								{include file='controllers/orders/_customized_data.tpl'}
-								{* Include product line partial *}
+								 <!-- Include product line partial  -->
 								{include file='controllers/orders/_product_line.tpl'}
 							{/foreach}
 							{if $can_edit}
@@ -1109,14 +1070,13 @@
 							{/if}
 							</tbody>
 						</table>
-					</div>
-
+					</div> <!-- by webkul to hide unnessary things in the page--> *}
 					{if $can_edit}
 					<div class="row-margin-bottom row-margin-top order_action">
 					{if !$order->hasBeenDelivered()}
 						<button type="button" id="add_product" class="btn btn-default">
 							<i class="icon-plus-sign"></i>
-							{l s='Add a product'}
+							{l s='Add Rooms In Order'}
 						</button>
 					{/if}
 						<button id="add_voucher" class="btn btn-default" type="button" >
@@ -1124,18 +1084,18 @@
 							{l s='Add a new discount'}
 						</button>
 					</div>
-					{/if} --> <!-- by webkul to hide unnessary things in the page-->
+					{/if}
 					<div class="clear">&nbsp;</div>
 					<hr>
 					<div class="row">
-						<!-- <div class="col-xs-6">
+						{* <div class="col-xs-6">
 							<div class="alert alert-warning">
 								{l s='For this customer group, prices are displayed as: [1]%s[/1]' sprintf=[$smarty.capture.TaxMethod] tags=['<strong>']}
 								{if !Configuration::get('PS_ORDER_RETURN')}
 									<br/><strong>{l s='Merchandise returns are disabled'}</strong>
 								{/if}
 							</div>
-						</div> --> <!-- by webkul to hide unnessary things in the page-->
+						</div> <!-- by webkul to hide unnessary things in the page--> *}
 						
 						<!-- For Due amount submit panel (by webkul) -->
 						{if isset($order_adv_dtl)}
@@ -1162,20 +1122,24 @@
 														<strong>{displayPrice price=($order_adv_dtl['total_order_amount'] - $order_adv_dtl['total_paid_amount']) currency=$currency->id}</strong>
 													</td>
 												</tr>
-												<tr>
-													<td>
-														<strong>{l s='submitted Amount'}</strong>
-													</td>
-													<td>
-														<div class="input-group">
-															<span class="input-group-addon" id="htl_order_currenct">{$currency->sign}</span>
-															<input type="text" class="form-control" placeholder="Amount" aria-describedby="htl_order_currenct" name="submitted_amount">
-														</div>
-													</td>
-												</tr>
+												{if ($order_adv_dtl['total_order_amount'] - $order_adv_dtl['total_paid_amount'])|round:2 > 0}
+													<tr>
+														<td>
+															<strong>{l s='submitted Amount'}</strong>
+														</td>
+														<td>
+															<div class="input-group">
+																<span class="input-group-addon" id="htl_order_currenct">{$currency->sign}</span>
+																<input type="text" class="form-control" placeholder="Amount" aria-describedby="htl_order_currenct" name="submitted_amount">
+															</div>
+														</td>
+													</tr>
+												{/if}	
 											</table>
 										</div>
-										<button type="submit" class="btn btn-primary" name="payDueAmount" style="margin-top:10px;">{l s="Submit Amount"}</button>
+										{if ($order_adv_dtl['total_order_amount'] - $order_adv_dtl['total_paid_amount'])|round:2 > 0}
+											<button type="submit" class="btn btn-primary" name="payDueAmount" style="margin-top:10px;">{l s="Submit Amount"}</button>
+										{/if}	
 									</form>
 								</div>
 							</div>
@@ -1184,51 +1148,51 @@
 						<div class="col-xs-6 pull-right">
 							<div class="panel panel-vouchers" style="{if !sizeof($discounts)}display:none;{/if}">
 								{if (sizeof($discounts) || $can_edit)}
-								<div class="table-responsive">
-									<table class="table">
-										<thead>
-											<tr>
-												<th>
-													<span class="title_box ">
-														{l s='Discount name'}
-													</span>
-												</th>
-												<th>
-													<span class="title_box ">
-														{l s='Value'}
-													</span>
-												</th>
-												{if $can_edit}
-												<th></th>
-												{/if}
-											</tr>
-										</thead>
-										<tbody>
-											{foreach from=$discounts item=discount}
-											<tr>
-												<td>{$discount['name']}</td>
-												<td>
-												{if $discount['value'] != 0.00}
-													-
-												{/if}
-												{displayPrice price=$discount['value'] currency=$currency->id}
-												</td>
-												{if $can_edit}
-												<td>
-													<a href="{$current_index}&amp;submitDeleteVoucher&amp;id_order_cart_rule={$discount['id_order_cart_rule']}&amp;id_order={$order->id}&amp;token={$smarty.get.token|escape:'html':'UTF-8'}">
-														<i class="icon-minus-sign"></i>
-														{l s='Delete voucher'}
-													</a>
-												</td>
-												{/if}
-											</tr>
-											{/foreach}
-										</tbody>
-									</table>
-								</div>
-								<div class="current-edit" id="voucher_form" style="display:none;">
-									{include file='controllers/orders/_discount_form.tpl'}
-								</div>
+									<div class="table-responsive">
+										<table class="table">
+											<thead>
+												<tr>
+													<th>
+														<span class="title_box ">
+															{l s='Discount name'}
+														</span>
+													</th>
+													<th>
+														<span class="title_box ">
+															{l s='Value'}
+														</span>
+													</th>
+													{if $can_edit}
+													<th></th>
+													{/if}
+												</tr>
+											</thead>
+											<tbody>
+												{foreach from=$discounts item=discount}
+												<tr>
+													<td>{$discount['name']}</td>
+													<td>
+													{if $discount['value'] != 0.00}
+														-
+													{/if}
+													{displayPrice price=$discount['value'] currency=$currency->id}
+													</td>
+													{if $can_edit}
+													<td>
+														<a href="{$current_index}&amp;submitDeleteVoucher&amp;id_order_cart_rule={$discount['id_order_cart_rule']}&amp;id_order={$order->id}&amp;token={$smarty.get.token|escape:'html':'UTF-8'}">
+															<i class="icon-minus-sign"></i>
+															{l s='Delete voucher'}
+														</a>
+													</td>
+													{/if}
+												</tr>
+												{/foreach}
+											</tbody>
+										</table>
+									</div>
+									<div class="current-edit" id="voucher_form" style="display:none;">
+										{include file='controllers/orders/_discount_form.tpl'}
+									</div>
 								{/if}
 							</div>
 							<div class="panel panel-total">
@@ -1249,7 +1213,7 @@
 										<tr id="total_products">
 											<td class="text-right"><strong>{l s='Total Rooms Cost'}</strong></td>
 											<td class="amount text-right nowrap">
-												<strong>{displayPrice price=$total_rooms_cost currency=$currency->id}</strong>
+												<strong>{displayPrice price=$totalRoomsCostTE currency=$currency->id}</strong>
 											</td>
 											<td class="partial_refund_fields current-edit" style="display:none;"></td>
 										</tr>
@@ -1274,7 +1238,8 @@
 											</td>
 											<td class="partial_refund_fields current-edit" style="display:none;"></td>
 										</tr>
-										<!-- <tr id="total_shipping">
+										{*
+										<tr id="total_shipping">
 											<td class="text-right">{l s='Shipping'}</td>
 											<td class="amount text-right nowrap" >
 												{displayPrice price=$order_shipping_price currency=$currency->id}
@@ -1289,14 +1254,14 @@
 												</div>
 												<p class="help-block"><i class="icon-warning-sign"></i> {l s='(%s)' sprintf=$smarty.capture.TaxMethod}</p>
 											</td>
-										</tr> -->    <!-- by webkul to hide unnessary things in the page-->
-										<!-- {if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
+										</tr>
+										{if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
 			 							<tr id="total_taxes">
 			 								<td class="text-right">{l s='Taxes'}</td>
 			 								<td class="amount text-right nowrap" >{displayPrice price=($order->total_paid_tax_incl-$order->total_paid_tax_excl) currency=$currency->id}</td>
 			 								<td class="partial_refund_fields current-edit" style="display:none;"></td>
 			 							</tr>
-			 							{/if} -->
+			 							{/if}  <!-- by webkul to hide unnessary things in the page-->*}
 
 			 							{if isset($order_adv_dtl)}
 				 							<tr>
@@ -1537,23 +1502,23 @@
 					</div>
 					<div class="modal-body">
 						<div class="form-group">
-							<label for="curr_room_num" class="control-label">{l s='Current Room Number:' mod='hotelreservationsystem'}</label>
+							<label for="curr_room_num" class="control-label model-label">{l s='Current Room Number:' mod='hotelreservationsystem'}</label>
 							<input type="text" class="form-control modal_curr_room_num" name="modal_curr_room_num" readonly="true">
 							<input type="hidden" class="form-control modal_date_from" name="modal_date_from">
 							<input type="hidden" class="form-control modal_date_to" name="modal_date_to">
 							<input type="hidden" class="form-control modal_id_room" name="modal_id_room">
 						</div>
 						<div class="form-group">
-							<label for="realloc_avail_rooms" class="control-label">{l s='Available Rooms To Reallocate:' mod='hotelreservationsystem'}</label>
-							<div style="width: 195px;">
+							<label for="realloc_avail_rooms" class="control-label model-label">{l s='Available Rooms To Reallocate:' mod='hotelreservationsystem'}</label>
+							<div class="realloc_avail_rooms_container" style="width: 195px;">
 								<select class="form-control" name="realloc_avail_rooms" id="realloc_avail_rooms">
 									<option value="0" selected="selected">{l s='Select Rooms' mod='hotelreservationsystem'}</option>
 								</select>
-								<p class="error_text" id="realloc_sel_rm_err_p"></p>
 							</div>
+							<p class="error_text" id="realloc_sel_rm_err_p"></p>
 						</div>
 						<div class="form-group">
-							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:' mod='hotelreservationsystem'}</label>
+							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label model-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:' mod='hotelreservationsystem'}</label>
 							<dl class="well list-detail">
 								<dt>{l s='Name'}</dt>
 								<dd class="cust_name"></dd><br>
@@ -1576,7 +1541,7 @@
 					</div>
 					<div class="modal-body">
 						<div class="form-group">
-							<label for="swap_curr_room_num" class="control-label">{l s='Current Room Number:' mod='hotelreservationsystem'}</label>
+							<label for="swap_curr_room_num" class="control-label model-label">{l s='Current Room Number:' mod='hotelreservationsystem'}</label>
 							<input type="text" class="form-control modal_curr_room_num" name="modal_curr_room_num" readonly="true">
 							<input type="hidden" class="form-control modal_date_from" name="modal_date_from">
 							<input type="hidden" class="form-control modal_date_to" name="modal_date_to">
@@ -1584,16 +1549,12 @@
 							<input type="hidden" class="form-control modal_id_order" name="modal_id_order">
 						</div>
 						<div class="form-group">
-							<label for="swap_avail_rooms" class="control-label">{l s='Available Rooms To Swap:' mod='hotelreservationsystem'}</label>
-							<div style="width: 195px;">
-								<select class="form-control" name="swap_avail_rooms" id="swap_avail_rooms">
-									<option value="0" selected="selected">{l s='Select Rooms' mod='hotelreservationsystem'}</option>
-								</select>
-								<p class="error_text" id="swap_sel_rm_err_p"></p>
-							</div>
+							<label for="swap_avail_rooms" class="control-label model-label">{l s='Available Rooms To Swap:' mod='hotelreservationsystem'}</label>
+							<div class="swap_avail_rooms_container"></div>
+							<p class="error_text" id="swap_sel_rm_err_p"></p>
 						</div>
 						<div class="form-group">
-							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:' mod='hotelreservationsystem'}</label>
+							<label style="text-decoration:underline;margin-top:5px;" for="message-text" class="col-sm-12 control-label model-label"><i class="icon-info-circle"></i>&nbsp;{l s='Currently Alloted Customer Information:' mod='hotelreservationsystem'}</label>
 							<dl class="well list-detail">
 								<dt>{l s='Name'}</dt>
 								<dd class="cust_name"></dd><br>
@@ -1616,159 +1577,171 @@
 	{addJsDefL name=no_rm_avail_txt}{l s='No rooms available.' js=1 mod='hotelreservationsystem'}{/addJsDefL}
 	{addJsDefL name=slct_rm_err}{l s='Please select a room first.' js=1 mod='hotelreservationsystem'}{/addJsDefL}
 {/strip}
-	<script type="text/javascript">
-		var geocoder = new google.maps.Geocoder();
-		var delivery_map, invoice_map;
+<style>
+	.error_text {
+		color:red;
+	}
+	.model-label {
+		font-weight:bold!important;
+	}
+</style>
 
-		$(document).ready(function()
+<script type="text/javascript">
+	var geocoder = new google.maps.Geocoder();
+	var delivery_map, invoice_map;
+
+	$(document).ready(function()
+	{
+		$('#mySwappigModal').on('hidden.bs.modal', function (e)
 		{
-			/*By webkul for swapping Booked rooms modal js*/
-		    $("#swap_allocated_rooms").on('click', function(e){
-		        $(".error_text").text('');
-		        if ($('#swapped_avail_rooms').val() == 0)
-		        {
-		            $("#sel_rm_err_p").text(slct_rm_err);
-		            return false;
-		        }
-		    });
+			$(".modal_id_order").val('');
+			$(".modal_date_from").val('');
+			$(".modal_date_to").val('');
+			$(".modal_id_room").val('');
+			$(".modal_curr_room_num").val('');
+			$(".cust_name").text('');
+			$(".cust_email").text('');
+			$(".swp_rm_opts").remove();
+			$(".realloc_rm_opts").remove();
+		});
 
-		    $('#mySwappigModal').on('hidden.bs.modal', function (e)
-		    {
-		    	$(".modal_id_order").val('');
-		        $(".modal_date_from").val('');
-		        $(".modal_date_to").val('');
-		        $(".modal_id_room").val('');
-		        $(".modal_curr_room_num").val('');
-		        $(".cust_name").text('');
-		        $(".cust_email").text('');
-		        $(".swp_rm_opts").remove();
-		        $(".realloc_rm_opts").remove();
-		    });
+		$('#mySwappigModal').on('shown.bs.modal', function (e)
+		{
+			$(".modal_id_order").val(e.relatedTarget.dataset.id_order);
+			$(".modal_date_from").val(e.relatedTarget.dataset.date_from);
+			$(".modal_date_to").val(e.relatedTarget.dataset.date_to);
+			$(".modal_id_room").val(e.relatedTarget.dataset.id_room);
+			$(".modal_curr_room_num").val(e.relatedTarget.dataset.room_num);
+			$(".cust_name").text(e.relatedTarget.dataset.cust_name);
+			$(".cust_email").text(e.relatedTarget.dataset.cust_email);
 
-		    $('#mySwappigModal').on('shown.bs.modal', function (e)
-		    {
-		    	$(".modal_id_order").val(e.relatedTarget.dataset.id_order);
-		        $(".modal_date_from").val(e.relatedTarget.dataset.date_from);
-		        $(".modal_date_to").val(e.relatedTarget.dataset.date_to);
-		        $(".modal_id_room").val(e.relatedTarget.dataset.id_room);
-		        $(".modal_curr_room_num").val(e.relatedTarget.dataset.room_num);
-		        $(".cust_name").text(e.relatedTarget.dataset.cust_name);
-		        $(".cust_email").text(e.relatedTarget.dataset.cust_email);
-		        html = '';
-		        var json_arr_rm_swp = JSON.parse(e.relatedTarget.dataset.avail_rm_swap);
-		        $.each(json_arr_rm_swp, function(key,val)
-		        {
-		            html += '<option class="swp_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
-		        });
-		        if (html != '')
-		            $("#swap_avail_rooms").append(html);
+			// For Rooms Swapping
+			if (e.relatedTarget.dataset.avail_rm_swap != 'false') {
+				var json_arr_rm_swp = JSON.parse(e.relatedTarget.dataset.avail_rm_swap);
 
-		        html = '';
-		        var json_arr_rm_realloc = JSON.parse(e.relatedTarget.dataset.avail_rm_realloc);
-		        $.each(json_arr_rm_realloc, function(key,val)
-		        {
-		            html += '<option class="realloc_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
-		        });
-		        if (html != '')
-		            $("#realloc_avail_rooms").append(html);
-		    });
-			
-			/*For swaping rooms in the modal*/
-		    $("#realloc_allocated_rooms").on('click', function(e){
-		        $(".error_text").text('');
-		        if ($('#realloc_avail_rooms').val() == 0)
-		        {
-		            $("#realloc_sel_rm_err_p").text(slct_rm_err);
-		            return false;
-		        }
-		    });
-		    $("#swap_allocated_rooms").on('click', function(e){
-		        $(".error_text").text('');
-		        if ($('#swap_avail_rooms').val() == 0)
-		        {
-		            $("#swap_sel_rm_err_p").text(slct_rm_err);
-		            return false;
-		        }
-		    });	
+				html = '<select class="form-control" name="swap_avail_rooms" id="swap_avail_rooms" style="width:195px;">';
+					$.each(json_arr_rm_swp, function(key,val) {
+						html += '<option class="swp_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
+					});
+				html += '</select>';
+				$(".swap_avail_rooms_container").empty().append(html);
+			} else {
+				$(".swap_avail_rooms_container").empty().text(no_rm_avail_txt);
+			}
+
+			// For Rooms Reallocation
+			if (e.relatedTarget.dataset.avail_rm_realloc != 'false') {
+				var json_arr_rm_realloc = JSON.parse(e.relatedTarget.dataset.avail_rm_realloc);
+
+				html = '<select class="form-control" name="realloc_avail_rooms" id="realloc_avail_rooms" style="width:195px;">';
+					$.each(json_arr_rm_realloc, function(key,val) {
+						html += '<option class="realloc_rm_opts" value="'+val.id_room+'" >'+val.room_num+'</option>';
+					});
+				html += '</select>';
+				$(".realloc_avail_rooms_container").empty().append(html);
+			} else {
+				$(".realloc_avail_rooms_container").empty().text(no_rm_avail_txt);
+			}
+		});
 		
-		    /*END*/
+		/*For reallocating rooms in the modal*/
+		$("#realloc_allocated_rooms").on('click', function(e){
+			$(".error_text").text('');
+			var room_to_reallocate = $('#realloc_avail_rooms').val();
+			if (typeof room_to_reallocate == 'undefined' || room_to_reallocate == 0) {
+				$("#realloc_sel_rm_err_p").text(slct_rm_err);
+				return false;
+			}
+		});
+		/*For swaping rooms in the modal*/
+		$("#swap_allocated_rooms").on('click', function(e){
+			$(".error_text").text('');
+			var room_to_swap = $('#swap_avail_rooms').val();
+			console.log(room_to_swap);
+			if (typeof room_to_swap == 'undefined' || room_to_swap == 0) {
+				$("#swap_sel_rm_err_p").text(slct_rm_err);
+				return false;
+			}
+		});
+	
+		/*END*/
 
-			$(".textarea-autosize").autosize();
+		$(".textarea-autosize").autosize();
 
-			geocoder.geocode({
-				address: '{$addresses.delivery->address1|@addcslashes:'\''},{$addresses.delivery->postcode|@addcslashes:'\''},{$addresses.delivery->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.delivery->country|@addcslashes:'\''}'
-				}, function(results, status) {
-				if (status === google.maps.GeocoderStatus.OK)
-				{
-					delivery_map = new google.maps.Map(document.getElementById('map-delivery-canvas'), {
-						zoom: 10,
-						mapTypeId: google.maps.MapTypeId.ROADMAP,
-						center: results[0].geometry.location
-					});
-					var delivery_marker = new google.maps.Marker({
-						map: delivery_map,
-						position: results[0].geometry.location,
-						url: 'http://maps.google.com?q={$addresses.delivery->address1|urlencode},{$addresses.delivery->postcode|urlencode},{$addresses.delivery->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.delivery->country|urlencode}'
-					});
-					google.maps.event.addListener(delivery_marker, 'click', function() {
-						window.open(delivery_marker.url);
-					});
-				}
-			});
-
-			geocoder.geocode({
-				address: '{$addresses.invoice->address1|@addcslashes:'\''},{$addresses.invoice->postcode|@addcslashes:'\''},{$addresses.invoice->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.invoice->country|@addcslashes:'\''}'
-				}, function(results, status) {
-				if (status === google.maps.GeocoderStatus.OK)
-				{
-					invoice_map = new google.maps.Map(document.getElementById('map-invoice-canvas'), {
-						zoom: 10,
-						mapTypeId: google.maps.MapTypeId.ROADMAP,
-						center: results[0].geometry.location
-					});
-					invoice_marker = new google.maps.Marker({
-						map: invoice_map,
-						position: results[0].geometry.location,
-						url: 'http://maps.google.com?q={$addresses.invoice->address1|urlencode},{$addresses.invoice->postcode|urlencode},{$addresses.invoice->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.invoice->country|urlencode}'
-					});
-					google.maps.event.addListener(invoice_marker, 'click', function() {
-						window.open(invoice_marker.url);
-					});
-				}
-			});
-
-			var date = new Date();
-			var hours = date.getHours();
-			if (hours < 10)
-				hours = "0" + hours;
-			var mins = date.getMinutes();
-			if (mins < 10)
-				mins = "0" + mins;
-			var secs = date.getSeconds();
-			if (secs < 10)
-				secs = "0" + secs;
-
-			$('.datepicker').datetimepicker({
-				prevText: '',
-				nextText: '',
-				dateFormat: 'yy-mm-dd ' + hours + ':' + mins + ':' + secs
-			});
+		geocoder.geocode({
+			address: '{$addresses.delivery->address1|@addcslashes:'\''},{$addresses.delivery->postcode|@addcslashes:'\''},{$addresses.delivery->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.delivery->country|@addcslashes:'\''}'
+			}, function(results, status) {
+			if (status === google.maps.GeocoderStatus.OK)
+			{
+				delivery_map = new google.maps.Map(document.getElementById('map-delivery-canvas'), {
+					zoom: 10,
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+					center: results[0].geometry.location
+				});
+				var delivery_marker = new google.maps.Marker({
+					map: delivery_map,
+					position: results[0].geometry.location,
+					url: 'http://maps.google.com?q={$addresses.delivery->address1|urlencode},{$addresses.delivery->postcode|urlencode},{$addresses.delivery->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.delivery->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.delivery->country|urlencode}'
+				});
+				google.maps.event.addListener(delivery_marker, 'click', function() {
+					window.open(delivery_marker.url);
+				});
+			}
 		});
 
-		// Fix wrong maps center when map is hidden
-		$('#tabAddresses').click(function(){
-			x = delivery_map.getZoom();
-			c = delivery_map.getCenter();
-			google.maps.event.trigger(delivery_map, 'resize');
-			delivery_map.setZoom(x);
-			delivery_map.setCenter(c);
-
-			x = invoice_map.getZoom();
-			c = invoice_map.getCenter();
-			google.maps.event.trigger(invoice_map, 'resize');
-			invoice_map.setZoom(x);
-			invoice_map.setCenter(c);
+		geocoder.geocode({
+			address: '{$addresses.invoice->address1|@addcslashes:'\''},{$addresses.invoice->postcode|@addcslashes:'\''},{$addresses.invoice->city|@addcslashes:'\''}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|@addcslashes:'\''}{/if},{$addresses.invoice->country|@addcslashes:'\''}'
+			}, function(results, status) {
+			if (status === google.maps.GeocoderStatus.OK)
+			{
+				invoice_map = new google.maps.Map(document.getElementById('map-invoice-canvas'), {
+					zoom: 10,
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+					center: results[0].geometry.location
+				});
+				invoice_marker = new google.maps.Marker({
+					map: invoice_map,
+					position: results[0].geometry.location,
+					url: 'http://maps.google.com?q={$addresses.invoice->address1|urlencode},{$addresses.invoice->postcode|urlencode},{$addresses.invoice->city|urlencode}{if isset($addresses.deliveryState->name) && $addresses.invoice->id_state},{$addresses.deliveryState->name|urlencode}{/if},{$addresses.invoice->country|urlencode}'
+				});
+				google.maps.event.addListener(invoice_marker, 'click', function() {
+					window.open(invoice_marker.url);
+				});
+			}
 		});
-	</script>
+
+		var date = new Date();
+		var hours = date.getHours();
+		if (hours < 10)
+			hours = "0" + hours;
+		var mins = date.getMinutes();
+		if (mins < 10)
+			mins = "0" + mins;
+		var secs = date.getSeconds();
+		if (secs < 10)
+			secs = "0" + secs;
+
+		$('.datepicker').datetimepicker({
+			prevText: '',
+			nextText: '',
+			dateFormat: 'yy-mm-dd ' + hours + ':' + mins + ':' + secs
+		});
+	});
+
+	// Fix wrong maps center when map is hidden
+	$('#tabAddresses').click(function(){
+		x = delivery_map.getZoom();
+		c = delivery_map.getCenter();
+		google.maps.event.trigger(delivery_map, 'resize');
+		delivery_map.setZoom(x);
+		delivery_map.setCenter(c);
+
+		x = invoice_map.getZoom();
+		c = invoice_map.getCenter();
+		google.maps.event.trigger(invoice_map, 'resize');
+		invoice_map.setZoom(x);
+		invoice_map.setCenter(c);
+	});
+</script>
 
 {/block}

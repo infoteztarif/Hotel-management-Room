@@ -89,7 +89,6 @@ $_TABS['AdminBackup'] = 'Backup do BD';
 $_TABS['AdminRequestSql'] = 'Gerenciador SQL';
 $_TABS['AdminLogs'] = 'Logs';
 $_TABS['AdminWebservice'] = 'WebService';
-$_TABS['AdminSelfUpgrade'] = 'Atualização em 1 clique';
 $_TABS['AdminAdminPreferences'] = 'Preferências';
 $_TABS['AdminQuickAccesses'] = 'Acesso Rápido';
 $_TABS['AdminEmployees'] = 'Empregados';

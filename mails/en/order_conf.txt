@@ -3,27 +3,26 @@
 
 Hi {firstname} {lastname},
 
-Thank you for shopping with {shop_name}! 
+Thank you for selecting our hotel! 
 
 ORDER: {order_name} Placed on {date}
 
 PAYMENT: {payment} 		 
 
-REFERENCE
-
-PRODUCT
-
-UNIT PRICE
-
-QUANTITY
-
-TOTAL PRICE
+Room Image
+Room Description
+Room Capcity
+Unit Price
+Rooms Qty
+Check-in Date
+Check-out Date
+Total
 
 {products_txt} 
 
 {discounts} 
 
-PRODUCTS 
+Total Rooms Cost 
 
 {total_products} 
 
@@ -31,17 +30,11 @@ DISCOUNTS
 
 {total_discounts} 
 
-GIFT-WRAPPING 
-
-{total_wrapping} 
-
-SHIPPING 
-
-{total_shipping} 
-
 TOTAL TAX PAID 
 
 {total_tax_paid} 
+
+{adv_data_text}
 
 TOTAL PAID 
 
@@ -67,4 +60,3 @@ on our shop.
 
 {shop_name} [{shop_url}] powered by
 PrestaShop(tm) [http://www.prestashop.com/] 
-
