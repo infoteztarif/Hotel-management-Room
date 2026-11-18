@@ -127,21 +127,19 @@ class PhpEncryptionEngineCore
     {
         $bytes = Key::KEY_BYTE_SIZE;
 
+        try {
+            return random_bytes($bytes);
+        } catch (Exception $exception) {
+            // Continue with the OpenSSL compatibility path below. The legacy
+            // mcrypt fallback is intentionally not used on supported PHP 8.x.
+        }
+
         $secure = true;
         $buf = openssl_random_pseudo_bytes($bytes, $secure);
         if (
             $buf !== false
             &&
             $secure
-            &&
-            RandomCompat_strlen($buf) === $bytes
-        ) {
-            return $buf;
-        }
-
-        $buf = @mcrypt_create_iv($bytes, MCRYPT_DEV_URANDOM);
-        if (
-            $buf !== false
             &&
             RandomCompat_strlen($buf) === $bytes
         ) {
