@@ -34,12 +34,32 @@
 		{include file="$tpl_dir./errors.tpl"}
 	{/block}
 
-	{if isset($confirmation) && $confirmation == 1}
+	{if isset($show_reset_password)}
+	<p>{l s='Enter a new password for your account. This link expires after one hour and can only be used once.'}</p>
+	<form action="{$request_uri|escape:'html':'UTF-8'}" method="post" class="std" id="form_resetpassword">
+		<fieldset>
+			<input type="hidden" name="id_customer" value="{$reset_id_customer|intval}" />
+			<input type="hidden" name="reset_expires" value="{$reset_expires|intval}" />
+			<input type="hidden" name="reset_token" value="{$reset_token|escape:'html':'UTF-8'}" />
+			<div class="form-group">
+				<label for="new_password">{l s='New password'}</label>
+				<input class="form-control" type="password" id="new_password" name="new_password" autocomplete="new-password" minlength="8" required />
+			</div>
+			<div class="form-group">
+				<label for="new_password_confirmation">{l s='Confirm new password'}</label>
+				<input class="form-control" type="password" id="new_password_confirmation" name="new_password_confirmation" autocomplete="new-password" minlength="8" required />
+			</div>
+			<p class="submit">
+				<button type="submit" name="submitReset" class="btn button button-medium"><span>{l s='Reset password'}&nbsp;<i class="icon-chevron-right right"></i></span></button>
+			</p>
+		</fieldset>
+	</form>
+	{elseif isset($confirmation) && $confirmation == 1}
 	<p class="alert alert-success">{l s='Your password has been successfully reset and a confirmation has been sent to your email address:'} {if isset($customer_email)}{$customer_email|escape:'html':'UTF-8'|stripslashes}{/if}</p>
 	{elseif isset($confirmation) && $confirmation == 2}
 	<p class="alert alert-success">{l s='A confirmation email has been sent to your address:'} {if isset($customer_email)}{$customer_email|escape:'html':'UTF-8'|stripslashes}{/if}</p>
 	{else}
-	<p>{l s='Please enter the email address you used to register. We will then send you a new password. '}</p>
+	<p>{l s='Please enter the email address you used to register. We will send a secure, one-hour reset link.'}</p>
 	{block name='password_form'}
 		<form action="{$request_uri|escape:'html':'UTF-8'}" method="post" class="std" id="form_forgotpassword">
 			<fieldset>

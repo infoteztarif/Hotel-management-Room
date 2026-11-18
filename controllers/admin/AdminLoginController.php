@@ -74,6 +74,24 @@ class AdminLoginControllerCore extends AdminController
 
     public function initContent()
     {
+        if (Tools::getValue('reset_success')) {
+            $this->context->smarty->assign('password_reset_success', true);
+        }
+
+        if (Tools::getValue('reset_token')) {
+            $employee = new Employee((int) Tools::getValue('id_employee'));
+            if ($this->isEmployeeResetRequestValid($employee)) {
+                $this->context->smarty->assign(array(
+                    'show_reset_password' => true,
+                    'reset_id_employee' => (int) $employee->id,
+                    'reset_expires' => (int) Tools::getValue('reset_expires'),
+                    'reset_token' => Tools::getValue('reset_token'),
+                ));
+            } else {
+                $this->errors[] = Tools::displayError('This password reset link is invalid or has expired. Please request a new one.');
+            }
+        }
+
         if (!Tools::usingSecureMode() && Configuration::get('PS_SSL_ENABLED')) {
             // You can uncomment these lines if you want to force https even from localhost and automatically redirect
             // header('HTTP/1.1 301 Moved Permanently');
@@ -168,7 +186,9 @@ class AdminLoginControllerCore extends AdminController
 
     public function postProcess()
     {
-        if (Tools::isSubmit('submitLogin')) {
+        if (Tools::isSubmit('submitReset')) {
+            $this->processReset();
+        } elseif (Tools::isSubmit('submitLogin')) {
             $this->processLogin();
         } elseif (Tools::isSubmit('submitForgot')) {
             $this->processForgot();
@@ -180,6 +200,21 @@ class AdminLoginControllerCore extends AdminController
         /* Check fields validity */
         $passwd = trim(Tools::getValue('passwd'));
         $email = trim(Tools::getValue('email'));
+        $remoteIpAddress = Tools::getRemoteAddr();
+        $maxAttempts = $this->getMaxAdminLoginAttempts();
+        $attemptsCount = 0;
+
+        if (Validate::isEmail($email) && $maxAttempts) {
+            $attemptTracker = new MaintenanceAccess();
+            $attemptsCount = (int) $attemptTracker->getFailedAttemptsCount($email, $remoteIpAddress);
+            if ($attemptsCount >= $maxAttempts) {
+                $this->errors[] = Tools::displayError(sprintf(
+                    'Too many failed login attempts. Please try again after %d minutes.',
+                    MaintenanceAccess::LOGIN_ATTEMPTS_WINDOW
+                ));
+            }
+        }
+
         if (empty($email)) {
             $this->errors[] = Tools::displayError('Email is empty.');
         } elseif (!Validate::isEmail($email)) {
@@ -198,12 +233,23 @@ class AdminLoginControllerCore extends AdminController
             $is_employee_loaded = $this->context->employee->getByEmail($email, $passwd);
             $employee_associated_shop = $this->context->employee->getAssociatedShops();
             if (!$is_employee_loaded) {
-                $this->errors[] = Tools::displayError('The Employee does not exist, or the password provided is incorrect.');
+                $this->errors[] = Tools::displayError('The email address or password is incorrect.');
                 $this->context->employee->logout();
+
+                if ($maxAttempts) {
+                    $attemptTracker = new MaintenanceAccess();
+                    $attemptTracker->email = $email;
+                    $attemptTracker->ip_address = $remoteIpAddress;
+                    $attemptTracker->save();
+                }
             } elseif (empty($employee_associated_shop) && !$this->context->employee->isSuperAdmin()) {
                 $this->errors[] = Tools::displayError('This employee does not manage the shop anymore (Either the shop has been deleted or permissions have been revoked).');
                 $this->context->employee->logout();
             } else {
+                if ($maxAttempts) {
+                    $attemptTracker->removeFailedAttempts($email, $remoteIpAddress);
+                }
+
                 PrestaShopLogger::addLog(sprintf($this->l('Back Office connection from %s', 'AdminTab', false, false), Tools::getRemoteAddr()), 1, null, '', 0, true, (int)$this->context->employee->id);
 
                 $this->context->employee->remote_addr = (int)ip2long(Tools::getRemoteAddr());
@@ -251,50 +297,108 @@ class AdminLoginControllerCore extends AdminController
             $this->errors[] = Tools::displayError('Invalid email address.');
         } else {
             $employee = new Employee();
-            if (!$employee->getByEmail($email) || !$employee) {
-                $this->errors[] = Tools::displayError('This account does not exist.');
-            } elseif ((strtotime($employee->last_passwd_gen.'+'.Configuration::get('PS_PASSWD_TIME_BACK').' minutes') - time()) > 0) {
-                $this->errors[] = sprintf(
-                    Tools::displayError('You can regenerate your password only every %d minute(s)'),
-                    Configuration::get('PS_PASSWD_TIME_BACK')
-                );
-            }
+            $employeeExists = $employee->getByEmail($email) && Validate::isLoadedObject($employee);
         }
 
         if (!count($this->errors)) {
-            $pwd = Tools::passwdGen(10, 'RANDOM');
-            $objHash = new PasswordHashing();
-            $employee->passwd = $objHash->passwordHash($pwd);
-            $employee->last_passwd_gen = date('Y-m-d H:i:s', time());
+            if ($employeeExists) {
+                $cooldownEnds = strtotime($employee->last_passwd_gen.'+'.(int) Configuration::get('PS_PASSWD_TIME_BACK').' minutes');
+                if ($cooldownEnds <= time()) {
+                    $token = PasswordResetToken::create('employee', (int) $employee->id, $employee->passwd);
+                    $resetUrl = Tools::getCurrentUrlProtocolPrefix().Tools::getShopDomainSsl().__PS_BASE_URI__
+                        .$this->admin_webpath.'/index.php?controller=AdminLogin&id_employee='.(int) $employee->id
+                        .'&reset_expires='.(int) $token['expires'].'&reset_token='.urlencode($token['token']);
 
-            $params = array(
-                '{email}' => $employee->email,
-                '{lastname}' => $employee->lastname,
-                '{firstname}' => $employee->firstname,
-                '{passwd}' => $pwd
-            );
+                    $params = array(
+                        '{email}' => $employee->email,
+                        '{lastname}' => $employee->lastname,
+                        '{firstname}' => $employee->firstname,
+                        '{reset_url}' => $resetUrl,
+                    );
 
-            if (Mail::Send($employee->id_lang, 'employee_password', Mail::l('Your new password', $employee->id_lang), $params, $employee->email, $employee->firstname.' '.$employee->lastname)) {
-                // Update employee only if the mail can be sent
-                Shop::setContext(Shop::CONTEXT_SHOP, (int)min($employee->getAssociatedShops()));
-
-                $result = $employee->update();
-                if (!$result) {
-                    $this->errors[] = Tools::displayError('An error occurred while attempting to change your password.');
-                } else {
-                    die(json_encode(array(
-                        'hasErrors' => false,
-                        'confirm' => $this->l('Your password has been emailed to you.', 'AdminTab', false, false)
-                    )));
+                    if (Mail::Send($employee->id_lang, 'employee_password', Mail::l('Password reset request', $employee->id_lang), $params, $employee->email, $employee->firstname.' '.$employee->lastname)) {
+                        $employee->last_passwd_gen = date('Y-m-d H:i:s');
+                        $associatedShops = $employee->getAssociatedShops();
+                        if ($associatedShops) {
+                            Shop::setContext(Shop::CONTEXT_SHOP, (int) min($associatedShops));
+                        }
+                        $employee->update();
+                    }
                 }
-            } else {
-                die(json_encode(array(
-                    'hasErrors' => true,
-                    'errors' => array(Tools::displayError('An error occurred while attempting to change your password.'))
-                )));
             }
+
+            die(json_encode(array(
+                'hasErrors' => false,
+                'confirm' => $this->l('If this email belongs to an active account, a password reset link has been sent.', 'AdminTab', false, false),
+            )));
         } elseif (Tools::isSubmit('ajax')) {
             die(json_encode(array('hasErrors' => true, 'errors' => $this->errors)));
         }
+    }
+
+    protected function processReset()
+    {
+        $employee = new Employee((int) Tools::getValue('id_employee'));
+        if (!$this->isEmployeeResetRequestValid($employee)) {
+            $this->errors[] = Tools::displayError('This password reset link is invalid or has expired. Please request a new one.');
+            return;
+        }
+
+        $password = (string) Tools::getValue('new_password');
+        $confirmation = (string) Tools::getValue('new_password_confirmation');
+        if (!Validate::isPasswdAdmin($password)) {
+            $this->errors[] = Tools::displayError('The new password does not meet the minimum length requirement.');
+        } elseif ($password !== $confirmation) {
+            $this->errors[] = Tools::displayError('The password confirmation does not match.');
+        }
+
+        if ($this->errors) {
+            return;
+        }
+
+        $hasher = new PasswordHashing();
+        $employee->passwd = $hasher->passwordHash($password);
+        $employee->last_passwd_gen = date('Y-m-d H:i:s');
+        $associatedShops = $employee->getAssociatedShops();
+        if ($associatedShops) {
+            Shop::setContext(Shop::CONTEXT_SHOP, (int) min($associatedShops));
+        }
+
+        if (!$employee->update()) {
+            $this->errors[] = Tools::displayError('The password could not be updated. Please try again.');
+            return;
+        }
+
+        PrestaShopLogger::addLog('Back Office password reset completed', 1, null, 'Employee', (int) $employee->id, true);
+        Tools::redirectAdmin('index.php?controller=AdminLogin&reset_success=1');
+    }
+
+    protected function isEmployeeResetRequestValid($employee)
+    {
+        if (!Validate::isLoadedObject($employee) || !$employee->active) {
+            return false;
+        }
+
+        try {
+            return PasswordResetToken::isValid(
+                'employee',
+                (int) $employee->id,
+                $employee->passwd,
+                (int) Tools::getValue('reset_expires'),
+                (string) Tools::getValue('reset_token')
+            );
+        } catch (RuntimeException $exception) {
+            PrestaShopLogger::addLog('Password reset token configuration error', 3);
+            return false;
+        }
+    }
+
+    protected function getMaxAdminLoginAttempts()
+    {
+        if (method_exists('Configuration', 'hasKey') && Configuration::hasKey('PS_ADMIN_LOGIN_MAX_ATTEMPTS')) {
+            return max(0, (int) Configuration::get('PS_ADMIN_LOGIN_MAX_ATTEMPTS'));
+        }
+
+        return 5;
     }
 }

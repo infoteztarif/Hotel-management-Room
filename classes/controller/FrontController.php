@@ -874,8 +874,10 @@ class FrontControllerCore extends Controller
                     $cookie->remote_addr = ip2long($remoteIpAddress);
                     $cookie->write();
 
-                    // Reset attempts count on successful login
-                    $objMaintenanceAccess->removeFailedAttempts($email, $remoteIpAddress);
+                    // Reset attempts count on successful login when tracking is enabled.
+                    if ($maxAttempts) {
+                        $objMaintenanceAccess->removeFailedAttempts($email, $remoteIpAddress);
+                    }
                 }
 
                 if (count($this->errors)) {

@@ -28,4 +28,9 @@ if grep -R --include='*.php' -nE '(AKIA[0-9A-Z]{16}|sk_live_[0-9A-Za-z]{20,}|---
   exit 1
 fi
 
+if grep -R --include='employee_password.*' --include='password.*' -n '{passwd}' mails/en; then
+  echo 'Password reset emails must not contain plaintext password placeholders'
+  exit 1
+fi
+
 echo 'Security smoke checks passed'

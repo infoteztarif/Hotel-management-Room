@@ -57,7 +57,7 @@ Before enabling multiple unrelated paying companies in one database:
 2. update every hotel/booking/report/export/webservice query to enforce that ownership;
 3. add cross-tenant denial tests for list, view, create, update, delete, import, export, attachment, cache and background-job paths;
 4. implement webhook-verified Razorpay/Stripe billing with idempotency and transactional subscription updates;
-5. add 2FA, session/device management and password-reset links (the current email-password reset flow must be replaced);
+5. add 2FA and session/device management; password resets now use one-hour, password-bound signed links and never email plaintext passwords;
 6. run full MySQL integration, browser E2E, backup/restore and mobile/desktop tests.
 
 Until these gates pass, use one database/deployment per unrelated company or limit the shared instance to a single trusted hotel group.
