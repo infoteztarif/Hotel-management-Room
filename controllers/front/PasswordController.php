@@ -24,6 +24,8 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+require_once _PS_ROOT_DIR_.'/classes/PasswordResetToken.php';
+
 class PasswordControllerCore extends FrontController
 {
     public $php_self = 'password';
@@ -44,7 +46,7 @@ class PasswordControllerCore extends FrontController
                 $canSend = Validate::isLoadedObject($customer) && $customer->active;
                 $cooldown = (int) Configuration::get('PS_PASSWD_TIME_FRONT');
                 if ($canSend && strtotime($customer->last_passwd_gen.'+'.$cooldown.' minutes') <= time()) {
-                    $token = PasswordResetToken::create('customer', (int) $customer->id, $customer->passwd);
+                    $token = PasswordResetTokenCore::create('customer', (int) $customer->id, $customer->passwd);
                     $mail_params = array(
                         '{email}' => $customer->email,
                         '{lastname}' => $customer->lastname,
@@ -119,7 +121,7 @@ class PasswordControllerCore extends FrontController
         }
 
         try {
-            return PasswordResetToken::isValid(
+            return PasswordResetTokenCore::isValid(
                 'customer',
                 (int) $customer->id,
                 $customer->passwd,

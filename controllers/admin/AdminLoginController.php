@@ -24,6 +24,8 @@
  *  International Registered Trademark & Property of PrestaShop SA
  */
 
+require_once _PS_ROOT_DIR_.'/classes/PasswordResetToken.php';
+
 class AdminLoginControllerCore extends AdminController
 {
     public function __construct()
@@ -304,7 +306,7 @@ class AdminLoginControllerCore extends AdminController
             if ($employeeExists) {
                 $cooldownEnds = strtotime($employee->last_passwd_gen.'+'.(int) Configuration::get('PS_PASSWD_TIME_BACK').' minutes');
                 if ($cooldownEnds <= time()) {
-                    $token = PasswordResetToken::create('employee', (int) $employee->id, $employee->passwd);
+                    $token = PasswordResetTokenCore::create('employee', (int) $employee->id, $employee->passwd);
                     $resetUrl = Tools::getCurrentUrlProtocolPrefix().Tools::getShopDomainSsl().__PS_BASE_URI__
                         .$this->admin_webpath.'/index.php?controller=AdminLogin&id_employee='.(int) $employee->id
                         .'&reset_expires='.(int) $token['expires'].'&reset_token='.urlencode($token['token']);
@@ -380,7 +382,7 @@ class AdminLoginControllerCore extends AdminController
         }
 
         try {
-            return PasswordResetToken::isValid(
+            return PasswordResetTokenCore::isValid(
                 'employee',
                 (int) $employee->id,
                 $employee->passwd,
