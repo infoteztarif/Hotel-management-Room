@@ -2905,7 +2905,9 @@ CREATE TABLE IF NOT EXISTS `PREFIX_maintenance_access` (
   `ip_address` varchar(50) NOT NULL,
   `email` varchar(128) NOT NULL,
   `date_add` datetime NOT NULL,
-  PRIMARY KEY (`id_maintenance_access`)
+  PRIMARY KEY (`id_maintenance_access`),
+  KEY `idx_maintenance_email_date` (`email`, `date_add`),
+  KEY `idx_maintenance_ip_date` (`ip_address`, `date_add`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `PREFIX_room_type_selling_object` (

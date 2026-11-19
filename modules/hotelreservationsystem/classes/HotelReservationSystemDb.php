@@ -40,7 +40,8 @@ class HotelReservationSystemDb
                 `max_los` smallint(6) NOT NULL DEFAULT '0',
                 `date_add` datetime NOT NULL,
                 `date_upd` datetime NOT NULL,
-                PRIMARY KEY (`id`)
+                PRIMARY KEY (`id`),
+                KEY `idx_room_type_hotel_product` (`id_hotel`, `id_product`)
             ) ENGINE="._MYSQL_ENGINE_." DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;",
 
             "CREATE TABLE IF NOT EXISTS `"._DB_PREFIX_."htl_room_information` (
@@ -53,7 +54,8 @@ class HotelReservationSystemDb
                 `comment` text NOT NULL,
                 `date_add` datetime NOT NULL,
                 `date_upd` datetime NOT NULL,
-                PRIMARY KEY (`id`)
+                PRIMARY KEY (`id`),
+                KEY `idx_hotel_product` (`id_hotel`, `id_product`)
             ) ENGINE="._MYSQL_ENGINE_." DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;",
 
             "CREATE TABLE IF NOT EXISTS `"._DB_PREFIX_."htl_branch_info` (
@@ -74,7 +76,12 @@ class HotelReservationSystemDb
                 `tourism_tax_collection_type` tinyint(1) unsigned NOT NULL DEFAULT '0',
                 `date_add` datetime NOT NULL,
                 `date_upd` datetime NOT NULL,
-                PRIMARY KEY (`id`)
+                PRIMARY KEY (`id`),
+                KEY `idx_booking_hotel_dates` (`id_hotel`, `date_from`, `date_to`),
+                KEY `idx_booking_room_dates` (`id_room`, `date_from`, `date_to`),
+                KEY `idx_booking_order` (`id_order`),
+                KEY `idx_booking_customer` (`id_customer`),
+                KEY `idx_booking_backorder_checkout` (`is_back_order`, `date_to`)
             ) ENGINE="._MYSQL_ENGINE_." DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;",
 
             "CREATE TABLE IF NOT EXISTS `"._DB_PREFIX_."htl_branch_info_lang` (
@@ -190,7 +197,10 @@ class HotelReservationSystemDb
                 `is_refunded` tinyint(1) NOT NULL DEFAULT '0',
                 `date_add` datetime NOT NULL,
                 `date_upd` datetime NOT NULL,
-                PRIMARY KEY (`id`)
+                PRIMARY KEY (`id`),
+                KEY `idx_cart` (`id_cart`),
+                KEY `idx_cart_room_dates` (`id_room`, `date_from`, `date_to`),
+                KEY `idx_cart_hotel_dates` (`id_hotel`, `date_from`, `date_to`)
             ) ENGINE="._MYSQL_ENGINE_." DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;",
 
             "CREATE TABLE IF NOT EXISTS `"._DB_PREFIX_."htl_booking_detail` (
@@ -234,7 +244,12 @@ class HotelReservationSystemDb
                 -- `available_for_order` tinyint(1) NOT NULL DEFAULT '0',
                 `date_add` datetime NOT NULL,
                 `date_upd` datetime NOT NULL,
-                PRIMARY KEY (`id`)
+                PRIMARY KEY (`id`),
+                KEY `idx_booking_hotel_dates` (`id_hotel`, `date_from`, `date_to`),
+                KEY `idx_booking_room_dates` (`id_room`, `date_from`, `date_to`),
+                KEY `idx_booking_order` (`id_order`),
+                KEY `idx_booking_customer` (`id_customer`),
+                KEY `idx_booking_backorder_checkout` (`is_back_order`, `date_to`)
             ) ENGINE="._MYSQL_ENGINE_." DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;",
 
             "CREATE TABLE IF NOT EXISTS `"._DB_PREFIX_."htl_booking_status` (

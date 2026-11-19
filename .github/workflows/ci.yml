@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [v1.8.x, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  php-quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, dom, gd, openssl, pdo_mysql, simplexml, soap, zip
+          coverage: none
+      - name: Validate root Composer metadata
+        run: composer validate --strict --no-check-lock
+      - name: PHP syntax check
+        run: find . -type f -name '*.php' -not -path './tests/vendor/*' -print0 | xargs -0 -n1 -P4 php -l
+      - name: Security smoke checks
+        run: bash scripts/ci/security-smoke.sh
+      - name: Install test dependencies
+        working-directory: tests
+        run: composer install --no-interaction --prefer-dist
+      - name: Unit tests
+        working-directory: tests
+        run: vendor/bin/phpunit -c phpunit.xml

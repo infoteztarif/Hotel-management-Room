@@ -48,13 +48,37 @@
 		{if isset($warningSslMessage)}
 		<div class="alert alert-warning">{$warningSslMessage}</div>
 		{/if}
+	{if isset($password_reset_success)}
+		<div class="alert alert-success">{l s='Your password has been reset. You can now log in.'}</div>
+	{/if}
 	</div>
 	<div id="shop-img"><img src="{$img_dir}qloapps-login@2x.png" alt="{$shop_name}" width="136px" height="136px" /></div>
 	<div class="flip-container">
+		{if !isset($wrong_folder_name) && !isset($wrong_install_name)}
+		{if isset($show_reset_password)}
+		<div class="panel">
+			<h4>{l s='Choose a new password'}</h4>
+			<form action="index.php?controller=AdminLogin" method="post" id="reset_password_form">
+				<input type="hidden" name="id_employee" value="{$reset_id_employee|intval}" />
+				<input type="hidden" name="reset_expires" value="{$reset_expires|intval}" />
+				<input type="hidden" name="reset_token" value="{$reset_token|escape:'html':'UTF-8'}" />
+				<div class="form-group">
+					<label class="control-label" for="new_password">{l s='New password'}</label>
+					<input name="new_password" type="password" id="new_password" class="form-control" autocomplete="new-password" required />
+				</div>
+				<div class="form-group">
+					<label class="control-label" for="new_password_confirmation">{l s='Confirm new password'}</label>
+					<input name="new_password_confirmation" type="password" id="new_password_confirmation" class="form-control" autocomplete="new-password" required />
+				</div>
+				<button name="submitReset" type="submit" class="btn btn-primary btn-lg btn-block">
+					{l s='Reset password'}
+				</button>
+			</form>
+		</div>
+		{else}
 		<div class="flipper">
 			<div class="front panel">
 				<h4 id="shop_name">{$shop_name}</h4>
-				{if !isset($wrong_folder_name) && !isset($wrong_install_name)}
 				<form action="#" id="login_form" method="post">
 					<input type="hidden" name="redirect" id="redirect" value="{$redirect}"/>
 					<div class="form-group">
@@ -114,6 +138,7 @@
 				</form>
 			</div>
 		</div>
+		{/if}
 		{else}
 		<div class="alert alert-danger">
 			<p>{l s='For security reasons, you cannot connect to the back office until you have:'}</p>
